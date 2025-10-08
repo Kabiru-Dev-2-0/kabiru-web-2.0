@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@heroui/button";
-import { AppsRegular, BookOpenLightbulbRegular, DraftsRegular, PuzzlePieceRegular, TrophyRegular, SettingsRegular, ShareIosRegular } from "@fluentui/react-icons";
+import { AppsColor, BookOpenLightbulbColor, DraftsColor, PuzzlePieceColor, TrophyColor, SettingsColor, ShareIosColor } from "@fluentui/react-icons";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,27 +13,27 @@ export const Sidebar = () => {
     {
       label: "Dashboard",
       href: "/dashboard",
-      icon: AppsRegular,
+      icon: AppsColor,
     },
     {
       label: "Belajar",
       href: "/belajar",
-      icon: BookOpenLightbulbRegular,
+      icon: BookOpenLightbulbColor,
     },
     {
       label: "Latihan",
       href: "/latihan",
-      icon: DraftsRegular,
+      icon: DraftsColor,
     },
     {
       label: "Tantangan",
       href: "/tantangan",
-      icon: PuzzlePieceRegular,
+      icon: PuzzlePieceColor,
     },
     {
       label: "Papan Peringkat",
       href: "/peringkat",
-      icon: TrophyRegular,
+      icon: TrophyColor,
     },
   ];
 
@@ -41,12 +41,12 @@ export const Sidebar = () => {
     {
       label: "Pengaturan",
       href: "/pengaturan",
-      icon: SettingsRegular,
+      icon: SettingsColor,
     },
     {
       label: "Keluar Akun",
       href: "/logout",
-      icon: ShareIosRegular,
+      icon: ShareIosColor,
       danger: true,
     },
   ];

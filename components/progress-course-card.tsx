@@ -9,7 +9,8 @@ interface ProgressCourseCardProps {
   description: string;
   progress: number;
   total: number;
-  icon: string;
+  icon?: string;
+  iconComponent?: React.ReactNode;
   category?: string;
 }
 
@@ -19,6 +20,7 @@ export const ProgressCourseCard = ({
   progress,
   total,
   icon,
+  iconComponent,
   category = "Learning Path",
 }: ProgressCourseCardProps) => {
   const progressPercent = Math.round((progress / total) * 100);
@@ -29,10 +31,16 @@ export const ProgressCourseCard = ({
       radius="lg"
     >
       <CardBody className="p-5 gap-[14px]">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="text-4xl">{icon}</div>
-          <div className="flex-1 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              {iconComponent ? (
+                <div className="flex items-center justify-center">
+                  {iconComponent}
+                </div>
+              ) : (
+                <div className="text-4xl">{icon}</div>
+              )}
+              <div className="flex-1 flex flex-col">
             <span className="text-base font-medium leading-6 text-[#71717A]">
               {category}
             </span>

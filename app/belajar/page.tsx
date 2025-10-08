@@ -4,6 +4,13 @@ import { Sidebar } from "@/components/sidebar";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { LearningPathCard } from "@/components/learning-path-card";
 import { ProgressCourseCard } from "@/components/progress-course-card";
+import { Tooltip } from "@heroui/tooltip";
+import {
+  BookStarColor,
+  BookOpenLightbulbColor,
+  DataPieColor,
+  MoleculeColor,
+} from "@fluentui/react-icons";
 
 export default function BelajarPage() {
   const ongoingCourses = [
@@ -12,7 +19,7 @@ export default function BelajarPage() {
       description: "Lorem ipsum dolor sit lorem ipsum dolor sit amet.",
       progress: 5,
       total: 20,
-      icon: "📊",
+      iconComponent: <DataPieColor className="w-10 h-10" />,
       category: "Learning Path",
     },
     {
@@ -20,7 +27,7 @@ export default function BelajarPage() {
       description: "Lorem ipsum dolor sit lorem ipsum dolor sit amet.",
       progress: 5,
       total: 20,
-      icon: "🧬",
+      iconComponent: <MoleculeColor className="w-10 h-10" />,
       category: "Learning Path",
     },
   ];
@@ -90,11 +97,11 @@ export default function BelajarPage() {
         <div className="flex-1 overflow-y-auto p-6">
           <div className="flex flex-col gap-8">
             {/* Lanjutkan Section */}
-            <div className="flex gap-2.5">
+            <div className="flex gap-2.5 relative">
               {/* Left: Ongoing Courses */}
               <div className="flex-1 bg-white rounded-[14px] p-[14px] flex flex-col gap-[14px]">
                 <div className="flex items-center gap-2.5">
-                  <div className="text-4xl">📚</div>
+                  <BookStarColor className="w-10 h-10" />
                   <h2 className="text-2xl font-semibold leading-8 text-black">
                     Lanjutkan
                   </h2>
@@ -109,33 +116,43 @@ export default function BelajarPage() {
                 </div>
               </div>
 
-              {/* Right: Tooltip */}
+              {/* Right: Tooltip with Character */}
               <div className="w-[270px] h-[250px] relative">
-                <div className="absolute left-[-52px] top-[19px]">
-                  <div className="relative">
-                    <div className="bg-white rounded-lg p-1 shadow-lg shadow-primary/20">
-                      <p className="text-base font-normal leading-6 text-black text-center">
+                {/* Character */}
+                <div className="w-[238px] h-[230px] ml-[17px] mt-5 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center text-9xl">
+                  👨‍🎓
+                </div>
+
+                {/* Tooltip */}
+                <Tooltip
+                  content={
+                    <div className="px-3 py-1">
+                      <p className="text-base font-normal leading-6 text-white text-center">
                         Ayo lanjutkan
                         <br />
                         belajarmu!
                       </p>
                     </div>
-                    {/* Arrow indicator */}
-                    <div className="absolute right-[-8px] top-[36px] w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-l-8 border-l-white" />
-                  </div>
-                </div>
-
-                {/* Character */}
-                <div className="w-[238px] h-[230px] ml-[17px] mt-5 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center text-9xl">
-                  👨‍🎓
-                </div>
+                  }
+                  isOpen={true}
+                  placement="left-end"
+                  color="primary"
+                  radius="lg"
+                  offset={20}
+                  classNames={{
+                    base: "before:bg-[#006FEE]",
+                    content: "p-0 bg-[#006FEE]",
+                  }}
+                >
+                  <div className="absolute left-[-52px] top-[19px] w-0 h-0" />
+                </Tooltip>
               </div>
             </div>
 
             {/* Learning Path Section */}
             <div className="flex flex-col gap-[14px]">
               <div className="flex items-center gap-2.5">
-                <div className="text-4xl">💡</div>
+                <BookOpenLightbulbColor className="w-10 h-10" />
                 <h2 className="text-2xl font-semibold leading-8 text-black">
                   Learning Path
                 </h2>

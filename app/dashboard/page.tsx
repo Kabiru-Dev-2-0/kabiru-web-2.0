@@ -7,6 +7,17 @@ import { Card, CardBody } from "@heroui/card";
 import { Progress } from "@heroui/progress";
 import { Button } from "@heroui/button";
 import { Divider } from "@heroui/divider";
+import {
+  BookStarColor,
+  CertificateColor,
+  DataPieColor,
+  MoleculeColor,
+  BotColor,
+  TrophyColor,
+  StarColor,
+  PawColor,
+} from "@fluentui/react-icons";
+import { Tooltip } from "@heroui/tooltip";
 
 export default function DashboardPage() {
   return (
@@ -25,32 +36,45 @@ export default function DashboardPage() {
             {/* Left Column */}
             <div className="flex-1 flex flex-col gap-8">
               {/* Tooltip Section */}
-              <div className="flex items-center gap-2.5">
-                {/* Character Image */}
-                <div className="w-[155.25px] h-[200px] relative">
-                  <div className="w-full h-full bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-6xl">
-                    🤖
-                  </div>
-                </div>
-
-                {/* Tooltip */}
-                <div className="relative">
-                  <div className="bg-white rounded-xl p-6 shadow-2xl shadow-primary/20 max-w-md">
-                    <p className="text-lg leading-7 text-black mb-4">
-                      Hebat, kamu sudah memahami dasar logika dengan baik! 🎉
-                      <br />
-                      Tapi aku lihat kamu masih agak bingung di bagian looping dan efisiensi algoritma. Yuk, coba ulang latihan di bagian &apos;Simulasi Perulangan&apos;
-                    </p>
-                    <Button
-                      color="default"
-                      radius="sm"
-                      size="md"
-                      className="shadow-xl"
-                    >
-                      Belajar lagi
-                    </Button>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2.5 relative">
+                {/* Tooltip with Tooltip Component */}
+                <Tooltip
+                  showArrow={true}
+                  content={
+                    <div className="px-6 py-4 max-w-md flex flex-col gap-[18px]">
+                      <p className="text-lg leading-7 text-white">
+                        Hebat, kamu sudah memahami dasar logika dengan baik! 🎉
+                        <br />
+                        Tapi aku lihat kamu masih agak bingung di bagian looping
+                        dan efisiensi algoritma. Yuk, coba ulang latihan di
+                        bagian &apos;Simulasi Perulangan&apos;
+                      </p>
+                      <Button
+                        color="default"
+                        radius="sm"
+                        size="md"
+                        className="shadow-xl"
+                      >
+                        Belajar lagi
+                      </Button>
+                    </div>
+                  }
+                  isOpen={true}
+                  placement="right"
+                  color="primary"
+                  radius="lg"
+                  className="max-w-2xl"
+                  classNames={{
+                    base: "before:bg-[#006FEE]",
+                    content: "p-0 bg-[#006FEE]",
+                  }}
+                >
+                  <Button variant="flat" className="w-[155.25px] h-[200px] relative">
+                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-6xl">
+                      🤖
+                    </div>
+                  </Button>
+                </Tooltip>
               </div>
 
               <Divider className="bg-[rgba(17,17,17,0.15)]" />
@@ -58,7 +82,7 @@ export default function DashboardPage() {
               {/* Sedang Dipelajari Section */}
               <div className="flex flex-col gap-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="text-4xl">📚</div>
+                  <BookStarColor className="w-10 h-10" />
                   <h2 className="text-2xl font-semibold leading-8 text-black">
                     Sedang dipelajari
                   </h2>
@@ -68,7 +92,7 @@ export default function DashboardPage() {
                   <ProgressCourseCard
                     category="Learning Path"
                     description="Lorem ipsum dolor sit lorem ipsum dolor sit amet."
-                    icon="📊"
+                    iconComponent={<DataPieColor className="w-10 h-10" />}
                     progress={5}
                     title="Logika dan Berpikir Komputasional"
                     total={20}
@@ -76,7 +100,7 @@ export default function DashboardPage() {
                   <ProgressCourseCard
                     category="Learning Path"
                     description="Lorem ipsum dolor sit lorem ipsum dolor sit amet."
-                    icon="🧬"
+                    iconComponent={<MoleculeColor className="w-10 h-10" />}
                     progress={0}
                     title="Dasar Algoritma dan Pemrograman"
                     total={20}
@@ -89,7 +113,7 @@ export default function DashboardPage() {
               {/* Selesai Dipelajari Section */}
               <div className="flex flex-col gap-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="text-4xl">🎓</div>
+                  <CertificateColor className="w-10 h-10" />
                   <h2 className="text-2xl font-semibold leading-8 text-black">
                     Selesai dipelajari
                   </h2>
@@ -102,7 +126,7 @@ export default function DashboardPage() {
                   <CardBody className="p-5 gap-[14px]">
                     {/* Header */}
                     <div className="flex items-center gap-3">
-                      <div className="text-4xl">🤖</div>
+                      <BotColor className="w-10 h-10" />
                       <div className="flex-1 flex flex-col">
                         <span className="text-base font-medium leading-6 text-[#71717A]">
                           Learning Path
@@ -154,7 +178,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-2.5">
-                    <div className="text-[42px]">🏆</div>
+                    <TrophyColor className="w-[42px] h-[42px]" />
                     <div className="flex flex-col flex-1">
                       <span className="text-base font-medium leading-6 text-black">
                         Saat ini kamu di peringkat
@@ -187,7 +211,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-2.5">
-                    <div className="text-[42px]">⭐</div>
+                    <StarColor className="w-[42px] h-[42px]" />
                     <Progress
                       aria-label="Daily mission"
                       classNames={{
@@ -231,7 +255,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-2.5">
-                    <div className="text-[42px]">🐾</div>
+                    <PawColor className="w-[42px] h-[42px]" />
                     <Progress
                       aria-label="Journey progress"
                       classNames={{

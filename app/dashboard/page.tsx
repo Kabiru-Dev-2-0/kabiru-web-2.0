@@ -37,44 +37,31 @@ export default function DashboardPage() {
             <div className="flex-1 flex flex-col gap-8">
               {/* Tooltip Section */}
               <div className="flex items-center gap-2.5 relative">
-                {/* Tooltip with Tooltip Component */}
-                <Tooltip
-                  showArrow={true}
-                  content={
-                    <div className="px-6 py-4 max-w-md flex flex-col gap-[18px]">
-                      <p className="text-lg leading-7 text-white">
-                        Hebat, kamu sudah memahami dasar logika dengan baik! 🎉
-                        <br />
-                        Tapi aku lihat kamu masih agak bingung di bagian looping
-                        dan efisiensi algoritma. Yuk, coba ulang latihan di
-                        bagian &apos;Simulasi Perulangan&apos;
-                      </p>
-                      <Button
-                        color="default"
-                        radius="sm"
-                        size="md"
-                        className="shadow-xl"
-                      >
-                        Belajar lagi
-                      </Button>
-                    </div>
-                  }
-                  isOpen={true}
-                  placement="right"
-                  color="primary"
-                  radius="lg"
-                  className="max-w-2xl"
-                  classNames={{
-                    base: "before:bg-[#006FEE]",
-                    content: "p-0 bg-[#006FEE]",
-                  }}
-                >
-                  <Button variant="flat" className="w-[155.25px] h-[200px] relative">
+                {/* Ganti Tooltip dengan Komponen Biasa */}
+                <div className="flex flex-row items-center gap-8">
+                  <div className="w-[155.25px] h-[200px] relative z-10">
                     <div className="w-full h-full bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-6xl">
                       🤖
                     </div>
-                  </Button>
-                </Tooltip>
+                  </div>
+                  <div className="px-6 py-4 max-w-md flex flex-col gap-[18px] bg-[#006FEE] rounded-lg shadow-xl relative z-0">
+                    <p className="text-lg leading-7 text-white">
+                      Hebat, kamu sudah memahami dasar logika dengan baik! 🎉
+                      <br />
+                      Tapi aku lihat kamu masih agak bingung di bagian looping
+                      dan efisiensi algoritma. Yuk, coba ulang latihan di
+                      bagian 'Simulasi Perulangan'
+                    </p>
+                    <Button
+                      color="default"
+                      radius="sm"
+                      size="md"
+                      className="shadow-xl"
+                    >
+                      Belajar lagi
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               <Divider className="bg-[rgba(17,17,17,0.15)]" />

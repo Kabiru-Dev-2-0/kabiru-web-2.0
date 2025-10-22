@@ -1,11 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
+import ExerciseRenderer from '@/components/ExerciseRenderer';
 import { ProgressBar } from '@fluentui/react-components';
-import { fetchLessons } from './lessonAction';
+import { fetchExercises } from './quizAction';
 
-export default function Lessons() {
-  const [lessons, setLessons] = useState<any[]>([]);
+export default function Quiz() {
+  const [exercises, setExercises] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,8 +14,8 @@ export default function Lessons() {
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
-      const { data, error } = await fetchLessons();
-      setLessons(data);
+      const { data, error } = await fetchExercises();
+      setExercises(data);
       setIsLoading(false);
       if (error || data.length === 0) {
         setError('Gagal memuat soal. Silakan coba lagi.');
@@ -22,8 +23,8 @@ export default function Lessons() {
     }
     loadData();
   }, []);
-  console.log(lessons)
-  const progress = lessons.length > 0 ? (currentIndex + 1) / lessons.length : 0;
+
+  const progress = exercises.length > 0 ? (currentIndex + 1) / exercises.length : 0;
 
   if (isLoading) {
     return (
@@ -52,13 +53,7 @@ export default function Lessons() {
       <DashboardHeader />
       <div className="container mx-auto p-4">
         <ProgressBar value={progress} className="mb-6" />
-        <div>
-          {lessons.map((lesson => (
-            <div>
-              {lesson}
-            </div>
-          )))}
-        </div>
+        <ExerciseRenderer exercises={exercises} />
       </div>
     </div>
   );

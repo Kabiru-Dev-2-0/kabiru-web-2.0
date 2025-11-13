@@ -5,10 +5,10 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { ProgressBar, Select, RadioGroup, Radio, makeStyles } from '@fluentui/react-components';
 import Editor from '@monaco-editor/react';
-import { DndContext, closestCenter, DragEndEvent, useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, DragEndEvent, useDroppable, DragOverlay, useDraggable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CheckmarkCircleRegular, DismissCircleRegular } from '@fluentui/react-icons';
+import { CheckmarkCircleRegular, ChevronRightRegular, DismissCircleRegular } from '@fluentui/react-icons';
 
 const useStyles = makeStyles({
   select: {
@@ -51,40 +51,175 @@ const useStyles = makeStyles({
   },
 });
 
-// Komponen Droppable untuk drag_and_drop
-const Droppable = ({ id, children, items }: { id: string; children: React.ReactNode; items: string[] }) => {
-  const { setNodeRef } = useDroppable({ id });
-  return (
-    <div ref={setNodeRef} className={useStyles().droppable}>
-      {children}
-      {items.map((item) => (
-        <Draggable key={item} id={item}>
-          <div className="py-2 px-3 bg-white border rounded shadow">{item}</div>
-        </Draggable>
-      ))}
-    </div>
-  );
-};
-
-// Komponen Draggable
-const Draggable = ({ id, children }: { id: string; children: React.ReactNode }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={useStyles().draggable}>
-      {children}
-    </div>
-  );
-};
-
-export default function ExerciseRenderer({ exercises }: { exercises: any[] }) {
+// Komponen Container untuk Drag and Drop - ARSITEKTUR BARU
+const DroppableContainer = ({ 
+  id, 
+  title, 
+  items 
+}: { 
+  id: string; 
+  title: string; 
+  items: string[] 
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id });
   const styles = useStyles();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  return (
+    <div 
+      ref={setNodeRef} 
+      className={styles.droppable}
+      style={{
+        backgroundColor: isOver ? '#e0f2fe' : '#f9fafb',
+        minHeight: '80px',
+      }}
+    >
+      <h3 className="text-sm font-medium mb-2">{title}</h3>
+      <div className="space-y-2">
+        {items.length === 0 ? (
+          <div className="text-gray-400 text-sm italic py-2">Kosong - drag items ke sini</div>
+        ) : (
+          items.map((item) => (
+            <DraggableItem key={item} id={item} content={item} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Komponen Item yang bisa di-drag - SESUAI FIGMA
+const DraggableItem = ({ id, content, isCorrect }: { id: string; content: string; isCorrect?: boolean }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
+  
+  const combinedStyle = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'grab',
+    boxShadow: isCorrect ? '0px 4px 0px 0px rgba(23, 201, 100, 1)' : '0px 4px 0px 0px rgba(228, 228, 231, 1)'
+  };
+  
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={combinedStyle} 
+      {...attributes} 
+      {...listeners}
+      className={`border-2 rounded-[14px] px-6 py-3.5 flex items-center justify-center gap-5 transition-colors ${
+        isCorrect 
+          ? 'bg-[#E8FAF0] border-[#17C964] hover:border-[#17C964]' 
+          : 'bg-white border-[#E4E4E7] hover:border-[#3674B5]'
+      }`}
+    >
+      <p className={`text-xl font-medium text-center leading-[1.6em] ${
+        isCorrect ? 'text-[#12A150]' : 'text-[#3F3F46]'
+      }`}>
+        {content}
+      </p>
+    </div>
+  );
+};
+
+// Komponen Footer dengan Robot dan Tooltip - SESUAI FIGMA
+const FooterWithRobot = ({ 
+  onSubmit, 
+  feedback, 
+  isCorrect,
+  showNextButton = false,
+  onNext
+}: { 
+  onSubmit: () => void;
+  feedback: string;
+  isCorrect: boolean;
+  showNextButton?: boolean;
+  onNext?: () => void;
+}) => {
+  return (
+    <div className={`fixed bottom-0 left-0 right-0 bg-white px-12 py-3.5 flex items-center justify-center gap-5 ${
+      feedback ? (isCorrect ? 'border-t border-[#17C964]' : 'border-t border-[#F31260]') : 'border-t border-[#D4D4D8]'
+    }`}>
+      {/* Robot Container */}
+      <div className="relative w-[99px] h-[104px]">
+        <img 
+          src="/imageAssets/motivational.png" 
+          alt="Robot" 
+          className="w-[110px] h-[110px] absolute -left-4 -top-1"
+        />
+        
+        {/* Tooltip - Muncul saat ada feedback */}
+        {feedback && (
+          <div className="absolute left-[110px] bottom-[8px] flex flex-row items-end">
+            {/* Arrow - mengarah ke robot (ke kiri) */}
+            <div 
+              className={`w-[19.66px] h-[19.66px] rotate-45 mr-[-10px] mb-[70px] z-10 ${
+                isCorrect ? 'bg-[#205994]' : 'bg-[#C20E4D]'
+              }`}
+              style={{ borderRadius: '2.035px' }}
+            />
+            
+            {/* Tooltip Content */}
+            <div className={`rounded-[14.32px] px-3.5 py-3.5 flex flex-col gap-1 min-w-[280px] ${
+              isCorrect ? 'bg-[#205994]' : 'bg-[#C20E4D]'
+            }`}>
+              <p className={`text-2xl font-semibold leading-[1.25em] ${
+                isCorrect ? 'text-[#74DFA2]' : 'text-[#FCA5A5]'
+              }`}>
+                {isCorrect ? 'Jawaban benar!' : 'Jawaban salah!'}
+              </p>
+              <p className="text-base font-medium text-white leading-[1.25em]">
+                {isCorrect 
+                  ? 'Kamu sudah memahami konsepnya, ayo lanjut ke soal berikutnya' 
+                  : 'Coba periksa lagi jawabanmu dan pastikan semuanya sudah benar'}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Spacer */}
+      <div className="flex-1"></div>
+      
+      {/* Button */}
+      {showNextButton && isCorrect ? (
+        <button
+          onClick={onNext}
+          className="bg-[#3674B5] text-white font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#2d5d94] transition-colors flex items-center gap-2"
+          style={{
+            boxShadow: '0px 3px 0px 0px rgba(32, 89, 148, 1)'
+          }}
+        >
+          Selanjutnya
+          <ChevronRightRegular className="w-8 h-8 text-[#FFFFFF]" />
+        </button>
+      ) : (
+        <button
+          onClick={onSubmit}
+          className="bg-[#3674B5] text-white font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#2d5d94] transition-colors"
+          style={{
+            boxShadow: '0px 3px 0px 0px rgba(32, 89, 148, 1)'
+          }}
+        >
+          Periksa
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default function ExerciseRenderer({ 
+  exercises, 
+  currentIndex = 0,
+  onNext,
+  onComplete
+}: { 
+  exercises: any[];
+  currentIndex?: number;
+  onNext?: () => void;
+  onComplete?: (isCorrect: boolean) => void;
+}) {
+  const styles = useStyles();
   const [answers, setAnswers] = useState<{ [key: string]: any }>({});
   const [feedback, setFeedback] = useState('');
+  const [isCorrect, setIsCorrect] = useState(false);
   const exercise = exercises[currentIndex];
 
   // ⬆️ Taruh ini di bagian atas komponen ExerciseRenderer (sebelum switch)
@@ -97,33 +232,40 @@ export default function ExerciseRenderer({ exercises }: { exercises: any[] }) {
       setEditorValue(exercise.template_code.replace(/\\n/g, '\n'));
       setTotalBlanks((exercise.template_code.match(/____/g) || []).length);
     }
+    // Reset state saat exercise berubah
+    setAnswers({});
+    setFeedback('');
+    setIsCorrect(false);
   }, [exercise]);
 
-  // Handler untuk klik jawaban
-  const handleOptionClick = (opt: string) => {
+  // Handler untuk klik jawaban - BARU untuk inline blanks
+  const handleOptionClick = (opt: string, blankIndex?: number) => {
     if (exercise.type !== 'fill_in_the_blank') return;
 
     setAnswers((prev) => {
-      const existingKey = Object.keys(prev).find((k) => prev[k] === opt);
-
-      // Kalau user klik lagi → hapus
-      if (existingKey !== undefined) {
-        const updated = { ...prev };
-        delete updated[existingKey];
-
-        const reverted = editorValue.replace(opt, '____');
-        setEditorValue(reverted);
-        return updated;
+      // Jika blankIndex diberikan (klik pada blank), isi blank tersebut
+      if (blankIndex !== undefined) {
+        return { ...prev, [blankIndex]: opt };
       }
 
-      // Tambahkan jawaban baru ke blank pertama yang kosong
-      const nextIndex = Object.keys(prev).length + 1;
-      if (nextIndex > totalBlanks) return prev;
+      // Jika tidak, cari blank pertama yang kosong
+      const blanks = exercise.data.blanks || [];
+      for (let i = 0; i < blanks.length; i++) {
+        if (!prev[i]) {
+          return { ...prev, [i]: opt };
+        }
+      }
       
-      const newEditorValue = editorValue.replace('____', opt);
-      setEditorValue(newEditorValue);
+      return prev;
+    });
+  };
 
-      return { ...prev, [nextIndex]: opt };
+  // Handler untuk clear blank
+  const handleClearBlank = (blankIndex: number) => {
+    setAnswers((prev) => {
+      const updated = { ...prev };
+      delete updated[blankIndex];
+      return updated;
     });
   };
 
@@ -136,35 +278,123 @@ export default function ExerciseRenderer({ exercises }: { exercises: any[] }) {
 
 
   const handleSubmit = (userAnswer: any) => {
-    let isCorrect = false;
+    let correct = false;
     if (exercise.type === 'fill_in_the_blank') {
-      isCorrect = userAnswer.every((ans: string, idx: number) => ans === exercise.data.correct_answers[idx]);
+      // Pastikan semua blank terisi dan jumlahnya sesuai
+      const expectedLength = exercise.data.correct_answers.length;
+      const userAnswerArray = Array.isArray(userAnswer) ? userAnswer : Object.values(userAnswer);
+      
+      // Filter undefined/null values
+      const filledAnswers = userAnswerArray.filter((ans: any) => ans !== undefined && ans !== null && ans !== '');
+      
+      // Cek: jumlah jawaban harus sama dengan jumlah blank yang diharapkan
+      if (filledAnswers.length !== expectedLength) {
+        correct = false;
+      } else {
+        // Cek setiap jawaban sesuai dengan correct_answers
+        correct = filledAnswers.every((ans: string, idx: number) => ans === exercise.data.correct_answers[idx]);
+      }
     } else if (exercise.type === 'drag_and_drop') {
       const buckets = Object.keys(exercise.data.correct_assignment);
-      isCorrect =
-        buckets.every((bucket) => {
-          const correct = exercise.data.correct_assignment[bucket];
-          const user = userAnswer[bucket] || [];
-          if (!Array.isArray(correct) || !Array.isArray(user)) return false;
-          if (user.length !== correct.length) return false;
-          // Bandingkan hasil sort
-          return [...user].sort().every((itm, idx) => itm === [...correct].sort()[idx]);
-        })
-        && buckets.length === Object.keys(userAnswer).length;
+      correct = buckets.every((bucket: string) => {
+        const correctAns = exercise.data.correct_assignment[bucket];
+        const user = userAnswer[bucket] || [];
+        if (!Array.isArray(correctAns) || !Array.isArray(user)) return false;
+        if (user.length !== correctAns.length) return false;
+        // Bandingkan hasil sort (urutan tidak penting)
+        return [...user].sort().every((itm, idx) => itm === [...correctAns].sort()[idx]);
+      });
+      // PERBAIKAN: Juga pastikan container 'items' kosong (semua sudah dipindahkan)
+      if (correct && userAnswer['items'] && userAnswer['items'].length > 0) {
+        correct = false;
+      }
     } else if (exercise.type === 'sorting') {
-      isCorrect = userAnswer.join(',') === exercise.data.correct_order.join(',');
+      correct = userAnswer.join(',') === exercise.data.correct_order.join(',');
     } else if (exercise.type === 'guessing' || exercise.type === 'multiple_choice') {
-      isCorrect = userAnswer === exercise.data.correct;
+      correct = userAnswer === exercise.data.correct;
     }
+    
+    setIsCorrect(correct);
     const exerciseSummary = "Benar! +" + exercise.points + " poin 🏆"
-    setFeedback(isCorrect ? exerciseSummary : 'Salah, coba lagi! 😔');
-    if (isCorrect && currentIndex < exercises.length - 1) {
+    setFeedback(correct ? exerciseSummary : 'Salah, coba lagi! 😔');
+    
+    if (correct) {
+      // Panggil onComplete untuk menandai soal selesai dan kirim status benar
+      if (onComplete) onComplete(true);
+      
+      // Auto next ke soal berikutnya setelah 5 detik
+      if (currentIndex < exercises.length - 1 && onNext) {
+        setTimeout(() => {
+          onNext();
+        }, 5000);
+      }
+    } else {
+      // Jika salah, hilangkan tooltip setelah 3 detik
       setTimeout(() => {
-        setCurrentIndex(currentIndex + 1);
-        setAnswers({});
         setFeedback('');
-      }, 1000);
+      }, 3000);
     }
+  };
+
+  // HANDLER BARU - Lebih sederhana dan robust
+  const handleDragEndNew = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const draggedItemId = active.id.toString();
+    const targetContainerId = over.id.toString();
+
+    // Cek apakah target adalah container atau item
+    // Jika target adalah item, ambil container parent-nya
+    const buckets = exercise.data.buckets || [];
+    const allContainers = ['items', ...buckets];
+    
+    let finalTargetContainer = targetContainerId;
+    
+    // Jika yang di-drop adalah item (bukan container), cari container-nya
+    if (!allContainers.includes(targetContainerId)) {
+      // Target adalah item, cari di container mana item ini berada
+      for (const container of allContainers) {
+        const containerItems = answers[container] || [];
+        if (containerItems.includes(targetContainerId)) {
+          finalTargetContainer = container;
+          break;
+        }
+      }
+      // Jika tidak ditemukan di answers, cek di items awal
+      if (!allContainers.includes(finalTargetContainer)) {
+        const initialItems = exercise.data.items || [];
+        if (initialItems.includes(targetContainerId)) {
+          finalTargetContainer = 'items';
+        }
+      }
+    }
+
+    // Buat copy dari answers
+    const newAnswers: { [key: string]: string[] } = {};
+    
+    // Inisialisasi semua containers
+    allContainers.forEach(container => {
+      newAnswers[container] = answers[container] ? [...answers[container]] : [];
+    });
+    
+    // Jika 'items' belum ada di answers, inisialisasi dengan semua items
+    if (!answers['items']) {
+      newAnswers['items'] = [...(exercise.data.items || [])];
+    }
+
+    // Hapus item dari semua containers
+    allContainers.forEach(container => {
+      newAnswers[container] = newAnswers[container].filter(item => item !== draggedItemId);
+    });
+
+    // Tambahkan item ke target container
+    if (!newAnswers[finalTargetContainer]) {
+      newAnswers[finalTargetContainer] = [];
+    }
+    newAnswers[finalTargetContainer].push(draggedItemId);
+
+    setAnswers(newAnswers);
   };
 
   const handleDragEnd = (event: DragEndEvent, type: string) => {
@@ -172,27 +402,7 @@ export default function ExerciseRenderer({ exercises }: { exercises: any[] }) {
     if (!over) return;
 
     if (type === 'drag_and_drop') {
-      const sourceId = (active.data.current?.sortable?.containerId || 'items').toString();
-      const destId = over.id.toString();
-      const item = active.id.toString();
-
-      // Batasi hanya bucket yang valid
-      const validBuckets = ['Bebek', 'Ayam'];
-      if (!validBuckets.includes(destId)) return;
-
-      const newAnswers: { [key: string]: string[] } = { ...answers };
-
-      // Bersihkan item dari seluruh buckets valid
-      validBuckets.forEach((bucket) => {
-        if (Array.isArray(newAnswers[bucket])) {
-          newAnswers[bucket] = newAnswers[bucket].filter((i: string) => i !== item);
-        }
-      });
-
-      // Inisialisasi array jika belum ada
-      if (!Array.isArray(newAnswers[destId])) newAnswers[destId] = [];
-      newAnswers[destId].push(item);
-      setAnswers(newAnswers);
+      handleDragEndNew(event);
     } else if (type === 'sorting') {
       const items = Array.from(answers.items || exercise.data.code_lines);
       const sourceIndex = active.data.current?.sortable.index;
@@ -206,267 +416,452 @@ export default function ExerciseRenderer({ exercises }: { exercises: any[] }) {
   
   switch (exercise.type) {
     case 'fill_in_the_blank':
-    return (
-      <Card classNames={{ base: 'w-full max-w-2xl mx-auto p-6 bg-white border-[#E8E8E8]' }}>
-        <p className="text-lg font-semibold mb-4">{exercise.prompt}</p>
-
-        <Editor
-          height="200px"
-          defaultLanguage="html"
-          value={editorValue}
-          options={{ readOnly: true, fontSize: 14 }}
-        />
-
-        <div className="mt-6">
-          <p className="text-sm font-medium mb-2">
-            Pilih jawaban sesuai urutan blank:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {exercise.data.options.map((opt: string) => (
-              <button
-                key={opt}
-                onClick={() => handleOptionClick(opt)}
-                className={`px-3 py-1.5 rounded border transition-colors ${
-                  Object.values(answers).includes(opt)
-                    ? 'bg-gray-300 border-gray-400 text-black'
-                    : 'bg-white border-gray-300 hover:bg-gray-100'
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
+      // Parse template_code untuk mendapatkan parts dan blanks
+      // Ganti \\n dengan newline yang sebenarnya
+      const normalizedCode = exercise.template_code.replace(/\\n/g, '\n');
+      const templateParts = normalizedCode.split('____');
+      const blanksCount = templateParts.length - 1;
+      
+      // Cek apakah ini kode multi-line (ada newline)
+      const isMultiLine = normalizedCode.includes('\n');
+      
+      return (
+        <div className="flex flex-col gap-12">
+          {/* Instruction Card - Sesuai Figma */}
+          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] p-8 flex flex-col gap-5">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.25em]">
+              {exercise.prompt}
+            </p>
           </div>
-        </div>
 
-        <div className="mt-4">
-          {[...Array(totalBlanks)].map((_, idx) => (
-            <div key={idx} className="mt-1 text-sm">
-              <span className="font-medium mr-2">Blank {idx + 1}:</span>
-              <span>{answers[idx + 1] || '(belum dipilih)'}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <Button
-            className="bg-[#22c55e] text-white px-4 py-2 rounded hover:bg-[#16a34a]"
-            onClick={() => handleSubmit(Object.values(answers))}
-          >
-            Submit
-          </Button>
-          <Button
-            className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
-            onClick={handleReset}
-          >
-            Reset Jawaban
-          </Button>
-        </div>
-
-        {feedback && (
-          <p
-            className={`${styles.feedback} ${
-              feedback.includes('Benar')
-                ? styles.feedbackCorrect
-                : styles.feedbackIncorrect
-            } flex items-center mt-4`}
-          >
-            {feedback.includes('Benar') ? (
-              <CheckmarkCircleRegular className="mr-2" />
+          {/* Main Content */}
+          <div className="flex flex-col gap-8">
+            {isMultiLine ? (
+              /* Code Block Style untuk multi-line code */
+              <div className="bg-[#1e1e1e] rounded-[14px] p-6 font-mono text-base">
+                {templateParts.map((part: string, idx: number) => (
+                  <span key={idx}>
+                    {/* Text part dengan preserved whitespace */}
+                    <span className="text-[#d4d4d4]" style={{ whiteSpace: 'pre' }}>
+                      {part}
+                    </span>
+                    
+                    {/* Blank (jika bukan part terakhir) */}
+                    {idx < blanksCount && (
+                      <span 
+                        className={`inline-block min-w-[80px] px-3 py-1.5 mx-1 rounded-lg cursor-pointer transition-all ${
+                          answers[idx] 
+                            ? 'bg-[#3674B5] border-2 border-[#205994]' 
+                            : 'bg-[#374151] border-b-2 border-[#6b7280]'
+                        }`}
+                        style={{
+                          color: answers[idx] ? '#ffffff' : '#9ca3af',
+                          boxShadow: answers[idx] ? '0px 2px 0px 0px rgba(32, 89, 148, 1)' : 'none'
+                        }}
+                        onClick={() => answers[idx] && handleClearBlank(idx)}
+                      >
+                        {answers[idx] || '____'}
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </div>
             ) : (
-              <DismissCircleRegular className="mr-2" />
+              /* Inline Style untuk single-line text */
+              <div className="flex flex-wrap items-center gap-3.5">
+                {templateParts.map((part: string, idx: number) => (
+                  <div key={idx} className="flex items-center gap-3.5">
+                    {/* Text part */}
+                    {part && (
+                      <span className="text-xl font-medium text-[#27272A] leading-[1.2em]">
+                        {part}
+                      </span>
+                    )}
+                    
+                    {/* Blank (jika bukan part terakhir) */}
+                    {idx < blanksCount && (
+                      <div 
+                        className={`flex items-center justify-center min-w-[90px] h-auto cursor-pointer transition-all ${
+                          answers[idx]
+                            ? 'bg-[#3674B5] border-2 border-[#205994] rounded-[14px] px-4 py-2'
+                            : 'border-b-2 border-black px-2 py-1 hover:border-[#3674B5]'
+                        }`}
+                        style={{
+                          boxShadow: answers[idx] ? '0px 3px 0px 0px rgba(32, 89, 148, 1)' : 'none'
+                        }}
+                        onClick={() => answers[idx] && handleClearBlank(idx)}
+                      >
+                        {answers[idx] ? (
+                          <span className="text-xl font-semibold text-white">
+                            {answers[idx]}
+                          </span>
+                        ) : (
+                          <span className="text-xl font-medium text-transparent">
+                            ____
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
-            {feedback}
-          </p>
-        )}
-      </Card>
-    );
+
+            {/* Options - Card Style seperti Figma */}
+            <div className="flex flex-wrap gap-3.5">
+              {exercise.data.options.map((opt: string) => {
+                const isUsed = Object.values(answers).includes(opt);
+                const showCorrect = isCorrect && isUsed;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => !isUsed && handleOptionClick(opt)}
+                    disabled={isUsed}
+                    className={`border-2 rounded-[14px] px-6 py-3.5 flex items-center justify-center gap-5 transition-all ${
+                      showCorrect
+                        ? 'bg-[#E8FAF0] border-[#17C964] cursor-not-allowed'
+                        : isUsed 
+                        ? 'bg-white border-[#E4E4E7] opacity-50 cursor-not-allowed' 
+                        : 'bg-white border-[#E4E4E7] hover:border-[#3674B5] cursor-pointer'
+                    }`}
+                    style={{
+                      boxShadow: showCorrect 
+                        ? '0px 4px 0px 0px rgba(23, 201, 100, 1)'
+                        : isUsed ? 'none' : '0px 4px 0px 0px rgba(228, 228, 231, 1)'
+                    }}
+                  >
+                    <p className={`text-xl font-medium text-center leading-[1.6em] ${
+                      showCorrect ? 'text-[#12A150]' : 'text-[#3F3F46]'
+                    }`}>
+                      {opt}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footer dengan Robot dan Tooltip */}
+          <FooterWithRobot
+            onSubmit={() => handleSubmit(Object.values(answers))}
+            feedback={feedback}
+            isCorrect={isCorrect}
+            showNextButton={currentIndex < exercises.length - 1}
+            onNext={onNext}
+          />
+        </div>
+      );
 
 
 
     case 'drag_and_drop':
-      // Logic agar render pertama seluruh item langsung tampil di Items
-      const items = (answers['Bebek']?.length > 0 || answers['Ayam']?.length > 0)
-        ? exercise.data.items.filter(
-            (item: string) => ![...(answers['Bebek'] || []), ...(answers['Ayam'] || [])].includes(item)
-          )
-        : exercise.data.items;
-      const bucketItems = {
-        items,
-        Bebek: answers['Bebek'] || [],
-        Ayam: answers['Ayam'] || []
-      };
-      let allItems = [...bucketItems.items, ...bucketItems.Bebek, ...bucketItems.Ayam];
-      // Deduplicate dan pastikan hanya item valid dari data
-      const refItemsSet = new Set(exercise.data.items);
-      const uniqueAllItems = allItems.filter((item, i, arr) => arr.indexOf(item) === i && refItemsSet.has(item));
+      // LOGIKA BARU - Lebih sederhana
+      const buckets = exercise.data.buckets || [];
+      const allContainers = ['items', ...buckets];
+      
+      // Inisialisasi containers
+      const containerItems: { [key: string]: string[] } = {};
+      
+      // Jika answers kosong, semua items ada di 'items'
+      if (Object.keys(answers).length === 0) {
+        containerItems['items'] = [...(exercise.data.items || [])];
+        buckets.forEach((bucket: string) => {
+          containerItems[bucket] = [];
+        });
+      } else {
+        // Gunakan data dari answers
+        allContainers.forEach(container => {
+          containerItems[container] = answers[container] || [];
+        });
+        
+        // Pastikan tidak ada item yang hilang atau duplikat
+        const allAssignedItems = new Set<string>();
+        allContainers.forEach(container => {
+          containerItems[container].forEach(item => allAssignedItems.add(item));
+        });
+        
+        // Tambahkan items yang belum ter-assign ke 'items'
+        exercise.data.items.forEach((item: string) => {
+          if (!allAssignedItems.has(item)) {
+            containerItems['items'].push(item);
+          }
+        });
+      }
+      
       return (
-        <Card
-          classNames={{
-            base: 'w-full max-w-2xl mx-auto p-6 bg-white border-[#E8E8E8]',
-          }}
-        >
-          <p className="text-lg font-semibold mb-4">{exercise.prompt}</p>
-          <DndContext collisionDetection={closestCenter} onDragEnd={(event) => handleDragEnd(event, 'drag_and_drop')}>
-            <SortableContext items={uniqueAllItems} strategy={verticalListSortingStrategy}>
-              {/* Source items */}
-              <Droppable id="items" items={bucketItems.items}>
-                <h3 className="text-sm font-medium mb-2">Items 🦢</h3>
-              </Droppable>
-              {/* Bebek bucket */}
-              <Droppable id="Bebek" items={bucketItems.Bebek}>
-                <h3 className="text-sm font-medium mb-2">Bebek 🦆</h3>
-              </Droppable>
-              {/* Ayam bucket */}
-              <Droppable id="Ayam" items={bucketItems.Ayam}>
-                <h3 className="text-sm font-medium mb-2">Ayam 🐔</h3>
-              </Droppable>
-            </SortableContext>
-          </DndContext>
-          <Button
-            className="mt-6 bg-[#22c55e] text-white px-4 py-2 rounded hover:bg-[#16a34a]"
-            onClick={() => handleSubmit(answers as any)}
-          >
-            Submit
-          </Button>
-          {feedback && (
-            <p
-              className={`${styles.feedback} ${
-                feedback.includes('Benar') ? styles.feedbackCorrect : styles.feedbackIncorrect
-              }`}
-            >
-              {feedback.includes('Benar') ? (
-                <CheckmarkCircleRegular className="mr-2" />
-              ) : (
-                <DismissCircleRegular className="mr-2" />
-              )}
-              {feedback}
+        <div className="flex flex-col gap-12">
+          {/* Instruction Card - Sesuai Figma */}
+          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] p-8 flex flex-col gap-5">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.25em]">
+              {exercise.prompt}
             </p>
-          )}
-        </Card>
-      );
-    case 'sorting':
-      return (
-        <Card
-          classNames={{
-            base: 'w-full max-w-2xl mx-auto p-6 bg-white border-[#E8E8E8]',
-          }}
-        >
-          <p className="text-lg font-semibold mb-4">{exercise.prompt}</p>
-          <DndContext collisionDetection={closestCenter} onDragEnd={(event) => handleDragEnd(event, 'sorting')}>
-            <SortableContext items={(answers.items || exercise.data.code_lines).map((item: string) => item)} strategy={verticalListSortingStrategy}>
-              <div className={styles.droppable}>
-                {(answers.items || exercise.data.code_lines).map((item: string) => (
-                  <Draggable key={item} id={item}>
-                    {item}
-                  </Draggable>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex flex-col gap-8">
+            <p className="text-xl font-medium text-[#27272A]">
+              Kelompokkan aktivitas berikut ke dua kategori
+            </p>
+
+            {/* DndContext harus membungkus SEMUA draggable items */}
+            <DndContext 
+              collisionDetection={closestCenter} 
+              onDragEnd={(event) => handleDragEnd(event, 'drag_and_drop')}
+            >
+              {/* Buckets/Categories - Sesuai Figma */}
+              <div className="flex flex-col gap-6">
+                {/* Render buckets dinamis dari data */}
+                {buckets.map((bucket: string) => {
+                  // Komponen Droppable Bucket
+                  const DroppableBucket = () => {
+                    const { setNodeRef, isOver } = useDroppable({ id: bucket });
+                    
+                    return (
+                      <div 
+                        ref={setNodeRef}
+                        className="bg-white border-2 border-[#E4E4E7] rounded-[14px] p-5 flex flex-col gap-5"
+                        style={{
+                          backgroundColor: isOver ? '#e0f2fe' : 'white',
+                          transition: 'background-color 0.2s'
+                        }}
+                      >
+                        <div className="flex items-stretch gap-2.5">
+                          <div className="flex items-center gap-2 flex-1">
+                            <h3 className="text-2xl font-semibold text-[#3674B5]">{bucket}</h3>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 min-h-[60px]">
+                          {containerItems[bucket].length === 0 ? (
+                            <div className="text-gray-400 text-sm italic py-2">Drag items ke sini</div>
+                          ) : (
+                            containerItems[bucket].map((item) => (
+                              <DraggableItem key={item} id={item} content={item} isCorrect={isCorrect} />
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  };
+                  
+                  return <DroppableBucket key={bucket} />;
+                })}
+              </div>
+
+              {/* Items to Drag - Sesuai Figma */}
+              <div className="flex flex-wrap gap-3.5">
+                {containerItems['items'].map((item) => (
+                  <DraggableItem key={item} id={item} content={item} />
                 ))}
               </div>
-            </SortableContext>
-          </DndContext>
-          <Button
-            className="mt-6 bg-[#22c55e] text-white px-4 py-2 rounded hover:bg-[#16a34a]"
-            onClick={() => handleSubmit(answers.items || exercise.data.code_lines)}
+            </DndContext>
+          </div>
+
+          {/* Footer dengan Robot dan Tooltip */}
+          <FooterWithRobot
+            onSubmit={() => handleSubmit(answers as any)}
+            feedback={feedback}
+            isCorrect={isCorrect}
+            showNextButton={currentIndex < exercises.length - 1}
+            onNext={onNext}
+          />
+        </div>
+      );
+    case 'sorting':
+      // Komponen SortableItem dengan icon menu - Sesuai Figma
+      const SortableItem = ({ id, children, isCorrect: itemCorrect }: { id: string; children: React.ReactNode; isCorrect?: boolean }) => {
+        const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+        
+        const combinedStyle = {
+          transform: CSS.Transform.toString(transform),
+          transition,
+          opacity: isDragging ? 0.5 : 1,
+          boxShadow: itemCorrect ? '0px 4px 0px 0px rgba(23, 201, 100, 1)' : '0px 4px 0px 0px rgba(228, 228, 231, 1)'
+        };
+        
+        return (
+          <div 
+            ref={setNodeRef} 
+            style={combinedStyle} 
+            {...attributes} 
+            {...listeners}
+            className={`flex items-center gap-5 px-6 py-3.5 border-2 rounded-[14px] cursor-grab transition-colors ${
+              itemCorrect 
+                ? 'bg-[#E8FAF0] border-[#17C964] hover:border-[#17C964]' 
+                : 'bg-white border-[#E4E4E7] hover:border-[#3674B5]'
+            }`}
           >
-            Submit
-          </Button>
-          {feedback && (
-            <p
-              className={`${styles.feedback} ${
-                feedback.includes('Benar') ? styles.feedbackCorrect : styles.feedbackIncorrect
-              }`}
-            >
-              {feedback.includes('Benar') ? (
-                <CheckmarkCircleRegular className="mr-2" />
-              ) : (
-                <DismissCircleRegular className="mr-2" />
-              )}
-              {feedback}
+            {/* Menu Icon */}
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="flex-shrink-0">
+              <path d="M6.66675 13.3333H33.3334M6.66675 20H33.3334M6.66675 26.6667H33.3334" 
+                    stroke={itemCorrect ? "#12A150" : "#3F3F46"}
+                    strokeWidth="2.5" 
+                    strokeLinecap="round"/>
+            </svg>
+            <p className={`text-xl font-medium leading-[1.6em] ${
+              itemCorrect ? 'text-[#12A150]' : 'text-[#3F3F46]'
+            }`}>
+              {children}
             </p>
-          )}
-        </Card>
+          </div>
+        );
+      };
+      
+      return (
+        <div className="flex flex-col gap-12">
+          {/* Instruction Card */}
+          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] p-8 flex flex-col gap-5">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.25em]">
+              {exercise.prompt}
+            </p>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex flex-col gap-8">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
+              {exercise.data.question || 'Urutkan item berikut:'}
+            </p>
+
+            {/* Sortable Items */}
+            <DndContext collisionDetection={closestCenter} onDragEnd={(event) => handleDragEnd(event, 'sorting')}>
+              <SortableContext items={(answers.items || exercise.data.code_lines).map((item: string) => item)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-3.5">
+                  {(answers.items || exercise.data.code_lines).map((item: string) => (
+                    <SortableItem key={item} id={item} isCorrect={isCorrect}>
+                      {item}
+                    </SortableItem>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+
+            {/* Divider */}
+            <div className="h-[1.5px] bg-black/15"></div>
+          </div>
+
+          {/* Footer dengan Robot dan Tooltip */}
+          <FooterWithRobot
+            onSubmit={() => handleSubmit(answers.items || exercise.data.code_lines)}
+            feedback={feedback}
+            isCorrect={isCorrect}
+            showNextButton={currentIndex < exercises.length - 1}
+            onNext={onNext}
+          />
+        </div>
       );
     case 'guessing':
       return (
-        <Card
-          classNames={{
-            base: 'w-full max-w-2xl mx-auto p-6 bg-white border-[#E8E8E8]',
-          }}
-        >
-          <p className="text-lg font-semibold mb-4">{exercise.prompt}</p>
-          <Editor
-            height="100px"
-            defaultLanguage="javascript"
-            value={exercise.data.code}
-            options={{ readOnly: true, fontSize: 14 }}
-          />
-          <Input
-            classNames={{
-              base: 'mt-4',
-              input: 'text-sm',
-              inputWrapper: 'py-2 px-3 border-[#E8E8E8]',
-            }}
-            placeholder="Masukkan output"
-            onChange={(e) => setAnswers({ answer: e.target.value })}
-          />
-          <Button
-            className="mt-6 bg-[#22c55e] text-white px-4 py-2 rounded hover:bg-[#16a34a]"
-            onClick={() => handleSubmit(answers.answer)}
-          >
-            Submit
-          </Button>
-          {feedback && (
-            <p
-              className={`${styles.feedback} ${
-                feedback.includes('Benar') ? styles.feedbackCorrect : styles.feedbackIncorrect
-              }`}
-            >
-              {feedback.includes('Benar') ? (
-                <CheckmarkCircleRegular className="mr-2" />
-              ) : (
-                <DismissCircleRegular className="mr-2" />
-              )}
-              {feedback}
+        <div className="flex flex-col gap-12">
+          {/* Instruction Card */}
+          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] p-8 flex flex-col gap-5">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.25em]">
+              {exercise.prompt}
             </p>
-          )}
-        </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex flex-col gap-8">
+            {/* Code Editor */}
+            <div className="bg-white border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden">
+              <Editor
+                height="150px"
+                defaultLanguage="javascript"
+                value={exercise.data.code}
+                options={{ 
+                  readOnly: true, 
+                  fontSize: 16,
+                  minimap: { enabled: false },
+                  scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+                  lineNumbers: 'off',
+                  folding: false,
+                  padding: { top: 16, bottom: 16 }
+                }}
+              />
+            </div>
+
+            {/* Input Answer */}
+            <div className="flex flex-col gap-4">
+              <p className="text-xl font-medium text-[#27272A]">Masukkan output:</p>
+              <input
+                type="text"
+                placeholder="Ketik jawaban Anda di sini..."
+                value={answers.answer || ''}
+                onChange={(e) => setAnswers({ answer: e.target.value })}
+                className="px-6 py-4 border-2 border-[#E4E4E7] rounded-[14px] text-lg focus:outline-none focus:border-[#3674B5] transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Footer dengan Robot dan Tooltip */}
+          <FooterWithRobot
+            onSubmit={() => handleSubmit(answers.answer)}
+            feedback={feedback}
+            isCorrect={isCorrect}
+            showNextButton={currentIndex < exercises.length - 1}
+            onNext={onNext}
+          />
+        </div>
       );
     case 'multiple_choice':
       return (
-        <Card
-          classNames={{
-            base: 'w-full max-w-2xl mx-auto p-6 bg-white border-[#E8E8E8]',
-          }}
-        >
-          <p className="text-lg font-semibold mb-4">{exercise.data.question}</p>
-          <RadioGroup
-            className={styles.radioGroup}
-            onChange={(e, data) => setAnswers({ answer: data.value })}
-          >
-            {exercise.data.options.map((opt: string) => (
-              <Radio key={opt} value={opt} label={opt} />
-            ))}
-          </RadioGroup>
-          <Button
-            className='mt-6 bg-[#22c55e] text-white px-4 py-2 rounded hover:bg-[#16a34a]'
-            onClick={() => handleSubmit(answers.answer)}
-          >
-            Submit
-          </Button>
-          {feedback && (
-            <p
-              className={`${styles.feedback} ${
-                feedback.includes('Benar') ? styles.feedbackCorrect : styles.feedbackIncorrect
-              }`}
-            >
-              {feedback.includes('Benar') ? (
-                <CheckmarkCircleRegular className="mr-2" />
-              ) : (
-                <DismissCircleRegular className="mr-2" />
-              )}
-              {feedback}
+        <div className="flex flex-col gap-12">
+          {/* Instruction Card */}
+          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] p-8 flex flex-col gap-5">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.25em]">
+              {exercise.prompt}
             </p>
-          )}
-        </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex flex-col gap-8">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
+              {exercise.data.question}
+            </p>
+
+            {/* Options - Card Style */}
+            <div className="flex flex-col gap-3.5">
+              {exercise.data.options.map((opt: string) => {
+                const isSelected = answers.answer === opt;
+                const showCorrect = isCorrect && isSelected;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => !isCorrect && setAnswers({ answer: opt })}
+                    disabled={isCorrect}
+                    className={`flex items-stretch gap-5 px-6 py-[18px] border-2 rounded-[14px] transition-all ${
+                      showCorrect
+                        ? 'bg-[#E8FAF0] border-[#17C964]'
+                        : isSelected 
+                        ? 'bg-[#3674B5] border-[#205994]' 
+                        : 'bg-white border-[#E4E4E7] hover:border-[#3674B5]'
+                    }`}
+                    style={{
+                      boxShadow: showCorrect
+                        ? '0px 4px 0px 0px rgba(23, 201, 100, 1)'
+                        : isSelected 
+                        ? '0px 4px 0px 0px rgba(32, 89, 148, 1)' 
+                        : '0px 4px 0px 0px rgba(228, 228, 231, 1)'
+                    }}
+                  >
+                    <p className={`text-xl font-medium leading-[1.6em] text-left flex-1 ${
+                      showCorrect ? 'text-[#12A150]' : isSelected ? 'text-white' : 'text-[#3F3F46]'
+                    }`}>
+                      {opt}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footer dengan Robot dan Tooltip */}
+          <FooterWithRobot
+            onSubmit={() => handleSubmit(answers.answer)}
+            feedback={feedback}
+            isCorrect={isCorrect}
+            showNextButton={currentIndex < exercises.length - 1}
+            onNext={onNext}
+          />
+        </div>
       );
     default:
       return <div>Tipe tidak didukung</div>;

@@ -15,46 +15,46 @@ export const MotivationalTooltip = ({
   position = "right",
 }: MotivationalTooltipProps) => {
   return (
-    <div className={`relative ${position === "left" ? "flex flex-row-reverse" : "flex"} items-start gap-4`}>
+    <div
+      className={`relative flex flex-col-reverse items-center gap-4 w-fit`}
+    >
       {imageUrl && (
-        <div className="relative">
+        <div className="relative self-center">
           <Image
             src={imageUrl}
             alt="Motivational"
-            width={position === "left" ? 187 : 196}
-            height={position === "left" ? 246 : 225}
+            width={position === "left" ? 187 : 100}
+            height={position === "left" ? 246 : 100}
             className="object-contain"
           />
         </div>
       )}
-      <div className={`relative ${position === "left" ? "mr-auto" : "ml-auto"}`}>
+
+      {/* Tooltip bubble */}
+      <div className="relative">
         <Card
-          className="bg-[#006FEE] shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05),0px_10px_15px_-3px_rgba(0,112,243,0.4)] max-w-[250px]"
+          className="bg-[#006FEE] shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05),0px_10px_15px_-3px_rgba(0,112,243,0.4)] max-w-[200px]"
           radius="lg"
         >
           <div className="p-[4px_12px]">
-            <p className="text-base text-white text-center whitespace-pre-line">
+            <p className="text-bas text-sm text-white text-center whitespace-pre-line">
               {message}
             </p>
           </div>
         </Card>
-        {/* Arrow */}
+
+        {/* Arrow bawah menunjuk ke robot */}
         <div
-          className={`absolute ${
-            position === "left"
-              ? "left-full -translate-x-1/2"
-              : "right-full translate-x-1/2"
-          } top-[36px] w-0 h-0 border-[7px] border-transparent ${
-            position === "left"
-              ? "border-l-[#006FEE]"
-              : "border-r-[#006FEE]"
-          }`}
+          className="absolute left-1/2 -bottom-1.8 -translate-x-1/2 w-0 h-0 
+                     border-l-[8px] border-l-transparent 
+                     border-r-[8px] border-r-transparent 
+                     border-t-[8px] border-t-[#006FEE]"
           style={{
-            filter: "drop-shadow(0px 0px 1px rgba(0,0,0,0.3)) drop-shadow(0px 2px 10px rgba(0,0,0,0.06)) drop-shadow(0px 0px 5px rgba(0,0,0,0.02))",
+            filter:
+              "drop-shadow(0px 0px 1px rgba(0,0,0,0.3)) drop-shadow(0px 2px 10px rgba(0,0,0,0.06)) drop-shadow(0px 0px 5px rgba(0,0,0,0.02))",
           }}
         />
       </div>
     </div>
   );
 };
-

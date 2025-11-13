@@ -1,51 +1,59 @@
-"use client";
+'use client';
 
-import { Button } from "@heroui/button";
-import { AppsColor, BookOpenLightbulbColor, DraftsColor, PuzzlePieceColor, TrophyColor, SettingsColor, ShareIosColor } from "@fluentui/react-icons";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Button } from '@heroui/button';
+import {
+  AppsColor,
+  BookOpenLightbulbColor,
+  Diversity28Color,
+  PuzzlePieceColor,
+  TrophyColor,
+  SettingsColor,
+  ShareIosColor,
+} from '@fluentui/react-icons';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export const Sidebar = () => {
   const pathname = usePathname();
 
   const navItems = [
     {
-      label: "Dashboard",
-      href: "/dashboard",
+      label: 'Dashboard',
+      href: '/dashboard',
       icon: AppsColor,
     },
     {
-      label: "Belajar",
-      href: "/belajar",
+      label: 'Belajar',
+      href: '/belajar',
       icon: BookOpenLightbulbColor,
     },
     {
-      label: "Latihan",
-      href: "/latihan",
-      icon: DraftsColor,
+      label: 'Eksplorasi',
+      href: '/eksplorasi',
+      icon: Diversity28Color,
     },
     {
-      label: "Tantangan",
-      href: "/tantangan",
+      label: 'Tantangan',
+      href: '/tantangan',
       icon: PuzzlePieceColor,
     },
     {
-      label: "Papan Peringkat",
-      href: "/peringkat",
+      label: 'Papan Peringkat',
+      href: '/peringkat',
       icon: TrophyColor,
     },
   ];
 
   const bottomNavItems = [
     {
-      label: "Pengaturan",
-      href: "/pengaturan",
+      label: 'Pengaturan',
+      href: '/pengaturan',
       icon: SettingsColor,
     },
     {
-      label: "Keluar Akun",
-      href: "/logout",
+      label: 'Keluar Akun',
+      href: '/logout',
       icon: ShareIosColor,
       danger: true,
     },
@@ -68,12 +76,12 @@ export const Sidebar = () => {
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
-            
+
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} prefetch scroll={false}>
                 <Button
                   className={`w-full justify-start gap-2 h-auto py-0 px-5 min-h-[48px]`}
-                  variant={isActive ? "shadow" : "light"}
+                  variant={isActive ? 'shadow' : 'light'}
                   color="primary"
                   size="lg"
                   radius="sm"
@@ -90,13 +98,13 @@ export const Sidebar = () => {
         <div className="flex flex-col gap-[14px]">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
-            
+
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} prefetch scroll={false}>
                 <Button
                   className="w-full justify-start gap-2 h-auto py-0 px-5 min-h-[48px]"
                   variant="light"
-                  color={item.danger ? "danger" : "primary"}
+                  color={item.danger ? 'danger' : 'primary'}
                   size="lg"
                   radius="sm"
                   startContent={<Icon className="w-7 h-7" />}
@@ -111,4 +119,3 @@ export const Sidebar = () => {
     </div>
   );
 };
-

@@ -12,6 +12,12 @@ interface PodiumCardProps {
   height: "tall" | "medium" | "short";
 }
 
+const trophyImages: Record<number, string> = {
+  1: "/imageAssets/rank-1.png",
+  2: "/imageAssets/rank-2.png",
+  3: "/imageAssets/rank-3.png",
+};
+
 const PodiumCard = ({ rank, name, exp, color, height }: PodiumCardProps) => {
   const colorClasses = {
     success: "bg-[#17C964] shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05),0px_10px_15px_-3px_rgba(23,201,100,0.4)]",
@@ -21,20 +27,8 @@ const PodiumCard = ({ rank, name, exp, color, height }: PodiumCardProps) => {
 
   const heightClasses = {
     tall: "pt-[60px] pb-[40px]",
-    medium: "pt-[40px] pb-[20px]",
+    medium: "pt-[40px] pb-[20px]", // not used in this context
     short: "pt-[40px] pb-[20px]",
-  };
-
-  const heightOrder = {
-    tall: 1,
-    medium: 0,
-    short: 2,
-  };
-
-  const trophyColor = {
-    success: "#9E9E9E",
-    warning: "#F5A524",
-    danger: "#FF6E04",
   };
 
   const avatarBorder = {
@@ -43,25 +37,47 @@ const PodiumCard = ({ rank, name, exp, color, height }: PodiumCardProps) => {
     danger: "border-4 border-[#F31260]",
   };
 
+  // Pilih gambar trophy sesuai rank, kalau di luar 1-3 fallback ke null (tidak tampil)
+  const trophyImgSrc = trophyImages[rank] || null;
+
+  // Atur top offset avatar sesuai rank/height agar nempel pada kotaknya
+  // Rank 1 (tall): avatar lebih floating (seperti semula)
+  // Rank 2 & 3 (short): avatar lebih nempel ke kotak, lebih rendah letaknya
+  let avatarContainerClass =
+    "flex flex-col items-center z-10";
+  let avatarContainerStyle: React.CSSProperties = { left: 0, right: 0, marginLeft: "auto", marginRight: "auto" };
+
+  if (height === "tall") {
+    // Rank 1
+    avatarContainerClass += " absolute bottom-52 -mb-[69px]";
+    // 'top-22' = lebih tinggi, -mb-[69px] jaga jarak ke kontainer card
+  } else if (height === "short") {
+    // Rank 2 & 3
+    avatarContainerClass += " absolute bottom-36 -mb-[40px]";
+    // top-[86px] lebih rendah biar avatar nempel ke kartu, -mb-[40px] agar tidak negatif terlalu jauh
+    // angka px top disesuaikan supaya nempel dengan card
+  } else {
+    avatarContainerClass += " absolute bottom-52 -mb-[69px]";
+  }
+
   return (
     <div
-      className="flex flex-col items-center gap-[8px]"
-      style={{ order: heightOrder[height], width: "145px" }}
+      className="flex flex-col items-center gap-[8px] relative"
+      style={{ width: "145px" }}
     >
       {/* Trophy & Avatar - positioned above card */}
-      <div className="relative flex flex-col items-center -mb-[69px] z-10">
-        {/* Trophy Icon */}
-        <div className="relative w-[32px] h-[32px] mb-[10px] bg-white rounded-full flex items-center justify-center">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <path
-              d="M0.04 0L31.95 0C31.95 7.43 26.23 13.56 18.84 14.45V18.26H23.87V23.29H18.84V32H13.07V23.29H8.04V18.26H13.07V14.45C5.68 13.56 -0.04 7.43 0.04 0Z"
-              fill={trophyColor[color]}
+      <div className={avatarContainerClass} style={avatarContainerStyle}>
+        {/* Trophy Icon pakai gambar */}
+        {trophyImgSrc && (
+          <div className="relative w-[42px] h-[42px] mb-[6px] flex items-center justify-center">
+            <img
+              src={trophyImgSrc}
+              alt={`Trophy ${rank}`}
+              className="w-[42px] h-[42px] object-contain"
             />
-          </svg>
-          <span className="absolute text-xs text-center font-normal text-white" style={{ top: "1.28px" }}>
-            {rank}
-          </span>
-        </div>
+            {/* Removed rank number, only trophy image is shown */}
+          </div>
+        )}
         {/* Avatar */}
         <Avatar
           src="/api/placeholder/56/56"
@@ -94,36 +110,49 @@ const PodiumCard = ({ rank, name, exp, color, height }: PodiumCardProps) => {
 };
 
 interface PodiumProps {
-  firstPlace: { name: string; exp: number };
   secondPlace: { name: string; exp: number };
+  firstPlace: { name: string; exp: number };
   thirdPlace: { name: string; exp: number };
 }
 
 export const Podium = ({ firstPlace, secondPlace, thirdPlace }: PodiumProps) => {
+  // Susun array untuk pemesanan podium:
+  // Tall/Tinggi (biasanya juara 1) di tengah
+  // Short/Medium di kiri (2) dan kanan (3)
+  // Urutannya: [kiri, tengah, kanan] = [2, 1, 3]
+  const podiums = [
+    {
+      ...secondPlace,
+      rank: 2,
+      color: "success" as const,
+      height: "short" as const,
+    },
+    {
+      ...firstPlace,
+      rank: 1,
+      color: "warning" as const,
+      height: "tall" as const,
+    },
+    {
+      ...thirdPlace,
+      rank: 3,
+      color: "danger" as const,
+      height: "short" as const,
+    }
+  ];
+
   return (
-    <div className="flex justify-center items-end gap-[24px] h-[220px]">
-      <PodiumCard
-        rank={2}
-        name={secondPlace.name}
-        exp={secondPlace.exp}
-        color="success"
-        height="short"
-      />
-      <PodiumCard
-        rank={1}
-        name={firstPlace.name}
-        exp={firstPlace.exp}
-        color="warning"
-        height="tall"
-      />
-      <PodiumCard
-        rank={3}
-        name={thirdPlace.name}
-        exp={thirdPlace.exp}
-        color="danger"
-        height="short"
-      />
+    <div className="flex justify-center items-end gap-[24px] h-[240px]">
+      {podiums.map((p, idx) => (
+        <PodiumCard
+          key={p.rank}
+          rank={p.rank}
+          name={p.name}
+          exp={p.exp}
+          color={p.color}
+          height={p.height}
+        />
+      ))}
     </div>
   );
 };
-

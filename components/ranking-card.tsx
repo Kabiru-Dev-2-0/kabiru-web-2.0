@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { Card, CardBody } from '@heroui/card';
-import { Avatar } from '@heroui/avatar';
-import { Badge } from '@heroui/badge';
-import { ArrowUpRegular, ArrowDownRegular } from '@fluentui/react-icons';
+import { Card, CardBody } from "@heroui/card";
+import { Avatar } from "@heroui/avatar";
+import { Badge } from "@heroui/badge";
+import { ArrowUpRegular, ArrowDownRegular } from "@fluentui/react-icons";
 
 interface RankingCardProps {
   rank: number;
   name: string;
   exp: number;
-  trend: 'up' | 'down';
+  trend: "up" | "down";
   isCurrentUser?: boolean;
 }
 
@@ -20,34 +20,79 @@ export const RankingCard = ({
   trend,
   isCurrentUser = false,
 }: RankingCardProps) => {
+  // Style for isCurrentUser
+  const isCurrentUserCardClass = isCurrentUser
+    ? [
+        "bg-white",
+        "border-3 border-[#3674B5]",
+        "shadow-[0px_6px_0px_0px_#3674B5]",
+        "pl-2",
+        "font-semibold",
+      ].join(" ")
+    : "bg-white border-2 border-[#E4E4E7] pl-4 font-semibold";
+
+  // Badge for ranking for isCurrentUser
+  const renderBadge = () => {
+    if (isCurrentUser) {
+      // badge warna E6F1FE, text #3674B5
+      return (
+        <span
+          className="flex items-center justify-center rounded-full font-bold text-[#3674B5] bg-[#E6F1FE] w-[28px] h-[28px] border-none text-lg"
+          style={{
+            fontWeight: 700,
+            lineHeight: 1,
+          }}
+        >
+          {rank}
+        </span>
+      );
+    }
+    // Default badge
+    return (
+      <Badge
+        content={rank.toString()}
+        size="lg"
+        color="default"
+        variant="flat"
+        classNames={{
+          badge:
+            "flex items-center justify-center rounded-full text-[#71717A] bg-[#EEEEEF] w-[28px] h-[28px] border-none text-lg",
+        }}
+      >
+        <div></div>
+      </Badge>
+    );
+  };
+
+  // Text color
+  const nameTextClass = isCurrentUser ? "text-[#3674B5]" : "text-[#11181C]";
+  const expValueClass = isCurrentUser ? "text-[#3674B5]" : "text-[#006FEE]";
+  const expLabelClass = isCurrentUser
+    ? "text-[#3674B5] opacity-60"
+    : "text-[#D4D4D8]";
+
+  // Card opacity logic
+  const cardOpacity =
+    !isCurrentUser && rank > 6
+      ? rank === 7
+        ? 0.7
+        : rank === 8
+          ? 0.5
+          : 0.3
+      : 1;
+
   return (
     <Card
-      className={`w-full border-2 border-[#E4E4E7] ${
-        isCurrentUser
-          ? 'bg-[#006FEE] shadow-[0px_10px_10px_-5px_rgba(0,112,243,0.4),0px_20px_25px_-5px_rgba(0,112,243,0.2)]'
-          : 'bg-white'
-      } ${!isCurrentUser && 'opacity-100'}`}
+      className={`w-full ${isCurrentUserCardClass} ${!isCurrentUser && "opacity-100"}`}
       radius="lg"
       style={{
-        opacity: rank > 6 && !isCurrentUser ? (rank === 7 ? 0.7 : rank === 8 ? 0.5 : 0.3) : 1,
+        opacity: cardOpacity,
       }}
     >
       <CardBody className="p-0 flex-row items-center">
         {/* Ranking Badge */}
-        <div className="flex items-center justify-center p-[14px] bg-white">
-          <Badge
-            content={rank.toString()}
-            size="lg"
-            color="default"
-            variant={isCurrentUser ? 'solid' : 'flat'}
-            classNames={{
-              badge: `${
-                isCurrentUser
-                  ? 'bg-[#E6F1FE] text-black border-2 border-[#F5A524]'
-                  : 'bg-[rgba(212,212,216,0.4)] text-[#71717A]'
-              } w-[28px] h-[28px] flex items-center justify-center`,
-            }}
-          />
+        <div className="flex items-center justify-center p-[14px] bg-white rounded-full">
+          {renderBadge()}
         </div>
 
         {/* User Info */}
@@ -58,33 +103,23 @@ export const RankingCard = ({
               size="md"
               radius="full"
               classNames={{
-                base: 'w-[40px] h-[40px]',
+                base: "w-[40px] h-[40px]",
               }}
             />
-            <span className={`text-lg ${isCurrentUser ? 'text-white' : 'text-[#11181C]'}`}>
-              {name}
-            </span>
+            <span className={`text-lg ${nameTextClass}`}>{name}</span>
           </div>
 
           {/* EXP & Trend */}
           <div className="flex items-center gap-[32px]">
             <div className="flex items-center gap-[8px]">
-              <span
-                className={`text-2xl font-extrabold ${
-                  isCurrentUser ? 'text-white' : 'text-[#006FEE]'
-                }`}
-              >
+              <span className={`text-2xl font-extrabold ${expValueClass}`}>
                 {exp}
               </span>
-              <span
-                className={`text-2xl font-extrabold ${
-                  isCurrentUser ? 'text-[rgba(255,255,255,0.6)]' : 'text-[#D4D4D8]'
-                }`}
-              >
+              <span className={`text-2xl font-extrabold ${expLabelClass}`}>
                 EXP
               </span>
             </div>
-            {trend === 'up' ? (
+            {trend === "up" ? (
               <ArrowUpRegular className="w-[24px] h-[24px] text-[#17C964]" />
             ) : (
               <ArrowDownRegular className="w-[24px] h-[24px] text-[#F31260]" />

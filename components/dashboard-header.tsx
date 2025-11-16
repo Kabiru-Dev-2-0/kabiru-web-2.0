@@ -140,10 +140,10 @@ export const DashboardHeader = ({
   }, [penggunaId, resolvedPenggunaId]);
 
   return (
-    <div className="w-full bg-white border-b border-[#E8E8E8] px-[22px] py-4">
+    <div className="flex justify-end w-full bg-white border-b border-[#E8E8E8] px-[22px] py-4">
       <div className="flex items-center gap-5">
         {/* Search Input */}
-        <div className="flex-1">
+        {/* <div className="flex-1">
           <Input
             classNames={{
               base: 'w-full',
@@ -156,39 +156,48 @@ export const DashboardHeader = ({
             }
             type="search"
           />
-        </div>
+        </div> */}
 
-        {/* EXP */}
-        <div className="flex items-center gap-1">
-          <span className="text-2xl font-[800] bg-gradient-to-r from-[#6ADCFC] via-[#5B71E0] to-[#8F5ED7] bg-clip-text text-transparent">
-            EXP
-          </span>
-          <span className="text-2xl font-[800] text-[#006FEE]">{isLoading ? '...' : exp}</span>
-        </div>
-
-        {/* Trophy */}
-        <div className="flex items-center gap-1">
-          <div className="w-7 h-7">
-            {/* Trophy Icon - using emoji as placeholder */}
-            🏆
+        <div className="flex items-center gap-4">
+          {/* EXP */}
+          <div className="flex items-center gap-1">
+            <img
+              src="/imageAssets/exp-icon.png"
+              alt="Trophy Icon"
+              className="w-10 h-10 md:w-10 md:h-10 object-contain mr-1"
+              style={{ display: "inline-block", verticalAlign: "middle" }}
+            />
+            <span className="text-2xl font-[800] text-[#006FEE]">{isLoading ? '...' : exp}</span>
           </div>
-          <span className="text-2xl font-[800] text-[#F5A524]">10</span>
-        </div>
 
-        {/* Badge */}
-        <div className="flex items-center gap-1">
-          <div className="w-7 h-7">
-            {/* Ribbon Icon - using emoji as placeholder */}
-            🎖️
+          {/* Trophy */}
+          <div className="flex items-center gap-1">
+          <img
+              src="/imageAssets/trophy-icon.png"
+              alt="Trophy Icon"
+              className="w-10 h-10 md:w-7 md:h-7 object-contain mr-1"
+              style={{ display: "inline-block", verticalAlign: "middle" }}
+            />
+            <span className="text-2xl font-[800] text-[#F5A524]">10</span>
           </div>
-          <span className="text-2xl font-[800] text-[#7828C8]">4</span>
+
+          {/* Badge */}
+          <div className="flex items-center gap-1">
+          <img
+              src="/imageAssets/badge-icon.png"
+              alt="Trophy Icon"
+              className="w-10 h-10 md:w-7 md:h-7 object-contain mr-1"
+              style={{ display: "inline-block", verticalAlign: "middle" }}
+            />
+            <span className="text-2xl font-[800] text-[#7828C8]">4</span>
+          </div>
         </div>
 
         {/* Divider */}
         <Divider orientation="vertical" className="h-auto self-stretch bg-[rgba(17,17,17,0.15)]" />
 
         {/* User Info */}
-        <div className="flex items-center gap-3">
+        <div className="flex justify-end items-center gap-3 w-[315px] pr-6">
           <div className="flex flex-col items-end justify-center gap-0 px-0 py-[1px]">
             <span className="text-lg leading-7 text-[#11181C]">
               {isLoading ? '...' : userName || 'Pengguna'}

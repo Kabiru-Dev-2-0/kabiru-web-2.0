@@ -5,6 +5,7 @@ import { Button } from "@heroui/button";
 import Image from "next/image";
 
 interface LearningPathCardProps {
+  nomor: number,
   title: string;
   description: string;
   modules: number;
@@ -16,6 +17,7 @@ interface LearningPathCardProps {
 }
 
 export const LearningPathCard = ({
+  nomor,
   title,
   description,
   modules,
@@ -32,9 +34,13 @@ export const LearningPathCard = ({
     >
       <CardBody className="p-4 gap-4">
         {/* Header Section */}
+        {/* Image Section */}
+        <div className="w-full h-[230px] bg-gradient-to-br from-blue-400 to-teal-500 rounded-lg flex items-center justify-center text-8xl">
+          {icon}
+        </div>
         <div className="flex flex-col gap-0.5 px-3 pt-3">
           <span className="text-xs font-bold leading-4 text-[#11181C] opacity-60">
-            Learning Path
+            Modul {nomor}
           </span>
           <span className="text-xs font-medium leading-4 text-[#11181C] opacity-50">
             {modules} modul
@@ -45,22 +51,13 @@ export const LearningPathCard = ({
           {title}
         </h3>
 
-        {/* Image Section */}
-        <div className="w-full h-[230px] bg-gradient-to-br from-blue-400 to-teal-500 rounded-lg flex items-center justify-center text-8xl">
-          {icon}
-        </div>
 
         {/* Footer Section */}
-        <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-0 border-t border-[rgba(17,17,17,0.15)]">
+        <div className="flex flex-col items-center justify-between gap-2 px-3 pb-3 pt-0">
           <p className="text-xs font-medium leading-4 text-[#11181C] flex-1">
             {description}
           </p>
-          <Button
-            color="primary"
-            radius="full"
-            size="sm"
-            className="px-3 h-8"
-          >
+          <Button color="primary" radius="full" size="sm" className="px-3 h-8 w-full">
             {buttonText}
           </Button>
         </div>
@@ -68,4 +65,3 @@ export const LearningPathCard = ({
     </Card>
   );
 };
-

@@ -1,9 +1,9 @@
-"use client";
-import { ProgressCourseCard } from "@/components/progress-course-card";
-import { Card, CardBody } from "@heroui/card";
-import { Progress } from "@heroui/progress";
-import { Button } from "@heroui/button";
-import { Divider } from "@heroui/divider";
+'use client';
+import { ProgressCourseCard } from '@/components/progress-course-card';
+import { Card, CardBody } from '@heroui/card';
+import { Progress } from '@heroui/progress';
+import { Button } from '@heroui/button';
+import { Divider } from '@heroui/divider';
 import {
   BookStarColor,
   CertificateColor,
@@ -13,8 +13,9 @@ import {
   TrophyColor,
   StarColor,
   PawColor,
-} from "@fluentui/react-icons";
-import { Tooltip } from "@heroui/tooltip";
+} from '@fluentui/react-icons';
+import { Tooltip } from '@heroui/tooltip';
+import { PeringkatWidget } from '@/components/peringkat-widget';
 
 export default function DashboardPage() {
   return (
@@ -31,7 +32,7 @@ export default function DashboardPage() {
                     src="/imageAssets/agent-dashboard.png"
                     alt="Agent Dashboard"
                     className="object-contain h-fill w-auto"
-                    style={{ aspectRatio: "155.25 / 200" }}
+                    style={{ aspectRatio: '155.25 / 200' }}
                   />
                 </div>
               </div>
@@ -50,9 +51,8 @@ export default function DashboardPage() {
                   <p className="text-lg leading-7 text-white">
                     Hebat, kamu sudah memahami dasar logika dengan baik! 🎉
                     <br />
-                    Tapi aku lihat kamu masih agak bingung di bagian looping dan
-                    efisiensi algoritma. Yuk, coba ulang latihan di bagian
-                    'Simulasi Perulangan'
+                    Tapi aku lihat kamu masih agak bingung di bagian looping dan efisiensi
+                    algoritma. Yuk, coba ulang latihan di bagian 'Simulasi Perulangan'
                   </p>
                   <Button
                     color="default"
@@ -60,7 +60,7 @@ export default function DashboardPage() {
                     size="md"
                     className="bg-[#ffffff] text-[#2d5d94] font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#ffffff] transition-colors w-fit"
                     style={{
-                      boxShadow: "0px 3px 0px 0px #E4E4E7",
+                      boxShadow: '0px 3px 0px 0px #E4E4E7',
                     }}
                   >
                     Belajar lagi
@@ -75,9 +75,7 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-5">
             <div className="flex items-center gap-2.5">
               <BookStarColor className="w-10 h-10" />
-              <h2 className="text-2xl font-semibold leading-8 text-black">
-                Sedang dipelajari
-              </h2>
+              <h2 className="text-2xl font-semibold leading-8 text-black">Sedang dipelajari</h2>
             </div>
 
             <div className="flex gap-5">
@@ -106,15 +104,10 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-5">
             <div className="flex items-center gap-2.5">
               <CertificateColor className="w-10 h-10" />
-              <h2 className="text-2xl font-semibold leading-8 text-black">
-                Selesai dipelajari
-              </h2>
+              <h2 className="text-2xl font-semibold leading-8 text-black">Selesai dipelajari</h2>
             </div>
 
-            <Card
-              className="w-[333px] border border-[#F4F4F5] shadow-sm"
-              radius="lg"
-            >
+            <Card className="w-[333px] border border-[#F4F4F5] shadow-sm" radius="lg">
               <CardBody className="p-5 gap-[14px]">
                 {/* Header */}
                 <div className="flex items-center gap-3">
@@ -135,12 +128,7 @@ export default function DashboardPage() {
                 </p>
 
                 {/* Button */}
-                <Button
-                  color="primary"
-                  radius="full"
-                  size="sm"
-                  className="px-3 h-8 w-fit"
-                >
+                <Button color="primary" radius="full" size="sm" className="px-3 h-8 w-fit">
                   Ulas Materi
                 </Button>
               </CardBody>
@@ -151,111 +139,13 @@ export default function DashboardPage() {
         {/* Right Column */}
         <div className="w-[300px] flex flex-col gap-6">
           {/* Peringkat Card */}
-          <Card className="border-2 border-[#E4E4E7]" radius="lg">
-            <CardBody className="p-[14px_18px_20px] gap-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-semibold text-[#7828C8]">
-                    Peringkat
-                  </span>
-                </div>
-                <Button color="primary" radius="full" size="sm" variant="light">
-                  Lihat Semua
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <TrophyColor className="w-[42px] h-[42px]" />
-                <div className="flex flex-col flex-1">
-                  <span className="text-base font-medium leading-6 text-black">
-                    Saat ini kamu di peringkat
-                  </span>
-                  <span className="text-base font-semibold leading-6 text-[#7828C8]">
-                    #17
-                  </span>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+          <PeringkatWidget />
 
           {/* Misi Harian Card */}
-          <Card className="border-2 border-[#E4E4E7]" radius="lg">
-            <CardBody className="p-[14px_18px_20px] gap-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-semibold text-[#F31260]">
-                    Misi Harian
-                  </span>
-                </div>
-                <Button color="primary" radius="full" size="sm" variant="light">
-                  Lihat Semua
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <StarColor className="w-[42px] h-[42px]" />
-                <Progress
-                  aria-label="Daily mission"
-                  classNames={{
-                    base: "w-full",
-                    track: "bg-[#E4E4E7]",
-                    indicator: "bg-[#F5A524]",
-                    label: "text-base font-medium leading-6 text-black",
-                    value: "text-base font-medium leading-6 text-black",
-                  }}
-                  color="warning"
-                  label="Dapatkan 10 XP"
-                  maxValue={100}
-                  radius="full"
-                  showValueLabel
-                  size="md"
-                  value={84}
-                  valueLabel="84%"
-                />
-              </div>
-            </CardBody>
-          </Card>
+          <></>
 
           {/* Perjalananku Card */}
-          <Card className="border-2 border-[#E4E4E7]" radius="lg">
-            <CardBody className="p-[14px_18px_20px] gap-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-semibold text-[#17C964]">
-                    Perjalananku
-                  </span>
-                </div>
-                <Button
-                  isIconOnly
-                  color="primary"
-                  radius="full"
-                  size="sm"
-                  variant="light"
-                >
-                  →
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <PawColor className="w-[42px] h-[42px]" />
-                <Progress
-                  aria-label="Journey progress"
-                  classNames={{
-                    base: "w-full",
-                    track: "bg-[#E4E4E7]",
-                    indicator: "bg-[#F5A524]",
-                    label: "text-base font-medium leading-6 text-black",
-                  }}
-                  color="warning"
-                  label="Pemula"
-                  maxValue={100}
-                  radius="full"
-                  size="md"
-                  value={45}
-                />
-              </div>
-            </CardBody>
-          </Card>
+          <></>
         </div>
       </div>
     </div>

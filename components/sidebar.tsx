@@ -13,9 +13,39 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export const Sidebar = () => {
   const pathname = usePathname();
+  const [modulDipilih, setModulDipilih] = useState<number | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const fetch = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: penggunaData } = await supabase
+        .from('penggunas')
+        .select('id')
+        .eq('uuid', user.id)
+        .single();
+      if (!penggunaData) return;
+
+      const { data } = await supabase
+        .from('data_penggunas')
+        .select('modul_dipilih')
+        .eq('id_pengguna', penggunaData.id)
+        .single();
+
+      const id = data?.modul_dipilih;
+      if (typeof id === 'number') setModulDipilih(id);
+    };
+    fetch();
+  }, []);
 
   const navItems = [
     {
@@ -74,11 +104,22 @@ export const Sidebar = () => {
         {/* Main Navigation */}
         <div className="flex flex-col gap-[14px]">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
             const Icon = item.icon;
+            const href =
+              item.label === 'Belajar' && modulDipilih
+                ? `/belajar/${modulDipilih}`
+                : item.label === 'Eksplorasi' && modulDipilih
+                ? `/eksplorasi/${modulDipilih}`
+                : item.href;
+            const isActive =
+              item.label === 'Belajar'
+                ? pathname.startsWith('/belajar')
+                : item.label === 'Eksplorasi'
+                ? pathname.startsWith('/eksplorasi')
+                : pathname === href;
 
             return (
-              <Link key={item.href} href={item.href} prefetch scroll={false}>
+              <Link key={item.href} href={href} prefetch scroll={false}>
                 <Button
                   className={`w-full justify-start gap-2 h-auto py-0 px-5 min-h-[48px]`}
                   variant={isActive ? 'shadow' : 'light'}

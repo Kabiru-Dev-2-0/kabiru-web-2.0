@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Link from 'next/link';
 import { siteConfig } from '@/config/site';
+import { useRouter } from 'next/navigation';
 
 interface Modul {
   id: number;
@@ -17,11 +18,39 @@ export default function BelajarPage() {
   const [moduls, setModuls] = useState<Modul[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchModuls() {
       setLoading(true);
       const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: penggunaData } = await supabase
+          .from('penggunas')
+          .select('id')
+          .eq('uuid', user.id)
+          .single();
+
+        if (penggunaData) {
+          const { data } = await supabase
+            .from('data_penggunas')
+            .select('modul_dipilih')
+            .eq('id_pengguna', penggunaData.id)
+            .single();
+
+          const id = data?.modul_dipilih;
+          if (typeof id === 'number') {
+            router.replace(`/belajar/${id}`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
 
       const { data: modulsData, error: errModuls } = await supabase
         .from('moduls')

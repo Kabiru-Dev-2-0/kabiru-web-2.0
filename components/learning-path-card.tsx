@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
-import { Button } from "@heroui/button";
-import Image from "next/image";
+import { Card, CardHeader, CardBody, CardFooter } from '@heroui/card';
+import { Button } from '@heroui/button';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface LearningPathCardProps {
-  nomor: number,
+  nomor: number;
   title: string;
   description: string;
   modules: number;
@@ -14,6 +15,8 @@ interface LearningPathCardProps {
   buttonText: string;
   progress?: number;
   isStarted?: boolean;
+  href?: string;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 export const LearningPathCard = ({
@@ -26,12 +29,11 @@ export const LearningPathCard = ({
   buttonText,
   progress,
   isStarted = false,
+  href,
+  onClick,
 }: LearningPathCardProps) => {
   return (
-    <Card
-      className="w-full border border-[#F4F4F5] shadow-sm bg-white"
-      radius="lg"
-    >
+    <Card className="w-full border border-[#F4F4F5] shadow-sm bg-white" radius="lg">
       <CardBody className="p-4 gap-4">
         {/* Header Section */}
         {/* Image Section */}
@@ -47,17 +49,22 @@ export const LearningPathCard = ({
           </span>
         </div>
 
-        <h3 className="text-2xl font-bold leading-8 text-[#11181C] px-3">
-          {title}
-        </h3>
-
+        <h3 className="text-2xl font-bold leading-8 text-[#11181C] px-3">{title}</h3>
 
         {/* Footer Section */}
         <div className="flex flex-col items-center justify-between gap-2 px-3 pb-3 pt-0">
-          <p className="text-xs font-medium leading-4 text-[#11181C] flex-1">
-            {description}
-          </p>
-          <Button color="primary" radius="full" size="sm" className="px-3 h-8 w-full">
+          <p className="text-xs font-medium leading-4 text-[#11181C] flex-1">{description}</p>
+          <Button
+            as={href ? Link : undefined}
+            href={href || undefined}
+            scroll={false}
+            prefetch
+            onClick={onClick}
+            color="primary"
+            radius="full"
+            size="sm"
+            className="px-3 h-8 w-full"
+          >
             {buttonText}
           </Button>
         </div>

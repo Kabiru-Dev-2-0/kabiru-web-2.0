@@ -215,7 +215,7 @@ export default function BagianPage() {
     <div className="flex-1 overflow-y-auto">
       {/* Top Info Card */}
       <Card
-        className="mx-6 mt-6 border-2 border-[#E4E4E7] shadow-sm bg-white sm:w-[60vw] lg:w-[80vw] fixed z-999"
+        className="mx-6 mt-6 border-2 border-[#E4E4E7] shadow-sm bg-white sm:w-[60vw] lg:w-[70vw] absolute z-999"
         radius="lg"
       >
         <CardBody className="p-[14px_32px] gap-5">

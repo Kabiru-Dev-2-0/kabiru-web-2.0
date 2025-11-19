@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import ExerciseRenderer, { FooterWithRobot } from '@/components/ExerciseRenderer';
 import { fetchExercises, submitHasilLatihan } from './quizAction';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { ChevronLeftRegular, ChevronRightRegular, SendRegular } from '@fluentui/react-icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
@@ -13,6 +13,9 @@ import { Input } from '@heroui/input';
 export default function Quiz() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const params = useParams();
+  const modulParam = params?.modul as string | undefined;
+  const bagianParam = params?.bagian as string | undefined;
   const nomorLatihan = searchParams?.get('id');
   const pelajaranParam = searchParams?.get('pelajaran');
   const idPelajaran = pelajaranParam ? parseInt(pelajaranParam) : null;
@@ -27,16 +30,14 @@ export default function Quiz() {
     feedback: string;
     isCorrect: boolean;
   }>({ onSubmit: () => {}, feedback: '', isCorrect: false });
+  const [isCompletedView, setIsCompletedView] = useState(false);
+  const [finalScore, setFinalScore] = useState<number | null>(null);
+  const [finalExp, setFinalExp] = useState<number | null>(null);
 
   // Chat overlay state
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: 'ai' | 'user'; text: string }[]>([
     { role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' },
-    { role: 'user', text: 'Tolong Jelaskan' },
-    {
-      role: 'ai',
-      text: 'Untuk menghitung luas persegi panjang, kalikan panjang dengan lebar. Coba ubah pseudocode‑mu pakai operasi perkalian ya ✨',
-    },
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isAsking, setIsAsking] = useState(false);
@@ -87,7 +88,12 @@ export default function Quiz() {
       const res = await fetch('/api/ask-to-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: content, top_k: 4, quiz_context: quizContext, history: historyToSend }),
+        body: JSON.stringify({
+          question: content,
+          top_k: 4,
+          quiz_context: quizContext,
+          history: historyToSend,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -138,6 +144,9 @@ export default function Quiz() {
     // Hanya bisa previous jika soal sebelumnya sudah dikerjakan
     if (currentIndex > 0 && completedExercises.has(currentIndex - 1)) {
       setCurrentIndex(currentIndex - 1);
+      setChatMessages([{ role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' }]);
+      setChatInput('');
+      setIsAsking(false);
     }
   };
 
@@ -145,7 +154,7 @@ export default function Quiz() {
     // Hanya bisa next jika soal saat ini sudah selesai
     if (currentIndex < exercises.length - 1 && completedExercises.has(currentIndex)) {
       setCurrentIndex(currentIndex + 1);
-      setChatMessages([]);
+      setChatMessages([{ role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' }]);
       setChatInput('');
       setIsAsking(false);
     }
@@ -220,6 +229,7 @@ export default function Quiz() {
                   if (typeof expRow.nama_lengkap === 'string') {
                     localStorage.setItem('aizone.userName', expRow.nama_lengkap);
                   }
+                  setFinalExp(expRow.exp ?? 0);
                 } catch {}
               }
             }
@@ -227,12 +237,8 @@ export default function Quiz() {
         } catch (e) {
           // Abaikan error lokal; header akan tetap subscribe realtime bila di dashboard
         }
-
-        alert(`Selamat! Latihan selesai dengan nilai: ${nilai}`);
-        // Redirect ke dashboard setelah 2 detik
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
+        setFinalScore(nilai);
+        setIsCompletedView(true);
       }
     } catch (error) {
       console.error('Error submitting hasil:', error);
@@ -252,6 +258,33 @@ export default function Quiz() {
     return (
       <div className="min-h-screen bg-[#FCFDFD] flex items-center justify-center">
         <p className="text-red-500 text-lg">{error}</p>
+      </div>
+    );
+  }
+
+  if (isCompletedView) {
+    return (
+      <div className="min-h-screen bg-[#FCFDFD] flex flex-col items-center justify-center">
+        <img
+          src="/imageAssets/motivational.png"
+          alt="Agent"
+          className="w-[260px] h-auto mb-6"
+        />
+        <p className="text-[40px] leading-[48px] font-bold text-[#3674B5]">+100 EXP</p>
+        <p className="mt-3 text-lg text-[#3F3F46]">Hebat! Kamu berhasil menyelesaikannya!</p>
+        <Button
+          className="mt-6 bg-[#3674B5] text-white px-6"
+          radius="md"
+          onPress={() => {
+            if (modulParam && bagianParam) {
+              router.push(`/belajar/${modulParam}/${bagianParam}`);
+            } else {
+              router.back();
+            }
+          }}
+        >
+          Lanjutkan
+        </Button>
       </div>
     );
   }
@@ -373,9 +406,7 @@ export default function Quiz() {
                                     : 'bg-[#F5A524] text-black shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
                                 }`}
                                 dangerouslySetInnerHTML={
-                                  m.role === 'ai'
-                                    ? { __html: m.text }
-                                    : undefined
+                                  m.role === 'ai' ? { __html: m.text } : undefined
                                 }
                               >
                                 {m.role !== 'ai' ? m.text : null}

@@ -212,66 +212,59 @@ export default function BagianPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      {/* Top Info Card */}
-      <Card
-        className="mx-6 mt-6 border-2 border-[#E4E4E7] shadow-sm bg-white sm:w-[60vw] lg:w-[70vw] absolute z-999"
-        radius="lg"
-      >
-        <CardBody className="p-[14px_32px] gap-5">
-          <div className="flex items-center gap-6">
-            {/* Back Button */}
-            <Button
-              as={Link}
-              href={`/belajar/${modulId}`}
-              isIconOnly
-              variant="light"
-              color="primary"
-              size="lg"
-              className="min-w-0 w-8 h-8"
-            >
-              <ArrowLeftRegular className="w-8 h-8 text-[#3674B5]" />
-            </Button>
+    <div className="flex-1 relative">
+      <div className="px-6 sticky top-0 z-[999]">
+        <div className="sticky bg-white p-2 top-0 w-[100%] z-[999]"></div>
+        <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
+          <CardBody className="p-[14px_32px] gap-5">
+            <div className="flex items-center gap-6">
+              <Button
+                as={Link}
+                href={`/belajar/${modulId}`}
+                isIconOnly
+                variant="light"
+                color="primary"
+                size="lg"
+                className="min-w-0 w-8 h-8"
+              >
+                <ArrowLeftRegular className="w-8 h-8 text-[#3674B5]" />
+              </Button>
 
-            {/* Title and Progress */}
-            <div className="flex-1 flex items-center gap-1">
-              <div className="flex-1 flex flex-col gap-1">
-                <span className="text-lg font-medium text-[#A1A1AA]">Bagian {bagian}</span>
-                <h1 className="text-2xl font-semibold text-[#3F3F46]">{pelajaran?.judul}</h1>
-              </div>
+              <div className="flex-1 flex items-center gap-1 min-w-0">
+                <div className="flex-1 flex flex-col gap-1 min-w-0">
+                  <span className="text-lg font-medium text-[#A1A1AA]">Bagian {bagian}</span>
+                  <h1 className="text-2xl font-semibold text-[#3F3F46] truncate">
+                    {pelajaran?.judul}
+                  </h1>
+                </div>
 
-              {/* Circular Progress */}
-              <div className="relative w-[72px] h-[72px]">
-                <svg className="w-full h-full transform -rotate-90">
-                  {/* Background circle */}
-                  <circle cx="36" cy="36" r="32" stroke="#D9D9D9" strokeWidth="8" fill="none" />
-                  {/* Progress circle */}
-                  <circle
-                    cx="36"
-                    cy="36"
-                    r="32"
-                    stroke="#FF921F"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 32}`}
-                    strokeDashoffset={`${2 * Math.PI * 32 * (1 - overallProgress / 100)}`}
-                    strokeLinecap="round"
-                    className="transition-all duration-500"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-base font-bold text-[#FF921F]">{overallProgress}%</span>
+                <div className="relative w-[72px] h-[72px]">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="36" cy="36" r="32" stroke="#D9D9D9" strokeWidth="8" fill="none" />
+                    <circle
+                      cx="36"
+                      cy="36"
+                      r="32"
+                      stroke="#FF921F"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 32}`}
+                      strokeDashoffset={`${2 * Math.PI * 32 * (1 - overallProgress / 100)}`}
+                      strokeLinecap="round"
+                      className="transition-all duration-500"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-base font-bold text-[#FF921F]">{overallProgress}%</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
+      </div>
 
-      {/* Main Content with Learning Path and Widgets */}
-      <div className="py-10 w-full bg-[#FCFDFD] fixed z-800"></div>
-      <div className="flex gap-6 p-6 mt-[100px]">
-        {/* Learning Path Visual */}
+      <div className="flex gap-6 p-6">
         <div className="flex-1">
           <LearningPathVisual stages={stages} onStageClick={handleStageClick} />
         </div>

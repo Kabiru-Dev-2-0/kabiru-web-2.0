@@ -1,10 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
-import ExerciseRenderer from '@/components/ExerciseRenderer';
+import ExerciseRenderer, { FooterWithRobot } from '@/components/ExerciseRenderer';
 import { fetchExercises, submitHasilLatihan } from './quizAction';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ChevronLeftRegular, ChevronRightRegular } from '@fluentui/react-icons';
+import { ChevronLeftRegular, ChevronRightRegular, SendRegular } from '@fluentui/react-icons';
+import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
+import { Card, CardBody } from '@heroui/card';
+import { Button } from '@heroui/button';
+import { Input } from '@heroui/input';
 
 export default function Quiz() {
   const searchParams = useSearchParams();
@@ -18,6 +22,93 @@ export default function Quiz() {
   const [error, setError] = useState<string | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set());
   const [correctAnswers, setCorrectAnswers] = useState<Set<number>>(new Set());
+  const [footerProps, setFooterProps] = useState<{
+    onSubmit: () => void;
+    feedback: string;
+    isCorrect: boolean;
+  }>({ onSubmit: () => {}, feedback: '', isCorrect: false });
+
+  // Chat overlay state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ role: 'ai' | 'user'; text: string }[]>([
+    { role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' },
+    { role: 'user', text: 'Tolong Jelaskan' },
+    {
+      role: 'ai',
+      text: 'Untuk menghitung luas persegi panjang, kalikan panjang dengan lebar. Coba ubah pseudocode‑mu pakai operasi perkalian ya ✨',
+    },
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isAsking, setIsAsking] = useState(false);
+
+  const sanitizeAllowedHtml = (html: string) => {
+    return html
+      .replace(/<\/(?:script|style|iframe|object|embed|link|meta)[^>]*>/gi, '')
+      .replace(/<(?:script|style|iframe|object|embed|link|meta)[^>]*>/gi, '')
+      .replace(/on[a-zA-Z]+\s*=\s*("[^"]*"|'[^']*')/gi, '')
+      .replace(/javascript:/gi, '');
+  };
+
+  const handleAgentClick = () => setChatOpen(true);
+  const handleSendMessage = async () => {
+    const content = chatInput.trim();
+    if (!content || isAsking) return;
+    setChatMessages((msgs) => [...msgs, { role: 'user', text: content }]);
+    setChatInput('');
+    setIsAsking(true);
+    try {
+      const ex = exercises[currentIndex];
+      let quizContext = '';
+      if (ex) {
+        const t = ex.type;
+        if (t === 'multiple_choice') {
+          const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
+          quizContext = `Jenis: Pilihan Ganda\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${ex?.data?.question || ''}\nPilihan: ${opts}`;
+        } else if (t === 'fill_in_the_blank') {
+          const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
+          const tpl = typeof ex?.template_code === 'string' ? ex.template_code : '';
+          quizContext = `Jenis: Isian\nPrompt: ${ex?.prompt || ''}\nTemplate:\n${tpl}\nPilihan: ${opts}`;
+        } else if (t === 'guessing') {
+          const code = typeof ex?.data?.code === 'string' ? ex.data.code : '';
+          quizContext = `Jenis: Menebak Output\nPrompt: ${ex?.prompt || ''}\nKode:\n${code}`;
+        } else if (t === 'drag_and_drop') {
+          const items = Array.isArray(ex?.data?.items) ? ex.data.items.join(', ') : '';
+          const buckets = Array.isArray(ex?.data?.buckets) ? ex.data.buckets.join(', ') : '';
+          quizContext = `Jenis: Kelompokkan\nPrompt: ${ex?.prompt || ''}\nItems: ${items}\nKategori: ${buckets}`;
+        } else if (t === 'sorting') {
+          const q = ex?.data?.question || '';
+          const lines = Array.isArray(ex?.data?.code_lines) ? ex.data.code_lines.join(' | ') : '';
+          quizContext = `Jenis: Mengurutkan\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${q}\nItems: ${lines}`;
+        } else {
+          quizContext = `Prompt: ${ex?.prompt || ''}`;
+        }
+      }
+      const historyToSend = [...chatMessages, { role: 'user', text: content }].slice(-8);
+      const res = await fetch('/api/ask-to-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: content, top_k: 4, quiz_context: quizContext, history: historyToSend }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setChatMessages((msgs) => [
+          ...msgs,
+          { role: 'ai', text: `Terjadi kesalahan: ${data.error || res.statusText}` },
+        ]);
+      } else {
+        const data = await res.json();
+        const safe = typeof data.answer === 'string' ? sanitizeAllowedHtml(data.answer) : '';
+        setChatMessages((msgs) => [...msgs, { role: 'ai', text: safe }]);
+      }
+    } catch (e: any) {
+      setChatMessages((msgs) => [
+        ...msgs,
+        { role: 'ai', text: `Terjadi kesalahan jaringan: ${e?.message || 'Unknown error'}` },
+      ]);
+    } finally {
+      setIsAsking(false);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -54,6 +145,9 @@ export default function Quiz() {
     // Hanya bisa next jika soal saat ini sudah selesai
     if (currentIndex < exercises.length - 1 && completedExercises.has(currentIndex)) {
       setCurrentIndex(currentIndex + 1);
+      setChatMessages([]);
+      setChatInput('');
+      setIsAsking(false);
     }
   };
 
@@ -169,12 +263,12 @@ export default function Quiz() {
         <div className="flex items-center justify-center gap-5">
           {/* Logo/Icon Placeholder */}
           <div className="w-[100px]">
-            <img src="/imageAssets/motivational.png" alt="Logo" className="w-full" />
+            {/* <img src="/imageAssets/motivational.png" alt="Logo" className="w-full" /> */}
           </div>
 
           {/* Progress Section */}
           <div className="flex flex-col items-center justify-center gap-2.5 flex-1">
-            <div className="flex items-center gap-8 w-[840px]">
+            <div className="flex items-center gap-8 w-[80%]">
               {/* Arrow Left */}
               <button
                 onClick={handlePrevious}
@@ -219,16 +313,134 @@ export default function Quiz() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-80 py-6">
-          <ExerciseRenderer
-            exercises={exercises}
-            currentIndex={currentIndex}
-            onNext={handleNext}
-            onComplete={handleExerciseComplete}
-          />
+      <div className="flex-1 overflow-y-auto h-full">
+        <div className="flex justify-center px-0 py-6 h-[80vh]">
+          <motion.div
+            className="flex gap-6 items-start"
+            animate={{ width: chatOpen ? '80%' : '70%' }}
+            initial={false}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          >
+            <AnimatePresence>
+              {chatOpen && (
+                <motion.div
+                  className="w-[30%] h-[94%]"
+                  initial={{ opacity: 0, x: -540, y: 200, scale: 0.98 }}
+                  animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: -540, y: 200, scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  layout
+                >
+                  <Card
+                    className="border-2 border-[#E4E4E7] bg-white rounded-[18px] shadow-[0px_2px_0px_0px_rgba(228,228,231,1)] h-[100%]"
+                    radius="lg"
+                  >
+                    <CardBody className="px-4 py-10 flex flex-col gap-4">
+                      <div className="flex items-center justify-between px-4 py-4 absolute top-0 left-0 w-full z-99 bg-white border-b-1 border-[#E4E4E7]">
+                        <div className="flex items-center gap-2">
+                          <img src="/imageAssets/motivational.png" alt="AI" className="w-6 h-6" />
+                          <span className="text-base font-semibold text-[#3674B5]">AI Chat</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => setChatOpen(false)}
+                            className="text-sm font-semibold text-[#A1A1AA] hover:text-[#3674B5]"
+                            type="button"
+                          >
+                            Tutup
+                          </button>
+                          <div className="w-7 h-1.5 rounded-full bg-[#D4D4D8]"></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-4 h-[100%] pt-6 pb-8 overflow-y-auto pr-1 overflow-x-hidden">
+                        {chatMessages.map((m, idx) => (
+                          <div
+                            key={idx}
+                            className={`flex ${m.role === 'ai' ? 'items-start gap-2' : 'justify-end'}`}
+                          >
+                            {m.role === 'ai' && (
+                              <img
+                                src="/imageAssets/motivational.png"
+                                alt="AI"
+                                className="w-8 h-8 mt-1"
+                              />
+                            )}
+                            <div className="relative mx-1">
+                              <div
+                                className={`rounded-[18px] px-4 py-3 max-w-[280px] text-sm leading-[1.55em] ${
+                                  m.role === 'ai'
+                                    ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]'
+                                    : 'bg-[#F5A524] text-black shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
+                                }`}
+                                dangerouslySetInnerHTML={
+                                  m.role === 'ai'
+                                    ? { __html: m.text }
+                                    : undefined
+                                }
+                              >
+                                {m.role !== 'ai' ? m.text : null}
+                              </div>
+                              {m.role === 'ai' ? (
+                                <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
+                              ) : (
+                                <div className="absolute -right-1 top-4 w-3 h-3 bg-[#F5A524] rotate-45 rounded-sm"></div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-3 absolute bottom-0 left-0 w-full px-4 bg-white z-99 py-3">
+                        <Input
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          placeholder="Ketik pesanmu disini..."
+                          classNames={{
+                            inputWrapper:
+                              'border-2 border-[#E4E4E7] rounded-[16px] h-[46px] bg-[#FAFAFA]',
+                            input: 'text-base',
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSendMessage}
+                          disabled={isAsking || !chatInput.trim()}
+                          className="rounded-full w-[46px] h-[46px] flex items-center justify-center bg-white border-2 border-[#E4E4E7] hover:border-[#3674B5] disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Kirim"
+                        >
+                          <SendRegular className="w-4 h-4 text-[#3674B5]" />
+                        </button>
+                      </div>
+                    </CardBody>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.div
+              className="flex-1 w-full"
+              layout
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            >
+              <ExerciseRenderer
+                exercises={exercises}
+                currentIndex={currentIndex}
+                onNext={handleNext}
+                onComplete={handleExerciseComplete}
+                onAgentClick={handleAgentClick}
+                onFooterPropsChange={setFooterProps}
+              />
+            </motion.div>
+          </motion.div>
         </div>
       </div>
+      <FooterWithRobot
+        onSubmit={footerProps.onSubmit}
+        feedback={footerProps.feedback}
+        isCorrect={footerProps.isCorrect}
+        showNextButton={currentIndex < exercises.length - 1}
+        onNext={handleNext}
+        onAgentClick={handleAgentClick}
+      />
     </div>
   );
 }

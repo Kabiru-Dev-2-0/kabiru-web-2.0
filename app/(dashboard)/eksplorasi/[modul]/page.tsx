@@ -155,8 +155,8 @@ export default function EksplorasiDetailPage() {
                           r="30"
                           stroke="#F5A524"
                           strokeWidth="8"
-                          strokeDasharray={`${2 * Math.PI * 38}`}
-                          strokeDashoffset={`${(1 - overallProgress / 100) * (2 * Math.PI * 38)}`}
+                          strokeDasharray={`${2 * Math.PI * 29}`}
+                          strokeDashoffset={`${(1 - overallProgress / 100) * (2 * Math.PI * 29)}`}
                           fill="none"
                           strokeLinecap="round"
                         />

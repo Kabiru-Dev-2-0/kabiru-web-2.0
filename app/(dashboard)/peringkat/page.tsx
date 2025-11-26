@@ -6,31 +6,64 @@ import { RankingCard } from "@/components/ranking-card";
 import { MotivationalTooltip } from "@/components/motivational-tooltip";
 import { StarColor, PawColor } from "@fluentui/react-icons";
 import { Progress } from "@heroui/progress";
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+
+type LeaderboardRow = {
+  id_pengguna: number;
+  nama_lengkap: string;
+  avatar: string | null;
+  exp: number;
+  bronze: number;
+  silver: number;
+  gold: number;
+  score: number;
+  rank: number;
+};
 
 export default function PeringkatPage() {
-  const rankings = [
-    { rank: 4, name: "Annisa Isnaini Tsaniya", exp: 945, trend: "up" as const },
-    {
-      rank: 5,
-      name: "Annisa Isnaini Tsaniya",
-      exp: 921,
-      trend: "down" as const,
-    },
-    {
-      rank: 6,
-      name: "Annisa Isnaini Tsaniya",
-      exp: 894,
-      trend: "down" as const,
-    },
-    { rank: 7, name: "Annisa Isnaini Tsaniya", exp: 743, trend: "up" as const },
-    { rank: 8, name: "Annisa Isnaini Tsaniya", exp: 634, trend: "up" as const },
-    {
-      rank: 9,
-      name: "Annisa Isnaini Tsaniya",
-      exp: 423,
-      trend: "down" as const,
-    },
-  ];
+  const [rows, setRows] = useState<LeaderboardRow[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    async function loadLeaderboard() {
+      setLoading(true);
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const { data: pengguna } = await supabase
+            .from("penggunas")
+            .select("id")
+            .eq("uuid", user.id)
+            .single();
+          if (pengguna?.id) setCurrentUserId(pengguna.id);
+        }
+
+        const { data } = await supabase.rpc("get_leaderboard", {
+          p_days_active: 30,
+          p_bronze_weight: 1,
+          p_silver_weight: 3,
+          p_gold_weight: 6,
+        });
+        setRows((data || []) as LeaderboardRow[]);
+      } catch {}
+      setLoading(false);
+    }
+    loadLeaderboard();
+  }, []);
+
+  const top1 = rows.find((r) => r.rank === 1);
+  const top2 = rows.find((r) => r.rank === 2);
+  const top3 = rows.find((r) => r.rank === 3);
+
+  const listRows = rows
+    .filter((r) => r.rank > 3)
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 7);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -38,32 +71,44 @@ export default function PeringkatPage() {
         {/* Left Column */}
         <div className="flex-1 flex flex-col items-center gap-8">
           {/* Podium */}
-          <Podium
-            secondPlace={{ name: "Isnaini", exp: 1256 }}
-            firstPlace={{ name: "Annisa", exp: 2732 }}
-            thirdPlace={{ name: "Tsaniya", exp: 1034 }}
-          />
+          {top1 && top2 && top3 ? (
+            <Podium
+              secondPlace={{ name: top2.nama_lengkap || "Pengguna", exp: top2.score }}
+              firstPlace={{ name: top1.nama_lengkap || "Pengguna", exp: top1.score }}
+              thirdPlace={{ name: top3.nama_lengkap || "Pengguna", exp: top3.score }}
+            />
+          ) : (
+            <Podium
+              secondPlace={{ name: "...", exp: 0 }}
+              firstPlace={{ name: "...", exp: 0 }}
+              thirdPlace={{ name: "...", exp: 0 }}
+            />
+          )}
 
           {/* Ranking List */}
           <div className="w-full flex flex-col gap-[14px]">
-            {rankings.map((ranking) => (
+            {listRows.map((r) => (
               <RankingCard
-                key={ranking.rank}
-                rank={ranking.rank}
-                name={ranking.name}
-                exp={ranking.exp}
-                trend={ranking.trend}
+                key={r.id_pengguna}
+                rank={r.rank}
+                name={r.nama_lengkap || "Pengguna"}
+                exp={r.score}
+                trend={"up"}
+                label={"POIN"}
+                isCurrentUser={currentUserId === r.id_pengguna}
               />
             ))}
 
-            {/* Current User - Rank 17 */}
-            <RankingCard
-              rank={17}
-              name="Annisa Isnaini Tsaniya (You)"
-              exp={126}
-              trend="up"
-              isCurrentUser
-            />
+            {currentUserId && rows.some((r) => r.id_pengguna === currentUserId) ? (
+              <RankingCard
+                rank={rows.find((x) => x.id_pengguna === currentUserId)!.rank}
+                name={(rows.find((x) => x.id_pengguna === currentUserId)!.nama_lengkap || "Kamu") + " (You)"}
+                exp={rows.find((x) => x.id_pengguna === currentUserId)!.score}
+                trend={"up"}
+                label={"POIN"}
+                isCurrentUser
+              />
+            ) : null}
           </div>
         </div>
 

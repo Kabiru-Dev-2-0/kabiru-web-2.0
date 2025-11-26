@@ -11,6 +11,7 @@ interface RankingCardProps {
   exp: number;
   trend: "up" | "down";
   isCurrentUser?: boolean;
+  label?: string;
 }
 
 export const RankingCard = ({
@@ -19,6 +20,7 @@ export const RankingCard = ({
   exp,
   trend,
   isCurrentUser = false,
+  label = 'EXP',
 }: RankingCardProps) => {
   // Style for isCurrentUser
   const isCurrentUserCardClass = isCurrentUser
@@ -116,7 +118,7 @@ export const RankingCard = ({
                 {exp}
               </span>
               <span className={`text-2xl font-extrabold ${expLabelClass}`}>
-                EXP
+                {label}
               </span>
             </div>
             {trend === "up" ? (

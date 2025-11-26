@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import ExerciseRenderer, { FooterWithRobot } from '@/components/ExerciseRenderer';
 import { fetchExercises, submitHasilLatihan } from './quizAction';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
-import { ChevronLeftRegular, ChevronRightRegular, SendRegular } from '@fluentui/react-icons';
+import { ChevronLeftRegular, ChevronRightRegular, SendRegular, DismissRegular } from '@fluentui/react-icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { Card, CardBody } from '@heroui/card';
@@ -160,6 +160,24 @@ export default function Quiz() {
     }
   };
 
+  const handleExit = async () => {
+    const supabase = createClient();
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth?.user;
+      if (user) {
+        await supabase.rpc('reset_quiz_streak', { p_uuid: user.id }).match(() => {});
+      }
+    } catch {}
+    if (modulParam && bagianParam) {
+      router.replace(`/belajar/${modulParam}/${bagianParam}`);
+    } else if (modulParam) {
+      router.replace(`/belajar/${modulParam}`);
+    } else {
+      router.replace('/belajar');
+    }
+  };
+
   const handleExerciseComplete = (isCorrect: boolean) => {
     setCompletedExercises((prev) => new Set(prev).add(currentIndex));
 
@@ -294,9 +312,17 @@ export default function Quiz() {
       {/* Header dengan Progress Bar - Sesuai Figma */}
       <div className="w-full bg-white border-b border-[#E8E8E8] px-12 py-4">
         <div className="flex items-center justify-center gap-5">
-          {/* Logo/Icon Placeholder */}
-          <div className="w-[100px]">
-            {/* <img src="/imageAssets/motivational.png" alt="Logo" className="w-full" /> */}
+          <div className="w-[100px] flex items-center">
+            <Button
+              isIconOnly
+              variant="light"
+              radius="full"
+              size="lg"
+              className="min-w-0 w-8 h-8"
+              onClick={handleExit}
+            >
+              <DismissRegular className="w-8 h-8 text-[#3674B5]" />
+            </Button>
           </div>
 
           {/* Progress Section */}

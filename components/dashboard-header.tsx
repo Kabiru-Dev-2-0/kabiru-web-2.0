@@ -3,9 +3,21 @@
 import { Input } from '@heroui/input';
 import { Avatar } from '@heroui/avatar';
 import { Divider } from '@heroui/divider';
-import { SearchRegular, TrophyColor } from '@fluentui/react-icons';
+import {
+  SearchRegular,
+  TrophyColor,
+  DismissRegular,
+  PawColor,
+  EditRegular,
+} from '@fluentui/react-icons';
 import { useEffect, useState } from 'react';
+import { Card, CardBody } from '@heroui/card';
+import { Button } from '@heroui/button';
+import { Progress } from '@heroui/progress';
+import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
+import { Certificate16Color } from '@fluentui/react-icons';
+import { Notebook16Color } from '@fluentui/react-icons';
 
 interface DashboardHeaderProps {
   searchPlaceholder?: string;
@@ -33,6 +45,14 @@ export const DashboardHeader = ({
     gold: 0,
   });
   const [mounted, setMounted] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>('/imageAssets/avatar/default.png');
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [isNamePickerOpen, setIsNamePickerOpen] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   // Prefill dari localStorage (client-only) agar cepat tampil tanpa menunggu fetch
   useEffect(() => {
@@ -40,6 +60,7 @@ export const DashboardHeader = ({
       const lsName = typeof window !== 'undefined' ? localStorage.getItem('aizone.userName') : null;
       const lsExpStr = typeof window !== 'undefined' ? localStorage.getItem('aizone.exp') : null;
       const lsTrophy = typeof window !== 'undefined' ? localStorage.getItem('aizone.trophy') : null;
+      const lsAvatar = typeof window !== 'undefined' ? localStorage.getItem('aizone.avatar') : null;
       if (lsName || lsExpStr) {
         if (lsName) setUserName(lsName);
         if (lsExpStr) {
@@ -58,6 +79,7 @@ export const DashboardHeader = ({
         }
         setIsLoading(false);
       }
+      if (lsAvatar) setAvatarUrl(lsAvatar);
     } catch {}
   }, []);
 
@@ -100,7 +122,7 @@ export const DashboardHeader = ({
         // Ambil data pengguna (nama + exp total)
         const { data: expRow, error: expError } = await supabase
           .from('data_penggunas')
-          .select('exp, nama_lengkap')
+          .select('exp, nama_lengkap, avatar')
           .eq('id_pengguna', pengguna.id)
           .single();
         if (expError || !expRow) return;
@@ -110,6 +132,14 @@ export const DashboardHeader = ({
         try {
           localStorage.setItem('aizone.userName', expRow?.nama_lengkap || '');
           localStorage.setItem('aizone.exp', String(expRow?.exp || 0));
+        } catch {}
+        const av =
+          typeof expRow?.avatar === 'string' && expRow.avatar
+            ? expRow.avatar
+            : '/imageAssets/avatar/default.png';
+        setAvatarUrl(av);
+        try {
+          localStorage.setItem('aizone.avatar', av);
         } catch {}
         setIsLoading(false);
       } catch (e) {
@@ -166,12 +196,19 @@ export const DashboardHeader = ({
           try {
             const newExp = (payload as any)?.new?.exp;
             const newName = (payload as any)?.new?.nama_lengkap;
+            const newAvatar = (payload as any)?.new?.avatar;
             if (typeof newExp === 'number') setExp(newExp);
             if (typeof newName === 'string') setUserName(newName);
             try {
               if (typeof newExp === 'number') localStorage.setItem('aizone.exp', String(newExp));
               if (typeof newName === 'string') localStorage.setItem('aizone.userName', newName);
             } catch {}
+            if (typeof newAvatar === 'string' && newAvatar) {
+              setAvatarUrl(newAvatar);
+              try {
+                localStorage.setItem('aizone.avatar', newAvatar);
+              } catch {}
+            }
           } catch {}
         }
       )
@@ -278,7 +315,9 @@ export const DashboardHeader = ({
               className="w-10 h-10 md:w-7 md:h-7 object-contain mr-1"
               style={{ display: 'inline-block', verticalAlign: 'middle' }}
             />
-            <span className="text-2xl font-[800] text-[#7828C8]">4</span>
+            <span className="text-2xl font-[800] text-[#7828C8]">
+              {trophies.bronze + trophies.silver + trophies.gold}
+            </span>
           </div>
         </div>
 
@@ -286,7 +325,12 @@ export const DashboardHeader = ({
         <Divider orientation="vertical" className="h-auto self-stretch bg-[rgba(17,17,17,0.15)]" />
 
         {/* User Info */}
-        <div className="flex justify-end items-center gap-3 w-[315px] pr-6">
+        <div
+          className="flex justify-end items-center gap-3 w-[315px] pr-6 cursor-pointer hover:bg-[#F4F4F5] rounded-xl px-2 py-1"
+          onClick={() => setIsProfileOpen(true)}
+          role="button"
+          aria-label="Lihat profil"
+        >
           <div className="flex flex-col items-end justify-center gap-0 px-0 py-[1px]">
             <span className="text-lg leading-7 text-[#11181C]">
               {isLoading ? '...' : userName || 'Pengguna'}
@@ -303,11 +347,371 @@ export const DashboardHeader = ({
             isBordered={false}
             radius="full"
             size="md"
-            src="https://i.pravatar.cc/150?u=a042581f4e29026024d"
+            src={avatarUrl}
             className="w-10 h-10"
           />
         </div>
       </div>
+      <AnimatePresence>
+        {isProfileOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsProfileOpen(false);
+            }}
+          >
+            <motion.div
+              className="w-[720px] max-w-[92vw]"
+              initial={{ y: -24, scale: 0.98, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 24, scale: 0.98, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            >
+              <Card radius="lg" className="bg-white shadow-2xl z-[60]">
+                <CardBody className="p-6 gap-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#006FEE]" />
+                      <span className="text-2xl font-semibold text-black">Profil</span>
+                    </div>
+                    <Button
+                      isIconOnly
+                      radius="full"
+                      variant="light"
+                      onPress={() => setIsProfileOpen(false)}
+                    >
+                      <DismissRegular className="w-6 h-6 text-[#71717A]" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <Avatar src={avatarUrl} className="w-20 h-20" />
+                      <Button
+                        isIconOnly
+                        radius="full"
+                        size="sm"
+                        variant="light"
+                        className="absolute -right-3 -bottom-3"
+                        onPress={() => {
+                          setSelectedAvatar(avatarUrl);
+                          setIsAvatarPickerOpen(true);
+                        }}
+                      >
+                        <EditRegular className="w-5 h-5 text-[#3674B5]" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-semibold text-black">
+                        {userName || 'Pengguna'}
+                      </span>
+                      <Button
+                        isIconOnly
+                        radius="full"
+                        size="sm"
+                        variant="light"
+                        onPress={() => {
+                          setNameDraft(userName || '');
+                          setIsNamePickerOpen(true);
+                        }}
+                      >
+                        <EditRegular className="w-5 h-5 text-[#3674B5]" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <PawColor className="w-5 h-5 text-[#F5A524]" />
+                      <span className="text-sm font-medium text-[#F5A524]">Pemula</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-[#71717A]">{`${Math.min(exp % 2000, 2000)}/${2000} EXP`}</span>
+                    <Progress
+                      aria-label="EXP Progress"
+                      value={Math.min(exp % 2000, 2000)}
+                      maxValue={2000}
+                      color="warning"
+                      size="md"
+                      radius="full"
+                      classNames={{ track: 'bg-[#E4E4E7]' }}
+                    />
+                  </div>
+                  <Divider className="bg-[rgba(17,17,17,0.15)]" />
+                  <div className="flex flex-col gap-3">
+                    <span className="text-base font-semibold text-black">Statistik</span>
+                    <div className="grid grid-cols-4 gap-3">
+                      <Card radius="lg" className="border-2 border-[#E4E4E7]">
+                        <CardBody className="p-3 gap-2 items-center">
+                          <TrophyColor className="w-6 h-6 text-[#F5A524]" />
+                          <span className="text-sm font-semibold text-black">Peringkat</span>
+                          <span className="text-lg font-bold text-[#7828C8]">17</span>
+                        </CardBody>
+                      </Card>
+                      <Card radius="lg" className="border-2 border-[#E4E4E7]">
+                        <CardBody className="p-3 gap-2 items-center">
+                          <img src="/imageAssets/badge-icon.png" className="w-6 h-6" alt="Badge" />
+                          <span className="text-sm font-semibold text-black">Badge</span>
+                          <span className="text-lg font-bold text-[#7828C8]">
+                            {trophies.bronze + trophies.silver + trophies.gold}
+                          </span>
+                        </CardBody>
+                      </Card>
+                      <Card radius="lg" className="border-2 border-[#E4E4E7]">
+                        <CardBody className="p-3 gap-2 items-center">
+                          <Certificate16Color className="w-6 h-6 text-[#7828C8]" />
+                          <span className="text-sm font-semibold text-black">Modul Selesai</span>
+                          <span className="text-lg font-bold text-[#7828C8]">1</span>
+                        </CardBody>
+                      </Card>
+                      <Card radius="lg" className="border-2 border-[#E4E4E7]">
+                        <CardBody className="p-3 gap-2 items-center">
+                          <Notebook16Color className="w-6 h-6 text-[#7828C8]" />
+                          <span className="text-sm font-semibold text-black">Lesson Selesai</span>
+                          <span className="text-lg font-bold text-[#7828C8]">13</span>
+                        </CardBody>
+                      </Card>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <span className="text-base font-semibold text-black">Koleksi Penghargaan</span>
+                    <div className="grid grid-cols-6 gap-2">
+                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
+                        <TrophyColor className="w-7 h-7 text-[#CD7F32]" />
+                      </div>
+                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
+                        <TrophyColor className="w-7 h-7 text-[#C0C0C0]" />
+                      </div>
+                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
+                        <TrophyColor className="w-7 h-7 text-[#FFD700]" />
+                      </div>
+                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
+                        <TrophyColor className="w-7 h-7 text-[#3674B5]" />
+                      </div>
+                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
+                        <TrophyColor className="w-7 h-7 text-[#17C964]" />
+                      </div>
+                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
+                        <TrophyColor className="w-7 h-7 text-[#F31260]" />
+                      </div>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isNamePickerOpen && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsNamePickerOpen(false);
+            }}
+          >
+            <motion.div
+              className="w-[480px] max-w-[92vw]"
+              initial={{ y: -24, scale: 0.98, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 24, scale: 0.98, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            >
+              <Card radius="lg" className="bg-white shadow-2xl">
+                <CardBody className="p-6 gap-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-semibold text-black">Edit Nickname</span>
+                    <Button
+                      isIconOnly
+                      radius="full"
+                      variant="light"
+                      onPress={() => setIsNamePickerOpen(false)}
+                    >
+                      <DismissRegular className="w-6 h-6 text-[#71717A]" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      value={nameDraft}
+                      onValueChange={setNameDraft}
+                      radius="lg"
+                      size="md"
+                      classNames={{ inputWrapper: 'bg-[#F4F4F5]' }}
+                    />
+                    <span className="text-xs text-[#71717A]">Gunakan 4–10 karakter</span>
+                  </div>
+                  <div>
+                    <Button
+                      color="primary"
+                      radius="lg"
+                      size="md"
+                      className="w-full"
+                      isDisabled={
+                        savingName || nameDraft.trim().length < 4 || nameDraft.trim().length > 10
+                      }
+                      onPress={async () => {
+                        const val = nameDraft.trim();
+                        if (val.length < 4 || val.length > 10) return;
+                        setSavingName(true);
+                        try {
+                          const supabase = createClient();
+                          let idFor = penggunaId ?? resolvedPenggunaId;
+                          if (!idFor) {
+                            const { data: auth } = await supabase.auth.getUser();
+                            const uid = auth?.user?.id;
+                            if (uid) {
+                              const { data: pengguna } = await supabase
+                                .from('penggunas')
+                                .select('id')
+                                .eq('uuid', uid)
+                                .single();
+                              idFor = pengguna?.id ?? null;
+                            }
+                          }
+                          if (idFor) {
+                            await supabase
+                              .from('data_penggunas')
+                              .update({ nama_lengkap: val })
+                              .eq('id_pengguna', idFor);
+                          }
+                          setUserName(val);
+                          try {
+                            localStorage.setItem('aizone.userName', val);
+                          } catch {}
+                          setIsNamePickerOpen(false);
+                        } finally {
+                          setSavingName(false);
+                        }
+                      }}
+                    >
+                      Konfirmasi
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isAvatarPickerOpen && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsAvatarPickerOpen(false);
+            }}
+          >
+            <motion.div
+              className="w-[640px] max-w-[92vw]"
+              initial={{ y: -24, scale: 0.98, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 24, scale: 0.98, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            >
+              <Card radius="lg" className="bg-white shadow-2xl">
+                <CardBody className="p-6 gap-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-semibold text-black">Edit Profil</span>
+                    <Button
+                      isIconOnly
+                      radius="full"
+                      variant="light"
+                      onPress={() => setIsAvatarPickerOpen(false)}
+                    >
+                      <DismissRegular className="w-6 h-6 text-[#71717A]" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-1 gap-y-3 justify-between">
+                    {[
+                      '/imageAssets/avatar/default.png',
+                      '/imageAssets/avatar/avatar-1.png',
+                      '/imageAssets/avatar/avatar-2.png',
+                      '/imageAssets/avatar/avatar-3.png',
+                      '/imageAssets/avatar/avatar-4.png',
+                      '/imageAssets/avatar/avatar-5.png',
+                      '/imageAssets/avatar/avatar-6.png',
+                      '/imageAssets/avatar/avatar-7.png',
+                      '/imageAssets/avatar/avatar-8.png',
+                      '/imageAssets/avatar/avatar-9.png',
+                      '/imageAssets/avatar/avatar-10.png',
+                      '/imageAssets/avatar/avatar-11.png',
+                      '/imageAssets/avatar/avatar-12.png',
+                      '/imageAssets/avatar/avatar-13.png',
+                      '/imageAssets/avatar/avatar-14.png',
+                      '/imageAssets/avatar/avatar-15.png',
+                      '/imageAssets/avatar/avatar-16.png',
+                      '/imageAssets/avatar/avatar-17.png',
+                    ].map((src) => (
+                      <button
+                        key={src}
+                        onClick={() => setSelectedAvatar(src)}
+                        className={`rounded-xl border-5 p-2 transition shadow-sm ${
+                          (selectedAvatar || avatarUrl) === src
+                            ? 'border-[#3674B5] shadow-[0px_6px_0px_0px_#3674B5]'
+                            : 'border-[#E4E4E7]'
+                        }`}
+                        aria-label={src}
+                      >
+                        <img src={src} alt="avatar" className="w-16 h-16 object-contain" />
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2">
+                    <Button
+                      color="primary"
+                      radius="lg"
+                      size="md"
+                      className="w-full"
+                      isDisabled={savingAvatar}
+                      onPress={async () => {
+                        const chosen = selectedAvatar || avatarUrl;
+                        setSavingAvatar(true);
+                        try {
+                          const supabase = createClient();
+                          let idFor = penggunaId ?? resolvedPenggunaId;
+                          if (!idFor) {
+                            const { data: auth } = await supabase.auth.getUser();
+                            const uid = auth?.user?.id;
+                            if (uid) {
+                              const { data: pengguna } = await supabase
+                                .from('penggunas')
+                                .select('id')
+                                .eq('uuid', uid)
+                                .single();
+                              idFor = pengguna?.id ?? null;
+                            }
+                          }
+                          if (idFor) {
+                            await supabase
+                              .from('data_penggunas')
+                              .update({ avatar: chosen })
+                              .eq('id_pengguna', idFor);
+                          }
+                          setAvatarUrl(chosen);
+                          try {
+                            localStorage.setItem('aizone.avatar', chosen);
+                          } catch {}
+                          setIsAvatarPickerOpen(false);
+                        } finally {
+                          setSavingAvatar(false);
+                        }
+                      }}
+                    >
+                      Konfirmasi
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,14 +1,20 @@
 'use client';
 
 import { login } from './actions';
-import { Card, CardBody, CardHeader } from "@heroui/card";
-import { Input } from "@heroui/input";
-import { Button } from "@heroui/button";
-import { Link } from "@heroui/link";
-import { Divider } from "@heroui/divider";
-import { Spinner } from "@heroui/spinner";
-import { LockClosedRegular, MailRegular, PersonRegular, ArrowCircleRightRegular } from '@fluentui/react-icons';
+import { Card, CardBody, CardHeader } from '@heroui/card';
+import { Input } from '@heroui/input';
+import { Button } from '@heroui/button';
+import { Link } from '@heroui/link';
+import { Divider } from '@heroui/divider';
+import { Spinner } from '@heroui/spinner';
+import {
+  LockClosedRegular,
+  MailRegular,
+  PersonRegular,
+  ArrowCircleRightRegular,
+} from '@fluentui/react-icons';
 import { useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +24,23 @@ export default function LoginPage() {
     try {
       await login(formData);
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          scopes: 'openid email profile',
+        },
+      });
+    } catch {
       setIsLoading(false);
     }
   };
@@ -63,9 +86,9 @@ export default function LoginPage() {
               Silakan masukkan kredensial Anda untuk melanjutkan
             </p>
           </CardHeader>
-          
+
           <Divider className="bg-[rgba(17,17,17,0.15)]" />
-          
+
           <CardBody className="px-6 py-6">
             <form action={handleSubmit} className="flex flex-col gap-5">
               {/* Email Input */}
@@ -78,13 +101,12 @@ export default function LoginPage() {
                 labelPlacement="outside"
                 isRequired
                 isDisabled={isLoading}
-                startContent={
-                  <MailRegular className="w-5 h-5 text-[#71717A]" />
-                }
+                startContent={<MailRegular className="w-5 h-5 text-[#71717A]" />}
                 classNames={{
-                  label: "text-base font-medium text-black",
-                  input: "text-base",
-                  inputWrapper: "border-2 border-[#E4E4E7] hover:border-[#006FEE] focus-within:border-[#006FEE]",
+                  label: 'text-base font-medium text-black',
+                  input: 'text-base',
+                  inputWrapper:
+                    'border-2 border-[#E4E4E7] hover:border-[#006FEE] focus-within:border-[#006FEE]',
                 }}
                 radius="lg"
                 size="lg"
@@ -100,13 +122,12 @@ export default function LoginPage() {
                 labelPlacement="outside"
                 isRequired
                 isDisabled={isLoading}
-                startContent={
-                  <LockClosedRegular className="w-5 h-5 text-[#71717A]" />
-                }
+                startContent={<LockClosedRegular className="w-5 h-5 text-[#71717A]" />}
                 classNames={{
-                  label: "text-base font-medium text-black",
-                  input: "text-base",
-                  inputWrapper: "border-2 border-[#E4E4E7] hover:border-[#006FEE] focus-within:border-[#006FEE]",
+                  label: 'text-base font-medium text-black',
+                  input: 'text-base',
+                  inputWrapper:
+                    'border-2 border-[#E4E4E7] hover:border-[#006FEE] focus-within:border-[#006FEE]',
                 }}
                 radius="lg"
                 size="lg"
@@ -114,11 +135,7 @@ export default function LoginPage() {
 
               {/* Forgot Password Link */}
               <div className="flex justify-end">
-                <Link
-                  href="#"
-                  className="text-sm text-[#006FEE] hover:underline"
-                  size="sm"
-                >
+                <Link href="#" className="text-sm text-[#006FEE] hover:underline" size="sm">
                   Lupa password?
                 </Link>
               </div>
@@ -132,14 +149,10 @@ export default function LoginPage() {
                 className="font-semibold text-base shadow-lg"
                 isLoading={isLoading}
                 isDisabled={isLoading}
-                spinner={
-                  <Spinner size="sm" color="current" />
-                }
-                endContent={
-                  !isLoading && <ArrowCircleRightRegular className="w-5 h-5" />
-                }
+                spinner={<Spinner size="sm" color="current" />}
+                endContent={!isLoading && <ArrowCircleRightRegular className="w-5 h-5" />}
               >
-                {isLoading ? "Memproses..." : "Masuk"}
+                {isLoading ? 'Memproses...' : 'Masuk'}
               </Button>
 
               {/* Divider with text */}
@@ -149,10 +162,23 @@ export default function LoginPage() {
                 <Divider className="flex-1 bg-[rgba(17,17,17,0.15)]" />
               </div>
 
+              {/* Google Sign-In */}
+              <Button
+                type="button"
+                variant="bordered"
+                radius="lg"
+                size="lg"
+                className="font-semibold text-base"
+                isDisabled={isLoading}
+                onPress={handleGoogleLogin}
+              >
+                Masuk dengan Google
+              </Button>
+
               {/* Register Link */}
               <div className="text-center">
                 <span className="text-base text-[#71717A]">
-                  Belum punya akun?{" "}
+                  Belum punya akun?{' '}
                   <Link
                     href="/register"
                     className="text-base text-[#7828C8] font-semibold hover:underline"
@@ -168,11 +194,11 @@ export default function LoginPage() {
         {/* Footer Text */}
         <div className="text-center mt-6">
           <p className="text-sm text-[#71717A]">
-            Dengan masuk, Anda menyetujui{" "}
+            Dengan masuk, Anda menyetujui{' '}
             <Link href="#" className="text-sm text-[#006FEE] hover:underline">
               Syarat & Ketentuan
-            </Link>{" "}
-            dan{" "}
+            </Link>{' '}
+            dan{' '}
             <Link href="#" className="text-sm text-[#006FEE] hover:underline">
               Kebijakan Privasi
             </Link>

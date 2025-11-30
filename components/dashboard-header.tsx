@@ -53,6 +53,7 @@ export const DashboardHeader = ({
   const [isNamePickerOpen, setIsNamePickerOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   // Prefill dari localStorage (client-only) agar cepat tampil tanpa menunggu fetch
   useEffect(() => {
@@ -122,15 +123,15 @@ export const DashboardHeader = ({
         // Ambil data pengguna (nama + exp total)
         const { data: expRow, error: expError } = await supabase
           .from('data_penggunas')
-          .select('exp, nama_lengkap, avatar')
+          .select('exp, username, avatar')
           .eq('id_pengguna', pengguna.id)
           .single();
         if (expError || !expRow) return;
 
-        setUserName(expRow?.nama_lengkap || '');
+        setUserName(expRow?.username || '');
         setExp(expRow?.exp || 0);
         try {
-          localStorage.setItem('aizone.userName', expRow?.nama_lengkap || '');
+          localStorage.setItem('aizone.userName', expRow?.username || '');
           localStorage.setItem('aizone.exp', String(expRow?.exp || 0));
         } catch {}
         const av =
@@ -195,7 +196,7 @@ export const DashboardHeader = ({
         (payload) => {
           try {
             const newExp = (payload as any)?.new?.exp;
-            const newName = (payload as any)?.new?.nama_lengkap;
+            const newName = (payload as any)?.new?.username;
             const newAvatar = (payload as any)?.new?.avatar;
             if (typeof newExp === 'number') setExp(newExp);
             if (typeof newName === 'string') setUserName(newName);
@@ -536,12 +537,16 @@ export const DashboardHeader = ({
                   <div className="flex flex-col gap-2">
                     <Input
                       value={nameDraft}
-                      onValueChange={setNameDraft}
+                      onValueChange={(v) => {
+                        setNameDraft(v);
+                        setNameError(null);
+                      }}
                       radius="lg"
                       size="md"
                       classNames={{ inputWrapper: 'bg-[#F4F4F5]' }}
                     />
                     <span className="text-xs text-[#71717A]">Gunakan 4–10 karakter</span>
+                    {nameError ? <span className="text-xs text-[#F31260]">{nameError}</span> : null}
                   </div>
                   <div>
                     <Button
@@ -572,9 +577,19 @@ export const DashboardHeader = ({
                             }
                           }
                           if (idFor) {
+                            const { data: conflicts } = await supabase
+                              .from('data_penggunas')
+                              .select('id_pengguna')
+                              .eq('username', val)
+                              .neq('id_pengguna', idFor as number)
+                              .limit(1);
+                            if (Array.isArray(conflicts) && conflicts.length > 0) {
+                              setNameError('Username sudah digunakan');
+                              return;
+                            }
                             await supabase
                               .from('data_penggunas')
-                              .update({ nama_lengkap: val })
+                              .update({ username: val })
                               .eq('id_pengguna', idFor);
                           }
                           setUserName(val);

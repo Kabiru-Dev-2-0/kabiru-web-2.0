@@ -1,17 +1,17 @@
-"use client";
-import { Card, CardBody } from "@heroui/card";
-import { Button } from "@heroui/button";
-import { Podium } from "@/components/podium";
-import { RankingCard } from "@/components/ranking-card";
-import { MotivationalTooltip } from "@/components/motivational-tooltip";
-import { StarColor, PawColor } from "@fluentui/react-icons";
-import { Progress } from "@heroui/progress";
-import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+'use client';
+import { Card, CardBody } from '@heroui/card';
+import { Button } from '@heroui/button';
+import { Podium } from '@/components/podium';
+import { RankingCard } from '@/components/ranking-card';
+import { MotivationalTooltip } from '@/components/motivational-tooltip';
+import { StarColor, PawColor } from '@fluentui/react-icons';
+import { Progress } from '@heroui/progress';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 type LeaderboardRow = {
   id_pengguna: number;
-  nama_lengkap: string;
+  username: string;
   avatar: string | null;
   exp: number;
   bronze: number;
@@ -36,14 +36,14 @@ export default function PeringkatPage() {
         } = await supabase.auth.getUser();
         if (user) {
           const { data: pengguna } = await supabase
-            .from("penggunas")
-            .select("id")
-            .eq("uuid", user.id)
+            .from('penggunas')
+            .select('id')
+            .eq('uuid', user.id)
             .single();
           if (pengguna?.id) setCurrentUserId(pengguna.id);
         }
 
-        const { data } = await supabase.rpc("get_leaderboard", {
+        const { data } = await supabase.rpc('get_leaderboard', {
           p_days_active: 30,
           p_bronze_weight: 1,
           p_silver_weight: 3,
@@ -73,15 +73,27 @@ export default function PeringkatPage() {
           {/* Podium */}
           {top1 && top2 && top3 ? (
             <Podium
-              secondPlace={{ name: top2.nama_lengkap || "Pengguna", exp: top2.score }}
-              firstPlace={{ name: top1.nama_lengkap || "Pengguna", exp: top1.score }}
-              thirdPlace={{ name: top3.nama_lengkap || "Pengguna", exp: top3.score }}
+              secondPlace={{
+                name: top2.username || 'Pengguna',
+                exp: top2.score,
+                avatarSrc: top2.avatar || undefined,
+              }}
+              firstPlace={{
+                name: top1.username || 'Pengguna',
+                exp: top1.score,
+                avatarSrc: top1.avatar || undefined,
+              }}
+              thirdPlace={{
+                name: top3.username || 'Pengguna',
+                exp: top3.score,
+                avatarSrc: top3.avatar || undefined,
+              }}
             />
           ) : (
             <Podium
-              secondPlace={{ name: "...", exp: 0 }}
-              firstPlace={{ name: "...", exp: 0 }}
-              thirdPlace={{ name: "...", exp: 0 }}
+              secondPlace={{ name: '...', exp: 0 }}
+              firstPlace={{ name: '...', exp: 0 }}
+              thirdPlace={{ name: '...', exp: 0 }}
             />
           )}
 
@@ -91,22 +103,26 @@ export default function PeringkatPage() {
               <RankingCard
                 key={r.id_pengguna}
                 rank={r.rank}
-                name={r.nama_lengkap || "Pengguna"}
+                name={r.username || 'Pengguna'}
                 exp={r.score}
-                trend={"up"}
-                label={"POIN"}
+                trend={'up'}
+                label={'POIN'}
                 isCurrentUser={currentUserId === r.id_pengguna}
+                avatarSrc={r.avatar || undefined}
               />
             ))}
 
             {currentUserId && rows.some((r) => r.id_pengguna === currentUserId) ? (
               <RankingCard
                 rank={rows.find((x) => x.id_pengguna === currentUserId)!.rank}
-                name={(rows.find((x) => x.id_pengguna === currentUserId)!.nama_lengkap || "Kamu") + " (You)"}
+                name={
+                  (rows.find((x) => x.id_pengguna === currentUserId)!.username || 'Kamu') + ' (You)'
+                }
                 exp={rows.find((x) => x.id_pengguna === currentUserId)!.score}
-                trend={"up"}
-                label={"POIN"}
+                trend={'up'}
+                label={'POIN'}
                 isCurrentUser
+                avatarSrc={rows.find((x) => x.id_pengguna === currentUserId)!.avatar || undefined}
               />
             ) : null}
           </div>
@@ -121,9 +137,9 @@ export default function PeringkatPage() {
               <div
                 className="absolute top-4 -right-3 w-0 h-0"
                 style={{
-                  borderTop: "12px solid transparent",
-                  borderBottom: "12px solid transparent",
-                  borderLeft: "16px solid #006FEE",
+                  borderTop: '12px solid transparent',
+                  borderBottom: '12px solid transparent',
+                  borderLeft: '16px solid #006FEE',
                 }}
               />
               <p className="text-lg leading-7 text-white">
@@ -135,21 +151,16 @@ export default function PeringkatPage() {
                 src="/imageAssets/leaderboard-agent.png"
                 alt="leaderboard"
                 className="mt-[-24px] mb-2 max-w-[180px] w-auto h-[250px]"
-                style={{ objectFit: "contain" }}
+                style={{ objectFit: 'contain' }}
               />
             </div>
           </div>
 
           {/* Misi Harian Widget */}
-          <Card
-            className="border-2 border-[#E4E4E7] shadow-sm bg-white"
-            radius="lg"
-          >
+          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
             <CardBody className="p-[14px_18px_20px] gap-5">
               <div className="flex items-center justify-center gap-2.5">
-                <span className="text-2xl font-semibold text-[#F31260]">
-                  Misi Harian
-                </span>
+                <span className="text-2xl font-semibold text-[#F31260]">Misi Harian</span>
                 <Button
                   variant="light"
                   color="primary"
@@ -171,9 +182,9 @@ export default function PeringkatPage() {
                   showValueLabel
                   valueLabel="84%"
                   classNames={{
-                    base: "flex-1",
-                    label: "text-base font-medium text-black",
-                    value: "text-base font-normal text-black",
+                    base: 'flex-1',
+                    label: 'text-base font-medium text-black',
+                    value: 'text-base font-normal text-black',
                   }}
                 />
               </div>
@@ -181,15 +192,10 @@ export default function PeringkatPage() {
           </Card>
 
           {/* Perjalananku Widget */}
-          <Card
-            className="border-2 border-[#E4E4E7] shadow-sm bg-white"
-            radius="lg"
-          >
+          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
             <CardBody className="p-[14px_18px_20px] gap-5">
               <div className="flex items-center justify-center gap-2.5">
-                <span className="text-2xl font-semibold text-[#17C964]">
-                  Perjalananku
-                </span>
+                <span className="text-2xl font-semibold text-[#17C964]">Perjalananku</span>
                 <Button
                   variant="light"
                   color="primary"
@@ -210,8 +216,8 @@ export default function PeringkatPage() {
                   radius="full"
                   label="Pemula"
                   classNames={{
-                    base: "flex-1",
-                    label: "text-base font-medium text-black",
+                    base: 'flex-1',
+                    label: 'text-base font-medium text-black',
                   }}
                 />
               </div>

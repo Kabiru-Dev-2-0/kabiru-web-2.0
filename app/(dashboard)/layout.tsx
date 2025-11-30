@@ -1,6 +1,7 @@
 import { Sidebar } from '@/components/sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
 
 export default async function DashboardShellLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -27,13 +28,14 @@ export default async function DashboardShellLayout({ children }: { children: Rea
 
         const { data: expRow } = await supabase
           .from('data_penggunas')
-          .select('exp')
+          .select('exp, is_pengguna_baru')
           .eq('id_pengguna', pengguna.id)
-          .single();
+          .maybeSingle();
 
-        if (expRow) {
-          initialExp = (expRow as any)?.exp ?? 0;
+        if (!expRow || (expRow as any)?.is_pengguna_baru === true) {
+          redirect('/perkenalan');
         }
+        initialExp = (expRow as any)?.exp ?? 0;
       }
     }
   } catch {

@@ -49,10 +49,43 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/error') &&
     request.nextUrl.pathname !== '/'
   ) {
-    // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
+  }
+
+  // Redirect onboarding: jika pengguna baru atau belum ada data_penggunas
+  if (user && !request.nextUrl.pathname.startsWith('/perkenalan')) {
+    try {
+      const { data: pengguna } = await supabase
+        .from('penggunas')
+        .select('id')
+        .eq('uuid', user.id)
+        .single();
+
+      const penggunaId = pengguna?.id as number | undefined;
+      if (penggunaId) {
+        const { data: dataRow } = await supabase
+          .from('data_penggunas')
+          .select('is_pengguna_baru')
+          .eq('id_pengguna', penggunaId)
+          .maybeSingle();
+
+        const isBaru = dataRow?.is_pengguna_baru === true;
+        const belumAda = !dataRow; // maybeSingle: null jika tidak ada baris
+
+        if (isBaru || belumAda) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/perkenalan';
+          return NextResponse.redirect(url);
+        }
+      } else {
+        // Tidak menemukan id_pengguna, arahkan untuk lengkapi perkenalan
+        const url = request.nextUrl.clone();
+        url.pathname = '/perkenalan';
+        return NextResponse.redirect(url);
+      }
+    } catch {}
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

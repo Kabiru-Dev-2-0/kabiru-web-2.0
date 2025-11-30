@@ -12,6 +12,7 @@ interface RankingCardProps {
   trend: "up" | "down";
   isCurrentUser?: boolean;
   label?: string;
+  avatarSrc?: string;
 }
 
 export const RankingCard = ({
@@ -21,6 +22,7 @@ export const RankingCard = ({
   trend,
   isCurrentUser = false,
   label = 'EXP',
+  avatarSrc,
 }: RankingCardProps) => {
   // Style for isCurrentUser
   const isCurrentUserCardClass = isCurrentUser
@@ -101,7 +103,7 @@ export const RankingCard = ({
         <div className="flex-1 flex items-center justify-between gap-[32px] p-[8px_24px]">
           <div className="flex items-center gap-[24px]">
             <Avatar
-              src="/api/placeholder/40/40"
+              src={avatarSrc || '/imageAssets/avatar/default.png'}
               size="md"
               radius="full"
               classNames={{

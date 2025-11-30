@@ -10,6 +10,7 @@ interface PodiumCardProps {
   exp: number;
   color: "success" | "warning" | "danger";
   height: "tall" | "medium" | "short";
+  avatarSrc?: string;
 }
 
 const trophyImages: Record<number, string> = {
@@ -18,7 +19,7 @@ const trophyImages: Record<number, string> = {
   3: "/imageAssets/rank-3.png",
 };
 
-const PodiumCard = ({ rank, name, exp, color, height }: PodiumCardProps) => {
+const PodiumCard = ({ rank, name, exp, color, height, avatarSrc }: PodiumCardProps) => {
   const colorClasses = {
     success: "bg-[#17C964] shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05),0px_10px_15px_-3px_rgba(23,201,100,0.4)]",
     warning: "bg-[#F5A524] shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05),0px_10px_15px_-3px_rgba(245,165,36,0.4)]",
@@ -80,7 +81,7 @@ const PodiumCard = ({ rank, name, exp, color, height }: PodiumCardProps) => {
         )}
         {/* Avatar */}
         <Avatar
-          src="/api/placeholder/56/56"
+          src={avatarSrc || "/imageAssets/avatar/default.png"}
           size="lg"
           radius="full"
           classNames={{
@@ -110,9 +111,9 @@ const PodiumCard = ({ rank, name, exp, color, height }: PodiumCardProps) => {
 };
 
 interface PodiumProps {
-  secondPlace: { name: string; exp: number };
-  firstPlace: { name: string; exp: number };
-  thirdPlace: { name: string; exp: number };
+  secondPlace: { name: string; exp: number; avatarSrc?: string };
+  firstPlace: { name: string; exp: number; avatarSrc?: string };
+  thirdPlace: { name: string; exp: number; avatarSrc?: string };
 }
 
 export const Podium = ({ firstPlace, secondPlace, thirdPlace }: PodiumProps) => {
@@ -151,6 +152,7 @@ export const Podium = ({ firstPlace, secondPlace, thirdPlace }: PodiumProps) => 
           exp={p.exp}
           color={p.color}
           height={p.height}
+          avatarSrc={p.avatarSrc}
         />
       ))}
     </div>

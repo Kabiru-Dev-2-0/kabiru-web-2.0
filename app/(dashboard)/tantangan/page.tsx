@@ -13,6 +13,7 @@ import {
 } from '@fluentui/react-icons';
 import { Progress } from '@heroui/progress';
 import { createClient } from '@/utils/supabase/client';
+import { PeringkatWidget } from '@/components/peringkat-widget';
 
 type ChallengeRow = {
   tipe: 'login_harian' | 'quiz_beruntun' | 'modul_selesai';
@@ -37,7 +38,14 @@ function getTierInfo(row?: ChallengeRow) {
   else tier = 'bronze';
   const total = tier === 'bronze' ? b : tier === 'silver' ? s : g;
   const progress = tier === 'completed' ? total : Math.min(row.current_value, total);
-  const tierLabel = tier === 'completed' ? 'Gold (Selesai)' : tier === 'bronze' ? 'Bronze' : tier === 'silver' ? 'Silver' : 'Gold';
+  const tierLabel =
+    tier === 'completed'
+      ? 'Gold (Selesai)'
+      : tier === 'bronze'
+        ? 'Bronze'
+        : tier === 'silver'
+          ? 'Silver'
+          : 'Gold';
   return { tierLabel, progress, total };
 }
 
@@ -61,7 +69,9 @@ export default function TantanganPage() {
 
         const { data } = await supabase
           .from('v_tantangan_progress')
-          .select('tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold')
+          .select(
+            'tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold'
+          )
           .eq('id_pengguna', penggunaId);
 
         const rows = Array.isArray(data) ? (data as ChallengeRow[]) : [];
@@ -111,76 +121,18 @@ export default function TantanganPage() {
           </div>
 
           {/* Motivational Image with Tooltip */}
-          <div className="relative w-[270px] h-[250px]">
+          {/* <div className="relative w-[270px] h-[250px]">
             <MotivationalTooltip
               message="Ayo selesaikan misi&#10;dan dapatkan hadiahmu!"
-              imageUrl="/api/placeholder/187/246"
+              imageUrl="/imageAssets/motivational.png"
               position="left"
             />
-          </div>
+          </div> */}
         </div>
 
         {/* Right Column - Widgets */}
         <div className="w-[300px] flex flex-col gap-6">
-          {/* Peringkat Widget */}
-          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
-            <CardBody className="p-[14px_18px_20px] gap-5">
-              <div className="flex items-center justify-center gap-2.5">
-                <span className="text-2xl font-semibold text-[#7828C8]">Peringkat</span>
-                <Button
-                  variant="light"
-                  color="primary"
-                  size="sm"
-                  radius="full"
-                  className="min-w-0 h-8"
-                >
-                  Lihat Semua
-                </Button>
-              </div>
-              <div className="flex items-center justify-center gap-2.5">
-                <TrophyColor className="w-[42px] h-[42px]" />
-                <div className="flex flex-col justify-center">
-                  <span className="text-base font-medium text-black">
-                    Saat ini kamu di peringkat
-                  </span>
-                  <span className="text-base font-semibold text-[#7828C8]">#17</span>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Perjalananku Widget */}
-          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
-            <CardBody className="p-[14px_18px_20px] gap-5">
-              <div className="flex items-center justify-center gap-2.5">
-                <span className="text-2xl font-semibold text-[#17C964]">Perjalananku</span>
-                <Button
-                  variant="light"
-                  color="primary"
-                  size="sm"
-                  radius="full"
-                  isIconOnly
-                  className="min-w-0 w-8 h-8"
-                >
-                  →
-                </Button>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <PawColor className="w-[42px] h-[42px]" />
-                <Progress
-                  value={30}
-                  color="warning"
-                  size="md"
-                  radius="full"
-                  label="Pemula"
-                  classNames={{
-                    base: 'flex-1',
-                    label: 'text-base font-medium text-black',
-                  }}
-                />
-              </div>
-            </CardBody>
-          </Card>
+          <PeringkatWidget displayedData={['peringkat', 'perjalanan']} />
         </div>
       </div>
     </div>

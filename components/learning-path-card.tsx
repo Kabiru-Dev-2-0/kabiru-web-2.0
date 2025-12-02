@@ -60,10 +60,13 @@ export const LearningPathCard = ({
             scroll={false}
             prefetch
             onClick={onClick}
-            color="primary"
-            radius="full"
-            size="sm"
-            className="px-3 h-8 w-full"
+            color="default"
+            radius="sm"
+            size="md"
+            className="bg-[#3674B5] text-[#ffffff] font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#2d5d94] transition-colors w-full"
+            style={{
+              boxShadow: '0px 3px 0px 0px #205994',
+            }}
           >
             {buttonText}
           </Button>

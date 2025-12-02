@@ -2,7 +2,7 @@
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
-import { Spinner } from '@heroui/spinner';
+import { Skeleton } from '@heroui/skeleton';
 import { MotivationalTooltip } from '@/components/motivational-tooltip';
 import { ArrowLeftRegular, CheckmarkCircleColor, LockClosedColor } from '@fluentui/react-icons';
 import { PeringkatWidget } from '@/components/peringkat-widget';
@@ -22,9 +22,10 @@ export default function LatihanPage() {
   const [pelajarans, setPelajarans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasCache, setHasCache] = useState<boolean>(false);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    setLoading(!hasCache);
     const supabase = createClient();
 
     // Get current user
@@ -135,7 +136,49 @@ export default function LatihanPage() {
     setModuls(modulData);
     setPelajarans(pelajaransWithProgress);
     setError(null);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`aizone.modul.${modulId}.info`, JSON.stringify(modulData || []));
+        localStorage.setItem(
+          `aizone.pelajarans.${modulId}`,
+          JSON.stringify(pelajaransWithProgress || [])
+        );
+      }
+    } catch {}
     setLoading(false);
+  }, [modulId]);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const modStr = localStorage.getItem(`aizone.modul.${modulId}.info`);
+        const pelStr = localStorage.getItem(`aizone.pelajarans.${modulId}`);
+        let used = false;
+        if (modStr) {
+          try {
+            const parsed = JSON.parse(modStr);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setModuls(parsed);
+              used = true;
+            }
+          } catch {}
+        }
+        if (pelStr) {
+          try {
+            const parsed = JSON.parse(pelStr);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setPelajarans(parsed);
+              used = true;
+            }
+          } catch {}
+        }
+        if (used) {
+          setHasCache(true);
+          setError(null);
+          setLoading(false);
+        }
+      }
+    } catch {}
   }, [modulId]);
 
   useEffect(() => {
@@ -144,13 +187,50 @@ export default function LatihanPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-6">
-        <Card className="p-8 bg-white shadow-lg" radius="lg">
-          <CardBody className="flex flex-col items-center gap-4">
-            <Spinner size="lg" color="primary" />
-            <p className="text-lg font-semibold text-black">Memuat pelajaran...</p>
-          </CardBody>
-        </Card>
+      <div className="flex gap-8 p-6">
+        <div className="flex-1 flex flex-col gap-8">
+          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white w-full" radius="lg">
+            <CardBody className="p-[14px_32px] gap-5">
+              <div className="flex items-center gap-6">
+                <div className="flex-1 flex items-center gap-1">
+                  <div className="flex-1 flex flex-col gap-2">
+                    <Skeleton className="w-24 h-4 rounded-md" />
+                    <Skeleton className="w-64 h-8 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <div className="flex flex-col gap-5">
+            {[1, 2, 3].map((k) => (
+              <Card key={k} className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
+                <CardBody className="p-5 gap-5 flex flex-row overflow-hidden justify-between">
+                  <div className="flex flex-col gap-2 w-[60%] justify-between">
+                    <div className="flex flex-col gap-2">
+                      <Skeleton className="w-28 h-4 rounded-md" />
+                      <Skeleton className="w-64 h-6 rounded-md" />
+                      <div className="flex flex-row gap-2 items-center">
+                        <Skeleton className="flex-1 h-4 rounded-md" />
+                        <Skeleton className="w-16 h-5 rounded-md" />
+                      </div>
+                    </div>
+                    <Skeleton className="w-40 h-10 rounded-md" />
+                  </div>
+                  <div className="w-fit h-fit pointer-events-none">
+                    <div className="relative w-[180px] h-[130px] px-2">
+                      <Skeleton className="w-full h-full rounded-xl" />
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div className="w-[300px] flex flex-col gap-6">
+          <PeringkatWidget />
+        </div>
       </div>
     );
   }
@@ -180,7 +260,7 @@ export default function LatihanPage() {
           <CardBody className="p-[14px_32px] gap-5">
             <div className="flex items-center gap-6">
               {/* Back Button */}
-              <Button
+              {/* <Button
                 as={Link}
                 href={`/belajar`}
                 isIconOnly
@@ -190,7 +270,7 @@ export default function LatihanPage() {
                 className="min-w-0 w-8 h-8"
               >
                 <ArrowLeftRegular className="w-8 h-8 text-[#3674B5]" />
-              </Button>
+              </Button> */}
 
               {/* Title and Progress */}
               <div className="flex-1 flex items-center gap-1">
@@ -264,11 +344,13 @@ export default function LatihanPage() {
                   {/* Action Button (optional adjust) */}
                   {bagian.status === 'done' && (
                     <Button
-                      variant="ghost"
-                      color="primary"
-                      size="md"
+                      color="default"
                       radius="sm"
-                      className="border-2 border-[#3674B5] py-4 w-fit drop-shadow-lg"
+                      size="md"
+                      className="bg-[#ffffff] text-[#2d5d94] border-1 font-semibold text-md px-4 py-2.5 rounded-xl hover:bg-[#ffffff] transition-colors w-fit"
+                      style={{
+                        boxShadow: '0px 3px 0px 0px #2d5d94',
+                      }}
                       as={Link}
                       href={`/belajar/${modulId}/${bagian.bagian}`}
                     >
@@ -277,11 +359,13 @@ export default function LatihanPage() {
                   )}
                   {bagian.status === 'progress' && (
                     <Button
-                      variant="ghost"
-                      color="primary"
-                      size="md"
+                      color="default"
                       radius="sm"
-                      className="border-2 border-[#3674B5] py-4 w-fit drop-shadow-lg"
+                      size="md"
+                      className="bg-[#ffffff] text-[#2d5d94] border-1 font-semibold text-md px-4 py-2.5 rounded-xl hover:bg-[#ffffff] transition-colors w-fit"
+                      style={{
+                        boxShadow: '0px 3px 0px 0px #2d5d94',
+                      }}
                       as={Link}
                       href={`/belajar/${modulId}/${bagian.bagian}`}
                     >
@@ -291,10 +375,17 @@ export default function LatihanPage() {
                   {bagian.status === 'locked' && (
                     <Button
                       variant="faded"
-                      color="default"
-                      size="md"
+                      // color="default"
+                      // size="md"
+                      // radius="sm"
+                      // className="border-2 border-[#D4D4D8] py-4 w-fit drop-shadow-lg"
+                      // color="default"
                       radius="sm"
-                      className="border-2 border-[#D4D4D8] py-4 w-fit drop-shadow-lg"
+                      size="md"
+                      className="bg-[#a5a5a5] text-[#313131] border-1 border-[#313131] font-semibold text-md px-4 py-2.5 rounded-xl hover:bg-[#ffffff] transition-colors w-fit"
+                      style={{
+                        boxShadow: '0px 3px 0px 0px #313131',
+                      }}
                       isDisabled
                     >
                       Lanjutkan Belajar

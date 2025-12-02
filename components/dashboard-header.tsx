@@ -9,11 +9,13 @@ import {
   DismissRegular,
   PawColor,
   EditRegular,
+  Paw16Color,
 } from '@fluentui/react-icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
+import { Skeleton } from '@heroui/skeleton';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { Certificate16Color } from '@fluentui/react-icons';
@@ -54,6 +56,22 @@ export const DashboardHeader = ({
   const [nameDraft, setNameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [journeyLabelCached, setJourneyLabelCached] = useState<string | null>(null);
+  const [rankStat, setRankStat] = useState<number | null>(null);
+  const [modulSelesai, setModulSelesai] = useState<number>(0);
+  const [lessonsSelesai, setLessonsSelesai] = useState<number>(0);
+
+  const journeyLabel = useMemo(() => {
+    if (exp < 1000) return 'Pemula';
+    if (exp >= 1000 && exp < 3000) return 'Mahir';
+    return 'Ahli';
+  }, [exp]);
+
+  const expTier = useMemo(() => {
+    if (exp < 1000) return { label: 'Pemula (0–1000)', current: exp, max: 1000 };
+    if (exp >= 1000 && exp < 3000) return { label: 'Mahir (1000–3000)', current: exp, max: 3000 };
+    return { label: 'Ahli (≥3000)', current: exp, max: 3000 };
+  }, [exp]);
 
   // Prefill dari localStorage (client-only) agar cepat tampil tanpa menunggu fetch
   useEffect(() => {
@@ -62,6 +80,8 @@ export const DashboardHeader = ({
       const lsExpStr = typeof window !== 'undefined' ? localStorage.getItem('aizone.exp') : null;
       const lsTrophy = typeof window !== 'undefined' ? localStorage.getItem('aizone.trophy') : null;
       const lsAvatar = typeof window !== 'undefined' ? localStorage.getItem('aizone.avatar') : null;
+      const lsJL =
+        typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyLabel') : null;
       if (lsName || lsExpStr) {
         if (lsName) setUserName(lsName);
         if (lsExpStr) {
@@ -81,6 +101,7 @@ export const DashboardHeader = ({
         setIsLoading(false);
       }
       if (lsAvatar) setAvatarUrl(lsAvatar);
+      if (lsJL) setJourneyLabelCached(lsJL);
     } catch {}
   }, []);
 
@@ -151,6 +172,46 @@ export const DashboardHeader = ({
     loadExp();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('aizone.journeyLabel', journeyLabel);
+    } catch {}
+  }, [journeyLabel]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const idFor = penggunaId ?? resolvedPenggunaId;
+    if (!idFor) return;
+    (async () => {
+      try {
+        const { data: lb } = await supabase.rpc('get_leaderboard', {
+          p_days_active: 30,
+          p_bronze_weight: 1,
+          p_silver_weight: 3,
+          p_gold_weight: 6,
+        });
+        const me = (lb || []).find((r: any) => r.id_pengguna === idFor);
+        if (me?.rank) setRankStat(Number(me.rank));
+
+        const { data: vprog } = await supabase
+          .from('v_tantangan_progress')
+          .select('tipe, best_value')
+          .eq('id_pengguna', idFor);
+        const modulRow = (vprog || []).find((r: any) => r.tipe === 'modul_selesai');
+        if (modulRow?.best_value != null) setModulSelesai(Number(modulRow.best_value));
+
+        const { data: hasil } = await supabase
+          .from('hasil_latihans')
+          .select('id_pelajaran, nomor_latihan')
+          .eq('id_pengguna', idFor);
+        const uniq = new Set<string>(
+          (hasil || []).map((h: any) => `${h.id_pelajaran}-${h.nomor_latihan}`)
+        );
+        setLessonsSelesai(uniq.size);
+      } catch {}
+    })();
+  }, [penggunaId, resolvedPenggunaId]);
 
   async function fetchTrophiesByUser(idFor: number) {
     const supabase = createClient();
@@ -280,32 +341,31 @@ export const DashboardHeader = ({
               className="w-10 h-10 md:w-10 md:h-10 object-contain mr-1"
               style={{ display: 'inline-block', verticalAlign: 'middle' }}
             />
-            <span className="text-2xl font-[800] text-[#006FEE]">{isLoading ? '...' : exp}</span>
+            <Skeleton isLoaded={!isLoading} className="rounded-md w-14">
+              <span className="text-2xl font-[800] text-[#006FEE]">{exp}</span>
+            </Skeleton>
           </div>
 
           {/* Trophy */}
           <div className="flex items-center gap-3">
-            {mounted ? (
-              <>
-                <div className="flex items-center gap-1">
-                  <TrophyColor className="w-7 h-7 text-[#CD7F32]" />
-                  <span className="text-xl font-[800] text-[#CD7F32]">{trophies.bronze}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <TrophyColor className="w-7 h-7 text-[#C0C0C0]" />
-                  <span className="text-xl font-[800] text-[#C0C0C0]">{trophies.silver}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <TrophyColor className="w-7 h-7 text-[#FFD700]" />
-                  <span className="text-xl font-[800] text-[#FFD700]">{trophies.gold}</span>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center gap-1">
-                <TrophyColor className="w-7 h-7 text-[#A1A1AA]" />
-                <span className="text-xl font-[800] text-[#A1A1AA]">...</span>
-              </div>
-            )}
+            <div className="flex items-center gap-1">
+              <TrophyColor className="w-7 h-7 text-[#CD7F32]" />
+              <Skeleton isLoaded={mounted} className="rounded-md w-8 h-5">
+                <span className="text-xl font-[800] text-[#CD7F32]">{trophies.bronze}</span>
+              </Skeleton>
+            </div>
+            <div className="flex items-center gap-1">
+              <TrophyColor className="w-7 h-7 text-[#C0C0C0]" />
+              <Skeleton isLoaded={mounted} className="rounded-md w-8 h-5">
+                <span className="text-xl font-[800] text-[#C0C0C0]">{trophies.silver}</span>
+              </Skeleton>
+            </div>
+            <div className="flex items-center gap-1">
+              <TrophyColor className="w-7 h-7 text-[#FFD700]" />
+              <Skeleton isLoaded={mounted} className="rounded-md w-8 h-5">
+                <span className="text-xl font-[800] text-[#FFD700]">{trophies.gold}</span>
+              </Skeleton>
+            </div>
           </div>
 
           {/* Badge */}
@@ -316,9 +376,11 @@ export const DashboardHeader = ({
               className="w-10 h-10 md:w-7 md:h-7 object-contain mr-1"
               style={{ display: 'inline-block', verticalAlign: 'middle' }}
             />
-            <span className="text-2xl font-[800] text-[#7828C8]">
-              {trophies.bronze + trophies.silver + trophies.gold}
-            </span>
+            <Skeleton isLoaded={mounted} className="rounded-md w-10 ">
+              <span className="text-2xl font-[800] text-[#7828C8]">
+                {trophies.bronze + trophies.silver + trophies.gold}
+              </span>
+            </Skeleton>
           </div>
         </div>
 
@@ -333,24 +395,27 @@ export const DashboardHeader = ({
           aria-label="Lihat profil"
         >
           <div className="flex flex-col items-end justify-center gap-0 px-0 py-[1px]">
-            <span className="text-lg leading-7 text-[#11181C]">
-              {isLoading ? '...' : userName || 'Pengguna'}
-            </span>
+            <Skeleton isLoaded={!isLoading} className="rounded-md">
+              <span className="text-lg leading-7 text-[#11181C]">{userName || 'Pengguna'}</span>
+            </Skeleton>
             <div className="flex items-center justify-center gap-1">
-              <div className="w-[18px] h-[18px]">
-                {/* Paw Icon - using emoji as placeholder */}
-                🐾
-              </div>
-              <span className="text-sm leading-5 text-[#F5A524]">Pemula</span>
+              <Paw16Color className="w-5 h-5 text-[#F5A524]" />
+              <Skeleton isLoaded={!isLoading} className="rounded-md">
+                <span className="text-sm leading-5 text-[#F5A524]">
+                  {journeyLabelCached ?? journeyLabel}
+                </span>
+              </Skeleton>
             </div>
           </div>
-          <Avatar
-            isBordered={false}
-            radius="full"
-            size="md"
-            src={avatarUrl}
-            className="w-10 h-10"
-          />
+          <Skeleton isLoaded={!isLoading} className="rounded-full w-10 h-10">
+            <Avatar
+              isBordered={false}
+              radius="full"
+              size="md"
+              src={avatarUrl}
+              className="w-10 h-10"
+            />
+          </Skeleton>
         </div>
       </div>
       <AnimatePresence>
@@ -423,15 +488,15 @@ export const DashboardHeader = ({
                     </div>
                     <div className="flex items-center gap-1">
                       <PawColor className="w-5 h-5 text-[#F5A524]" />
-                      <span className="text-sm font-medium text-[#F5A524]">Pemula</span>
+                      <span className="text-sm font-medium text-[#F5A524]">{journeyLabel}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-[#71717A]">{`${Math.min(exp % 2000, 2000)}/${2000} EXP`}</span>
+                    <span className="text-sm font-medium text-[#71717A]">{`${expTier.current}/${expTier.max} EXP • ${expTier.label}`}</span>
                     <Progress
                       aria-label="EXP Progress"
-                      value={Math.min(exp % 2000, 2000)}
-                      maxValue={2000}
+                      value={expTier.current}
+                      maxValue={expTier.max}
                       color="warning"
                       size="md"
                       radius="full"
@@ -446,7 +511,7 @@ export const DashboardHeader = ({
                         <CardBody className="p-3 gap-2 items-center">
                           <TrophyColor className="w-6 h-6 text-[#F5A524]" />
                           <span className="text-sm font-semibold text-black">Peringkat</span>
-                          <span className="text-lg font-bold text-[#7828C8]">17</span>
+                          <span className="text-lg font-bold text-[#7828C8]">{rankStat ?? 0}</span>
                         </CardBody>
                       </Card>
                       <Card radius="lg" className="border-2 border-[#E4E4E7]">
@@ -462,14 +527,14 @@ export const DashboardHeader = ({
                         <CardBody className="p-3 gap-2 items-center">
                           <Certificate16Color className="w-6 h-6 text-[#7828C8]" />
                           <span className="text-sm font-semibold text-black">Modul Selesai</span>
-                          <span className="text-lg font-bold text-[#7828C8]">1</span>
+                          <span className="text-lg font-bold text-[#7828C8]">{modulSelesai}</span>
                         </CardBody>
                       </Card>
                       <Card radius="lg" className="border-2 border-[#E4E4E7]">
                         <CardBody className="p-3 gap-2 items-center">
                           <Notebook16Color className="w-6 h-6 text-[#7828C8]" />
                           <span className="text-sm font-semibold text-black">Lesson Selesai</span>
-                          <span className="text-lg font-bold text-[#7828C8]">13</span>
+                          <span className="text-lg font-bold text-[#7828C8]">{lessonsSelesai}</span>
                         </CardBody>
                       </Card>
                     </div>

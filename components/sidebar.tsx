@@ -22,6 +22,14 @@ export const Sidebar = () => {
 
   useEffect(() => {
     const supabase = createClient();
+    try {
+      const ls = typeof window !== 'undefined' ? localStorage.getItem('aizone.modulDipilih') : null;
+      if (ls) {
+        const n = Number(ls);
+        if (!Number.isNaN(n)) setModulDipilih(n);
+      }
+    } catch {}
+
     const fetch = async () => {
       const {
         data: { user },
@@ -42,7 +50,12 @@ export const Sidebar = () => {
         .single();
 
       const id = data?.modul_dipilih;
-      if (typeof id === 'number') setModulDipilih(id);
+      if (typeof id === 'number') {
+        setModulDipilih(id);
+        try {
+          localStorage.setItem('aizone.modulDipilih', String(id));
+        } catch {}
+      }
     };
     fetch();
   }, []);
@@ -109,14 +122,14 @@ export const Sidebar = () => {
               item.label === 'Belajar' && modulDipilih
                 ? `/belajar/${modulDipilih}`
                 : item.label === 'Eksplorasi' && modulDipilih
-                ? `/eksplorasi/${modulDipilih}`
-                : item.href;
+                  ? `/eksplorasi/${modulDipilih}`
+                  : item.href;
             const isActive =
               item.label === 'Belajar'
                 ? pathname.startsWith('/belajar')
                 : item.label === 'Eksplorasi'
-                ? pathname.startsWith('/eksplorasi')
-                : pathname === href;
+                  ? pathname.startsWith('/eksplorasi')
+                  : pathname === href;
 
             return (
               <Link key={item.href} href={href} prefetch scroll={false}>

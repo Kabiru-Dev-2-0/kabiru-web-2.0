@@ -6,8 +6,10 @@ import { RankingCard } from '@/components/ranking-card';
 import { MotivationalTooltip } from '@/components/motivational-tooltip';
 import { StarColor, PawColor } from '@fluentui/react-icons';
 import { Progress } from '@heroui/progress';
+import { Skeleton } from '@heroui/skeleton';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { PeringkatWidget } from '@/components/peringkat-widget';
 
 type LeaderboardRow = {
   id_pengguna: number;
@@ -25,10 +27,11 @@ export default function PeringkatPage() {
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [hasCache, setHasCache] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadLeaderboard() {
-      setLoading(true);
+      setLoading(!hasCache);
       try {
         const supabase = createClient();
         const {
@@ -40,7 +43,12 @@ export default function PeringkatPage() {
             .select('id')
             .eq('uuid', user.id)
             .single();
-          if (pengguna?.id) setCurrentUserId(pengguna.id);
+          if (pengguna?.id) {
+            setCurrentUserId(pengguna.id);
+            try {
+              localStorage.setItem('aizone.leaderboard.currentUserId', String(pengguna.id));
+            } catch {}
+          }
         }
 
         const { data } = await supabase.rpc('get_leaderboard', {
@@ -50,9 +58,41 @@ export default function PeringkatPage() {
           p_gold_weight: 6,
         });
         setRows((data || []) as LeaderboardRow[]);
+        try {
+          localStorage.setItem('aizone.leaderboard.rows', JSON.stringify(data || []));
+        } catch {}
       } catch {}
       setLoading(false);
     }
+    try {
+      const lsRows =
+        typeof window !== 'undefined' ? localStorage.getItem('aizone.leaderboard.rows') : null;
+      const lsUid =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('aizone.leaderboard.currentUserId')
+          : null;
+      let used = false;
+      if (lsRows) {
+        try {
+          const parsed = JSON.parse(lsRows);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setRows(parsed as LeaderboardRow[]);
+            used = true;
+          }
+        } catch {}
+      }
+      if (lsUid) {
+        const uid = Number(lsUid);
+        if (!Number.isNaN(uid)) {
+          setCurrentUserId(uid);
+          used = true;
+        }
+      }
+      if (used) {
+        setHasCache(true);
+        setLoading(false);
+      }
+    } catch {}
     loadLeaderboard();
   }, []);
 
@@ -60,72 +100,82 @@ export default function PeringkatPage() {
   const top2 = rows.find((r) => r.rank === 2);
   const top3 = rows.find((r) => r.rank === 3);
 
-  const listRows = rows
-    .filter((r) => r.rank > 3)
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 7);
+  const listRows = [...rows].sort((a, b) => a.rank - b.rank);
 
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="flex gap-8 p-6">
         {/* Left Column */}
         <div className="flex-1 flex flex-col items-center gap-8">
-          {/* Podium */}
-          {top1 && top2 && top3 ? (
-            <Podium
-              secondPlace={{
-                name: top2.username || 'Pengguna',
-                exp: top2.score,
-                avatarSrc: top2.avatar || undefined,
-              }}
-              firstPlace={{
-                name: top1.username || 'Pengguna',
-                exp: top1.score,
-                avatarSrc: top1.avatar || undefined,
-              }}
-              thirdPlace={{
-                name: top3.username || 'Pengguna',
-                exp: top3.score,
-                avatarSrc: top3.avatar || undefined,
-              }}
-            />
+          {loading ? (
+            <>
+              <Card className="w-[700px] border-2 border-[#E4E4E7]" radius="lg">
+                <CardBody className="p-6">
+                  <div className="w-full flex justify-center">
+                    <Skeleton className="w-[360px] h-[190px] rounded-xl" />
+                  </div>
+                </CardBody>
+              </Card>
+              <div className="w-full flex flex-col gap-[14px]">
+                {[...Array(7)].map((_, i) => (
+                  <Card key={i} className="w-full border-2 border-[#E4E4E7]" radius="lg">
+                    <CardBody className="p-4 flex flex-row items-center gap-4">
+                      <Skeleton className="w-10 rounded-full" />
+                      <div className="flex-1 flex flex-row gap-2">
+                        <Skeleton className="w-40 h-5 rounded-md" />
+                        <Skeleton className="w-24 h-4 rounded-md" />
+                      </div>
+                    </CardBody>
+                  </Card>
+                ))}
+              </div>
+            </>
           ) : (
-            <Podium
-              secondPlace={{ name: '...', exp: 0 }}
-              firstPlace={{ name: '...', exp: 0 }}
-              thirdPlace={{ name: '...', exp: 0 }}
-            />
+            <>
+              {/* Podium */}
+              {top1 && top2 && top3 ? (
+                <Podium
+                  secondPlace={{
+                    name: top2.username || 'Pengguna',
+                    exp: top2.score,
+                    avatarSrc: top2.avatar || undefined,
+                  }}
+                  firstPlace={{
+                    name: top1.username || 'Pengguna',
+                    exp: top1.score,
+                    avatarSrc: top1.avatar || undefined,
+                  }}
+                  thirdPlace={{
+                    name: top3.username || 'Pengguna',
+                    exp: top3.score,
+                    avatarSrc: top3.avatar || undefined,
+                  }}
+                />
+              ) : (
+                <Podium
+                  secondPlace={{ name: '...', exp: 0 }}
+                  firstPlace={{ name: '...', exp: 0 }}
+                  thirdPlace={{ name: '...', exp: 0 }}
+                />
+              )}
+
+              {/* Ranking List */}
+              <div className="w-full flex flex-col gap-[14px]">
+                {listRows.map((r) => (
+                  <RankingCard
+                    key={r.id_pengguna}
+                    rank={r.rank}
+                    name={r.username || 'Pengguna'}
+                    exp={r.score}
+                    trend={'up'}
+                    label={'POIN'}
+                    isCurrentUser={currentUserId === r.id_pengguna}
+                    avatarSrc={r.avatar || undefined}
+                  />
+                ))}
+              </div>
+            </>
           )}
-
-          {/* Ranking List */}
-          <div className="w-full flex flex-col gap-[14px]">
-            {listRows.map((r) => (
-              <RankingCard
-                key={r.id_pengguna}
-                rank={r.rank}
-                name={r.username || 'Pengguna'}
-                exp={r.score}
-                trend={'up'}
-                label={'POIN'}
-                isCurrentUser={currentUserId === r.id_pengguna}
-                avatarSrc={r.avatar || undefined}
-              />
-            ))}
-
-            {currentUserId && rows.some((r) => r.id_pengguna === currentUserId) ? (
-              <RankingCard
-                rank={rows.find((x) => x.id_pengguna === currentUserId)!.rank}
-                name={
-                  (rows.find((x) => x.id_pengguna === currentUserId)!.username || 'Kamu') + ' (You)'
-                }
-                exp={rows.find((x) => x.id_pengguna === currentUserId)!.score}
-                trend={'up'}
-                label={'POIN'}
-                isCurrentUser
-                avatarSrc={rows.find((x) => x.id_pengguna === currentUserId)!.avatar || undefined}
-              />
-            ) : null}
-          </div>
         </div>
 
         {/* Right Column - Widgets */}
@@ -156,73 +206,7 @@ export default function PeringkatPage() {
             </div>
           </div>
 
-          {/* Misi Harian Widget */}
-          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
-            <CardBody className="p-[14px_18px_20px] gap-5">
-              <div className="flex items-center justify-center gap-2.5">
-                <span className="text-2xl font-semibold text-[#F31260]">Misi Harian</span>
-                <Button
-                  variant="light"
-                  color="primary"
-                  size="sm"
-                  radius="full"
-                  className="min-w-0 h-8"
-                >
-                  Lihat Semua
-                </Button>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <StarColor className="w-[42px] h-[42px]" />
-                <Progress
-                  value={84}
-                  color="warning"
-                  size="md"
-                  radius="full"
-                  label="Dapatkan 10 XP"
-                  showValueLabel
-                  valueLabel="84%"
-                  classNames={{
-                    base: 'flex-1',
-                    label: 'text-base font-medium text-black',
-                    value: 'text-base font-normal text-black',
-                  }}
-                />
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Perjalananku Widget */}
-          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
-            <CardBody className="p-[14px_18px_20px] gap-5">
-              <div className="flex items-center justify-center gap-2.5">
-                <span className="text-2xl font-semibold text-[#17C964]">Perjalananku</span>
-                <Button
-                  variant="light"
-                  color="primary"
-                  size="sm"
-                  radius="full"
-                  isIconOnly
-                  className="min-w-0 w-8 h-8"
-                >
-                  →
-                </Button>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <PawColor className="w-[42px] h-[42px]" />
-                <Progress
-                  value={30}
-                  color="warning"
-                  size="md"
-                  radius="full"
-                  label="Pemula"
-                  classNames={{
-                    base: 'flex-1',
-                    label: 'text-base font-medium text-black',
-                  }}
-                />
-              </div>
-            </CardBody>
-          </Card>
+          <PeringkatWidget displayedData={['misiHarian', 'perjalanan']} />
         </div>
       </div>
     </div>

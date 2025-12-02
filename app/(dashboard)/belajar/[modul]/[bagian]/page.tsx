@@ -2,7 +2,7 @@
 
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
-import { Spinner } from '@heroui/spinner';
+import { Skeleton } from '@heroui/skeleton';
 import { LearningPathVisual } from '@/components/learning-path-visual';
 import { ArrowLeftRegular } from '@fluentui/react-icons';
 import { useState, useEffect } from 'react';
@@ -28,8 +28,9 @@ export default function BagianPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [hasCache, setHasCache] = useState<boolean>(false);
   const fetchData = async () => {
-    setLoading(true);
+    setLoading(!hasCache);
     const supabase = createClient();
 
     // Get current user
@@ -164,10 +165,66 @@ export default function BagianPage() {
     setOverallProgress(progress);
 
     setError(null);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          `aizone.bagian.pelajaran.${modulId}.${bagian}`,
+          JSON.stringify(pelajaranData || null)
+        );
+        localStorage.setItem(
+          `aizone.bagian.stages.${modulId}.${bagian}`,
+          JSON.stringify(stagesWithStatus || [])
+        );
+        localStorage.setItem(
+          `aizone.bagian.overall.${modulId}.${bagian}`,
+          JSON.stringify(progress)
+        );
+      }
+    } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const pelStr = localStorage.getItem(`aizone.bagian.pelajaran.${modulId}.${bagian}`);
+        const stgStr = localStorage.getItem(`aizone.bagian.stages.${modulId}.${bagian}`);
+        const ovStr = localStorage.getItem(`aizone.bagian.overall.${modulId}.${bagian}`);
+        let used = false;
+        if (pelStr) {
+          try {
+            const parsedPel = JSON.parse(pelStr);
+            if (parsedPel) {
+              setPelajaran(parsedPel);
+              used = true;
+            }
+          } catch {}
+        }
+        if (stgStr) {
+          try {
+            const parsedStg = JSON.parse(stgStr);
+            if (Array.isArray(parsedStg) && parsedStg.length > 0) {
+              setStages(parsedStg);
+              used = true;
+            }
+          } catch {}
+        }
+        if (ovStr) {
+          try {
+            const parsedOv = JSON.parse(ovStr);
+            if (typeof parsedOv === 'number') {
+              setOverallProgress(parsedOv);
+              used = true;
+            }
+          } catch {}
+        }
+        if (used) {
+          setHasCache(true);
+          setError(null);
+          setLoading(false);
+        }
+      }
+    } catch {}
     fetchData();
   }, [bagian]);
 
@@ -185,13 +242,39 @@ export default function BagianPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-6">
-        <Card className="p-8 bg-white shadow-lg" radius="lg">
-          <CardBody className="flex flex-col items-center gap-4">
-            <Spinner size="lg" color="primary" />
-            <p className="text-lg font-semibold text-black">Memuat latihan...</p>
-          </CardBody>
-        </Card>
+      <div className="flex-1 relative">
+        <div className="px-6 sticky top-0 z-[999]">
+          <div className="sticky bg-white p-2 top-0 w-[100%] z-[999]"></div>
+          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
+            <CardBody className="p-[14px_32px] gap-5">
+              <div className="flex items-center gap-6">
+                <Button
+                  as={Link}
+                  href={`/belajar/${modulId}`}
+                  isIconOnly
+                  variant="light"
+                  color="primary"
+                  size="lg"
+                  className="min-w-0 w-8 h-8"
+                >
+                  <ArrowLeftRegular className="w-8 h-8 text-[#3674B5]" />
+                </Button>
+                <div className="flex-1 flex items-center gap-1 min-w-0">
+                  <div className="flex-1 flex flex-col gap-2 min-w-0">
+                    <Skeleton className="w-24 h-4 rounded-md" />
+                    <Skeleton className="w-64 h-8 rounded-md" />
+                  </div>
+                  <Skeleton className="w-[72px] h-[72px] rounded-full" />
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+        <div className="flex gap-6 p-6">
+          <div className="flex-1">
+            <Skeleton className="w-full h-[300px] rounded-xl" />
+          </div>
+        </div>
       </div>
     );
   }

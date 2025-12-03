@@ -107,8 +107,11 @@ export const Sidebar = () => {
       {/* Logo */}
       <div className="flex justify-between items-center gap-[138px]">
         <div className="w-[140px] h-[42px] relative">
-          {/* Placeholder for logo - you can replace with actual logo */}
-          <div className="text-2xl font-bold text-primary">AIZONE</div>
+          <img
+            src="/imageAssets/LogoApp.png"
+            alt="AIZONE Logo"
+            className="w-full h-full object-contain"
+          />
         </div>
       </div>
 

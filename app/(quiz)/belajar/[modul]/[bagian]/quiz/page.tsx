@@ -3,7 +3,13 @@ import { useState, useEffect } from 'react';
 import ExerciseRenderer, { FooterWithRobot } from '@/components/ExerciseRenderer';
 import { fetchExercises, submitHasilLatihan } from './quizAction';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
-import { ChevronLeftRegular, ChevronRightRegular, SendRegular, DismissRegular } from '@fluentui/react-icons';
+import {
+  ChevronLeftRegular,
+  ChevronRightRegular,
+  SendRegular,
+  DismissRegular,
+  BotSparkle16Color,
+} from '@fluentui/react-icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { Card, CardBody } from '@heroui/card';
@@ -283,11 +289,7 @@ export default function Quiz() {
   if (isCompletedView) {
     return (
       <div className="min-h-screen bg-[#FCFDFD] flex flex-col items-center justify-center">
-        <img
-          src="/imageAssets/motivational.png"
-          alt="Agent"
-          className="w-[260px] h-auto mb-6"
-        />
+        <img src="/imageAssets/motivational.png" alt="Agent" className="w-[260px] h-auto mb-6" />
         <p className="text-[40px] leading-[48px] font-bold text-[#3674B5]">+100 EXP</p>
         <p className="mt-3 text-lg text-[#3F3F46]">Hebat! Kamu berhasil menyelesaikannya!</p>
         <Button
@@ -309,8 +311,8 @@ export default function Quiz() {
 
   return (
     <div className="min-h-screen bg-[#FCFDFD] flex flex-col">
-      {/* Header dengan Progress Bar - Sesuai Figma */}
-      <div className="w-full bg-white border-b border-[#E8E8E8] px-12 py-4">
+      {/* Header dengan Progress Bar - Fixed */}
+      <div className="w-full bg-white border-b border-[#E8E8E8] px-12 py-4 fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center justify-center gap-5">
           <div className="w-[100px] flex items-center">
             <Button
@@ -372,8 +374,8 @@ export default function Quiz() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto h-full">
-        <div className="flex justify-center px-0 py-6 h-[80vh]">
+      <div className="flex-1 overflow-y-auto py-20">
+        <div className="flex justify-center px-0 py-6 min-h-[calc(100vh-180px)] pb-28">
           <motion.div
             className="flex gap-6 items-start"
             animate={{ width: chatOpen ? '80%' : '70%' }}
@@ -397,18 +399,17 @@ export default function Quiz() {
                     <CardBody className="px-4 py-10 flex flex-col gap-4">
                       <div className="flex items-center justify-between px-4 py-4 absolute top-0 left-0 w-full z-99 bg-white border-b-1 border-[#E4E4E7]">
                         <div className="flex items-center gap-2">
-                          <img src="/imageAssets/motivational.png" alt="AI" className="w-6 h-6" />
+                          <BotSparkle16Color className="w-7 h-7 text-[#3674B5]" />
                           <span className="text-base font-semibold text-[#3674B5]">AI Chat</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => setChatOpen(false)}
-                            className="text-sm font-semibold text-[#A1A1AA] hover:text-[#3674B5]"
+                            className="text-sm font-semibold text-[#A1A1AA] hover:text-[#3674B5] cursor-pointer"
                             type="button"
                           >
-                            Tutup
+                            <div className="w-5 h-1 rounded-full bg-[#a1a1a1]"></div>
                           </button>
-                          <div className="w-7 h-1.5 rounded-full bg-[#D4D4D8]"></div>
                         </div>
                       </div>
                       <div className="flex flex-col gap-4 h-[100%] pt-6 pb-8 overflow-y-auto pr-1 overflow-x-hidden">
@@ -419,9 +420,9 @@ export default function Quiz() {
                           >
                             {m.role === 'ai' && (
                               <img
-                                src="/imageAssets/motivational.png"
+                                src="/imageAssets/bot-profile.png"
                                 alt="AI"
-                                className="w-8 h-8 mt-1"
+                                className="w-12 h-12 mt-1 rounded-full"
                               />
                             )}
                             <div className="relative mx-1">
@@ -429,7 +430,7 @@ export default function Quiz() {
                                 className={`rounded-[18px] px-4 py-3 max-w-[280px] text-sm leading-[1.55em] ${
                                   m.role === 'ai'
                                     ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]'
-                                    : 'bg-[#F5A524] text-black shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
+                                    : 'bg-[#F5A524] text-white shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
                                 }`}
                                 dangerouslySetInnerHTML={
                                   m.role === 'ai' ? { __html: m.text } : undefined
@@ -455,6 +456,12 @@ export default function Quiz() {
                             inputWrapper:
                               'border-2 border-[#E4E4E7] rounded-[16px] h-[46px] bg-[#FAFAFA]',
                             input: 'text-base',
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
                           }}
                         />
                         <button

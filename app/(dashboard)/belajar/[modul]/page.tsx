@@ -4,7 +4,12 @@ import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
 import { Skeleton } from '@heroui/skeleton';
 import { MotivationalTooltip } from '@/components/motivational-tooltip';
-import { ArrowLeftRegular, CheckmarkCircleColor, LockClosedColor } from '@fluentui/react-icons';
+import {
+  ArrowLeftRegular,
+  CheckmarkCircleColor,
+  LockClosedColor,
+  ArrowRepeatAllFilled,
+} from '@fluentui/react-icons';
 import { PeringkatWidget } from '@/components/peringkat-widget';
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
@@ -23,6 +28,9 @@ export default function LatihanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasCache, setHasCache] = useState<boolean>(false);
+  const [overallProgress, setOverallProgress] = useState<number>(0);
+  const [overallCompleted, setOverallCompleted] = useState<number>(0);
+  const [overallTotal, setOverallTotal] = useState<number>(0);
 
   const fetchData = useCallback(async () => {
     setLoading(!hasCache);
@@ -124,7 +132,7 @@ export default function LatihanPage() {
 
     const { data: modulData, error: errModul } = await supabase
       .from('moduls')
-      .select('id, judul')
+      .select('id, judul, nomor_modul')
       .eq('id', modulId);
 
     if (errModul) {
@@ -135,6 +143,21 @@ export default function LatihanPage() {
 
     setModuls(modulData);
     setPelajarans(pelajaransWithProgress);
+    try {
+      const multi = await calculateMultiplePelajaranProgress(
+        supabase,
+        sortedPelajarans,
+        penggunaData.id
+      );
+      const sumCompleted = multi.reduce((acc, p) => acc + (p.completed_count || 0), 0);
+      const sumTotal = multi.reduce((acc, p) => acc + (p.total_count || 0), 0);
+      setOverallCompleted(sumCompleted);
+      setOverallTotal(sumTotal);
+      const avg = statusRows.length
+        ? Math.round(statusRows.reduce((acc, r) => acc + (r.progress || 0), 0) / statusRows.length)
+        : 0;
+      setOverallProgress(avg);
+    } catch {}
     setError(null);
     try {
       if (typeof window !== 'undefined') {
@@ -258,26 +281,64 @@ export default function LatihanPage() {
         {/* Top Info Card */}
         <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white w-full" radius="lg">
           <CardBody className="p-[14px_32px] gap-5">
-            <div className="flex items-center gap-6">
-              {/* Back Button */}
-              {/* <Button
-                as={Link}
-                href={`/belajar`}
-                isIconOnly
-                variant="light"
-                color="primary"
-                size="lg"
-                className="min-w-0 w-8 h-8"
-              >
-                <ArrowLeftRegular className="w-8 h-8 text-[#3674B5]" />
-              </Button> */}
-
-              {/* Title and Progress */}
-              <div className="flex-1 flex items-center gap-1">
-                <div className="flex-1 flex flex-col gap-1">
-                  <span className="text-lg font-medium text-[#A1A1AA]">Modul {modulId}</span>
-                  <h1 className="text-2xl font-semibold text-[#3F3F46]">{moduls[0].judul}</h1>
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex items-start gap-5 flex-1">
+                <Button
+                  as={Link}
+                  href={`/eksplorasi/${modulId}`}
+                  isIconOnly
+                  variant="light"
+                  color="primary"
+                  size="lg"
+                  className="min-w-0 w-8 h-8"
+                >
+                  <ArrowLeftRegular className="w-8 h-8 text-[#3674B5]" />
+                </Button>
+                <div className="flex-1 flex flex-col gap-3">
+                  <div className="flex flex-col gap-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-medium text-[#A1A1AA]">
+                        Modul {moduls[0]?.nomor_modul ?? modulId}
+                      </span>
+                    </div>
+                    <h1 className="text-2xl font-bold text-[#3F3F46]">{moduls[0].judul}</h1>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[#3F3F46] font-medium">{overallProgress}%</span>
+                      <span className="text-sm text-[#A1A1AA] font-medium">
+                        {overallCompleted}/{overallTotal}
+                      </span>
+                    </div>
+                    <Progress
+                      value={overallProgress}
+                      color="primary"
+                      size="sm"
+                      radius="full"
+                      classNames={{
+                        base: 'w-full',
+                        track: 'bg-[#E4E4E7]',
+                        indicator: 'bg-[#3674B5]',
+                      }}
+                    />
+                  </div>
                 </div>
+              </div>
+              <div className="flex items-end h-[100%]">
+                <Button
+                  as={Link}
+                  href={`/eksplorasi`}
+                  color="default"
+                  radius="sm"
+                  size="md"
+                  className="bg-[#3674B5] text-[#ffffff] font-regular text-md px-3 py-2.5 rounded-xl hover:bg-[#2d5d94] transition-colors w-full gap-2"
+                  style={{
+                    boxShadow: '0px 3px 0px 0px #205994',
+                  }}
+                  startContent={<ArrowRepeatAllFilled className="w-5 h-5" />}
+                >
+                  Ganti Modul
+                </Button>
               </div>
             </div>
           </CardBody>
@@ -409,11 +470,12 @@ export default function LatihanPage() {
                     <MotivationalTooltip
                       message="Aku ingin mengenal lebih dalam tentang AI"
                       imageUrl={
-                        bagian.status === 'done'
-                          ? '/imageAssets/motivational.png'
-                          : bagian.status === 'locked'
-                            ? '/imageAssets/motivational.png'
-                            : '/imageAssets/motivational.png'
+                        [
+                          '/imageAssets/motivational.png',
+                          '/imageAssets/knowing.png',
+                          '/imageAssets/practice.png',
+                          '/imageAssets/achieving.png',
+                        ][Math.max(0, ((bagian.bagian || 1) - 1) % 4)]
                       }
                     />
                   </div>
@@ -425,7 +487,8 @@ export default function LatihanPage() {
       </div>
 
       {/* Right Column - Widgets */}
-      <div className="w-[300px] flex flex-col gap-6">
+      <div className="w-[300px]"></div>
+      <div className="w-[300px] flex flex-col gap-6 absolute top-24 right-9">
         <PeringkatWidget />
         {/* Misi Harian Card */}
         <></>

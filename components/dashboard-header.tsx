@@ -10,6 +10,8 @@ import {
   PawColor,
   EditRegular,
   Paw16Color,
+  Person16Color,
+  Flag16Color,
 } from '@fluentui/react-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardBody } from '@heroui/card';
@@ -57,7 +59,6 @@ export const DashboardHeader = ({
   const [nameDraft, setNameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [journeyLabelCached, setJourneyLabelCached] = useState<string | null>(null);
   const [rankStat, setRankStat] = useState<number | null>(null);
   const [modulSelesai, setModulSelesai] = useState<number>(0);
   const [lessonsSelesai, setLessonsSelesai] = useState<number>(0);
@@ -72,17 +73,12 @@ export const DashboardHeader = ({
   }, [exp]);
 
   const expTier = useMemo(() => {
-    if (exp < 1000)
-      return { label: 'Newbie (0–1000)', current: exp, max: 1000 };
-    if (exp < 2200)
-      return { label: 'Learner (1000–2200)', current: exp, max: 2200 };
-    if (exp < 3600)
-      return { label: 'Explorer (2200–3600)', current: exp, max: 3600 };
-    if (exp < 5200)
-      return { label: 'Skilled (3600–5200)', current: exp, max: 5200 };
-    if (exp < 7000)
-      return { label: 'Proficient (5200–7000)', current: exp, max: 7000 };
-    return { label: 'Proficient (≥7000)', current: exp, max: 7000 };
+    if (exp < 1000) return { label: 'Newbie', current: exp, max: 1000 };
+    if (exp < 2200) return { label: 'Learner', current: exp, max: 2200 };
+    if (exp < 3600) return { label: 'Explorer', current: exp, max: 3600 };
+    if (exp < 5200) return { label: 'Skilled', current: exp, max: 5200 };
+    if (exp < 7000) return { label: 'Proficient', current: exp, max: 7000 };
+    return { label: 'Proficient', current: exp, max: 7000 };
   }, [exp]);
 
   // Prefill dari localStorage (client-only) agar cepat tampil tanpa menunggu fetch
@@ -113,7 +109,6 @@ export const DashboardHeader = ({
         setIsLoading(false);
       }
       if (lsAvatar) setAvatarUrl(lsAvatar);
-      if (lsJL) setJourneyLabelCached(lsJL);
     } catch {}
   }, []);
 
@@ -413,9 +408,7 @@ export const DashboardHeader = ({
             <div className="flex items-center justify-center gap-1">
               <Paw16Color className="w-5 h-5 text-[#F5A524]" />
               <Skeleton isLoaded={!isLoading} className="rounded-md">
-                <span className="text-sm leading-5 text-[#F5A524]">
-                  {journeyLabelCached ?? journeyLabel}
-                </span>
+                <span className="text-sm leading-5 text-[#F5A524]">{journeyLabel}</span>
               </Skeleton>
             </div>
           </div>
@@ -442,36 +435,40 @@ export const DashboardHeader = ({
             }}
           >
             <motion.div
-              className="w-[720px] max-w-[92vw]"
+              className="w-[37rem] max-w-[92vw]"
               initial={{ y: -24, scale: 0.98, opacity: 0 }}
               animate={{ y: 0, scale: 1, opacity: 1 }}
               exit={{ y: 24, scale: 0.98, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
             >
               <Card radius="lg" className="bg-white shadow-2xl z-[60]">
-                <CardBody className="p-6 gap-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-semibold text-black">Profil</span>
-                    </div>
-                    <Button
-                      isIconOnly
-                      radius="full"
-                      variant="light"
-                      onPress={() => setIsProfileOpen(false)}
-                    >
-                      <DismissRegular className="w-6 h-6 text-[#71717A]" />
-                    </Button>
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-2 h-fit">
+                    <img src="/imageAssets/fluent-color_person-24.svg" alt="🤵‍♂️" />
+                    <span className="text-2xl font-semibold text-black">Profil</span>
                   </div>
+                  <Button
+                    isIconOnly
+                    radius="full"
+                    variant="light"
+                    onPress={() => setIsProfileOpen(false)}
+                  >
+                    <DismissRegular className="w-6 h-6 text-[#71717A]" />
+                  </Button>
+                </div>
+                <CardBody className="px-6 py-8 gap-5 border-[1px] border-[#c2c2c2]">
                   <div className="flex flex-col items-center gap-3">
                     <div className="relative flex items-center justify-center">
                       {/* Outer border container */}
-                      <div className="rounded-[14px] p-0 overflow-hidden" style={{
-                        background: 'white',
-                        boxShadow: '0 0 0 4px #3674B5'
-                      }}>
-                        <Avatar 
-                          src={avatarUrl} 
+                      <div
+                        className="rounded-[14px] p-0 overflow-hidden"
+                        style={{
+                          background: 'white',
+                          boxShadow: '0 0 0 4px #3674B5',
+                        }}
+                      >
+                        <Avatar
+                          src={avatarUrl}
                           className="w-20 h-20 rounded-[18px] bg-white object-cover"
                         />
                       </div>
@@ -513,49 +510,69 @@ export const DashboardHeader = ({
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-[#71717A]">{`${expTier.current}/${expTier.max} EXP • ${expTier.label}`}</span>
-                    <Progress
-                      aria-label="EXP Progress"
-                      value={expTier.current}
-                      maxValue={expTier.max}
-                      color="warning"
-                      size="md"
-                      radius="full"
-                      classNames={{ track: 'bg-[#E4E4E7]' }}
-                    />
+                    <div className="flex flex-row w-full items-center gap-3 justify-between">
+                      <div className="flex flex-col w-[90%] gap-3">
+                        <span className="text-sm font-regular text-[#000000]">{`${expTier.current}/${expTier.max} EXP • ${expTier.label}`}</span>
+                        <Progress
+                          aria-label="EXP Progress"
+                          value={expTier.current}
+                          maxValue={expTier.max}
+                          color="warning"
+                          size="md"
+                          radius="full"
+                          classNames={{ track: 'bg-[#E4E4E7]' }}
+                        />
+                      </div>
+                      <div className="w-[5rem] flex flex-col gap-0 items-center">
+                        <Flag16Color className="w-10 h-10 text-[#3674B5]" />
+                        <p className="m-0 p-0 font-semibold text-[#cd00a7]">Learner</p>
+                      </div>
+                    </div>
                   </div>
                   <Divider className="bg-[rgba(17,17,17,0.15)]" />
                   <div className="flex flex-col gap-3">
                     <span className="text-base font-semibold text-black">Statistik</span>
                     <div className="grid grid-cols-4 gap-3">
-                      <Card radius="lg" className="border-2 border-[#E4E4E7]">
-                        <CardBody className="p-3 gap-2 items-center">
-                          <TrophyColor className="w-6 h-6 text-[#F5A524]" />
-                          <span className="text-sm font-semibold text-black">Peringkat</span>
-                          <span className="text-lg font-bold text-[#7828C8]">{rankStat ?? 0}</span>
+                      <Card
+                        radius="lg"
+                        className="border-transparent bg-gradient-to-br from-[#62c0ff] to-[#004c78] p-[2px] rounded-2xl"
+                      >
+                        <CardBody className="p-1 gap-0 items-center bg-white rounded-2xl">
+                          <TrophyColor className="w-8 h-8 text-[#F5A524]" />
+                          <span className="text-sm font-regular text-black">Peringkat</span>
+                          <span className="text-lg font-bold text-[#030d68]">{rankStat ?? 0}</span>
                         </CardBody>
                       </Card>
-                      <Card radius="lg" className="border-2 border-[#E4E4E7]">
-                        <CardBody className="p-3 gap-2 items-center">
-                          <img src="/imageAssets/badge-icon.png" className="w-6 h-6" alt="Badge" />
-                          <span className="text-sm font-semibold text-black">Badge</span>
-                          <span className="text-lg font-bold text-[#7828C8]">
+                      <Card
+                        radius="lg"
+                        className="border-transparent bg-gradient-to-br from-[#62c0ff] to-[#004c78] p-[2px] rounded-2xl"
+                      >
+                        <CardBody className="p-1 gap-0 items-center bg-white rounded-2xl">
+                          <img src="/imageAssets/badge-icon.png" className="w-8 h-8" alt="Badge" />
+                          <span className="text-sm font-regular text-black">Badge</span>
+                          <span className="text-lg font-bold text-[#00074a]">
                             {trophies.bronze + trophies.silver + trophies.gold}
                           </span>
                         </CardBody>
                       </Card>
-                      <Card radius="lg" className="border-2 border-[#E4E4E7]">
-                        <CardBody className="p-3 gap-2 items-center">
-                          <Certificate16Color className="w-6 h-6 text-[#7828C8]" />
-                          <span className="text-sm font-semibold text-black">Modul Selesai</span>
-                          <span className="text-lg font-bold text-[#7828C8]">{modulSelesai}</span>
+                      <Card
+                        radius="lg"
+                        className="border-transparent bg-gradient-to-br from-[#62c0ff] to-[#004c78] p-[2px] rounded-2xl"
+                      >
+                        <CardBody className="p-1 gap-0 items-center bg-white rounded-2xl">
+                          <Certificate16Color className="w-8 h-8" />
+                          <span className="text-sm font-regular text-black">Modul Selesai</span>
+                          <span className="text-lg font-bold text-[#00074a]">{modulSelesai}</span>
                         </CardBody>
                       </Card>
-                      <Card radius="lg" className="border-2 border-[#E4E4E7]">
-                        <CardBody className="p-3 gap-2 items-center">
-                          <Notebook16Color className="w-6 h-6 text-[#7828C8]" />
-                          <span className="text-sm font-semibold text-black">Lesson Selesai</span>
-                          <span className="text-lg font-bold text-[#7828C8]">{lessonsSelesai}</span>
+                      <Card
+                        radius="lg"
+                        className="border-transparent bg-gradient-to-br from-[#62c0ff] to-[#004c78] p-[2px] rounded-2xl"
+                      >
+                        <CardBody className="p-1 gap-0 items-center bg-white rounded-2xl">
+                          <Notebook16Color className="w-8 h-8" />
+                          <span className="text-sm font-regular text-black">Lesson Selesai</span>
+                          <span className="text-lg font-bold text-[#00074a]">{lessonsSelesai}</span>
                         </CardBody>
                       </Card>
                     </div>
@@ -641,7 +658,7 @@ export const DashboardHeader = ({
                         minHeight: '46px',
                         backgroundColor: '#4281c7',
                         color: '#fff',
-                        borderRadius: '12px',                  
+                        borderRadius: '12px',
                         border: 'none',
                         boxShadow: '0 4px 0 0 #205994',
                       }}
@@ -734,42 +751,38 @@ export const DashboardHeader = ({
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2 gap-y-3 justify-between">
-                        {[
-                          "/imageAssets/avatar/default.png",
-                          "/imageAssets/avatar/avatar-1.png",
-                          "/imageAssets/avatar/avatar-2.png",
-                          "/imageAssets/avatar/avatar-3.png",
-                          "/imageAssets/avatar/avatar-4.png",
-                          "/imageAssets/avatar/avatar-5.png",
-                          "/imageAssets/avatar/avatar-6.png",
-                          "/imageAssets/avatar/avatar-7.png",
-                          "/imageAssets/avatar/avatar-8.png",
-                          "/imageAssets/avatar/avatar-9.png",
-                          "/imageAssets/avatar/avatar-10.png",
-                          "/imageAssets/avatar/avatar-11.png",
-                          "/imageAssets/avatar/avatar-12.png",
-                          "/imageAssets/avatar/avatar-13.png",
-                          "/imageAssets/avatar/avatar-14.png",
-                          "/imageAssets/avatar/avatar-15.png",
-                          "/imageAssets/avatar/avatar-16.png",
-                          "/imageAssets/avatar/avatar-17.png",
-                        ].map((src) => (
-                          <button
-                            key={src}
-                            onClick={() => setSelectedAvatar(src)}
-                            className={`rounded-xl border-4 p-0 transition shadow-sm overflow-hidden ${
-                              (selectedAvatar || avatarUrl) === src
-                                ? "border-[#3674B5] shadow-[0px_6px_0px_0px_#3674B5]"
-                                : "border-[#E4E4E7]"
-                            }`}
-                            aria-label={src}
-                          >
-                            <img
-                              src={src}
-                              alt="avatar"
-                              className="w-18 h-18 object-contain"
-                            />
-                          </button>
+                    {[
+                      '/imageAssets/avatar/default.png',
+                      '/imageAssets/avatar/avatar-1.png',
+                      '/imageAssets/avatar/avatar-2.png',
+                      '/imageAssets/avatar/avatar-3.png',
+                      '/imageAssets/avatar/avatar-4.png',
+                      '/imageAssets/avatar/avatar-5.png',
+                      '/imageAssets/avatar/avatar-6.png',
+                      '/imageAssets/avatar/avatar-7.png',
+                      '/imageAssets/avatar/avatar-8.png',
+                      '/imageAssets/avatar/avatar-9.png',
+                      '/imageAssets/avatar/avatar-10.png',
+                      '/imageAssets/avatar/avatar-11.png',
+                      '/imageAssets/avatar/avatar-12.png',
+                      '/imageAssets/avatar/avatar-13.png',
+                      '/imageAssets/avatar/avatar-14.png',
+                      '/imageAssets/avatar/avatar-15.png',
+                      '/imageAssets/avatar/avatar-16.png',
+                      '/imageAssets/avatar/avatar-17.png',
+                    ].map((src) => (
+                      <button
+                        key={src}
+                        onClick={() => setSelectedAvatar(src)}
+                        className={`rounded-xl border-4 p-0 transition shadow-sm overflow-hidden ${
+                          (selectedAvatar || avatarUrl) === src
+                            ? 'border-[#3674B5] shadow-[0px_6px_0px_0px_#3674B5]'
+                            : 'border-[#E4E4E7]'
+                        }`}
+                        aria-label={src}
+                      >
+                        <img src={src} alt="avatar" className="w-18 h-18 object-contain" />
+                      </button>
                     ))}
                   </div>
                   <div className="mt-2">
@@ -779,7 +792,7 @@ export const DashboardHeader = ({
                         minHeight: '46px',
                         backgroundColor: '#4281c7',
                         color: '#fff',
-                        borderRadius: '12px',                  
+                        borderRadius: '12px',
                         border: 'none',
                         boxShadow: '0 4px 0 0 #205994',
                       }}

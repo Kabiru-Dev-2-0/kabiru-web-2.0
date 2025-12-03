@@ -343,7 +343,8 @@ export default function EksplorasiDetailPage() {
             </div>
           </div>
         </div>
-        <div className="w-[300px] flex flex-col gap-6">
+        <div className="w-[300px]"></div>
+        <div className="w-[300px] flex flex-col gap-6 absolute top-24 right-9">
           <PeringkatWidget />
         </div>
       </div>

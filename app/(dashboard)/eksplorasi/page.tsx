@@ -9,12 +9,21 @@ import {
   MoleculeColor,
 } from '@fluentui/react-icons';
 import { createClient } from '@/utils/supabase/client';
+import { getCompletedBagiansForModul } from '@/utils/supabase/progress-helpers';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function BelajarPage() {
   const [ongoingCourses, setOngoingCourses] = useState<
-    Array<{ title: string; description: string; progress: number; total: number; iconComponent: React.ReactNode; category: string; id: number }>
+    Array<{
+      title: string;
+      description: string;
+      progress: number;
+      total: number;
+      iconComponent: React.ReactNode;
+      category: string;
+      id: number;
+    }>
   >([]);
 
   type Modul = { id: number; judul: string; deskripsi: string; nomor_modul: number };
@@ -57,7 +66,15 @@ export default function BelajarPage() {
             .eq('uuid', user.id)
             .single();
           const penggunaId = pengguna?.id as number | undefined;
-          let courseRows: Array<{ title: string; description: string; progress: number; total: number; iconComponent: React.ReactNode; category: string; id: number }> = [];
+          let courseRows: Array<{
+            title: string;
+            description: string;
+            progress: number;
+            total: number;
+            iconComponent: React.ReactNode;
+            category: string;
+            id: number;
+          }> = [];
 
           // Ambil modul_dipilih
           let chosenId: number | undefined = undefined;
@@ -77,42 +94,26 @@ export default function BelajarPage() {
           for (const id of targetIds.slice(0, 2)) {
             const modul = (modulsData || []).find((m: any) => m.id === id);
             if (!modul) continue;
-            const pelIds = (pelajarans || [])
-              .filter((p) => p.id_modul === id)
-              .map((p) => p.id);
-
-            let totalCount = 0;
-            let completed = 0;
-            if (pelIds.length > 0) {
-              const { data: latihans } = await supabase
-                .from('latihans')
-                .select('id, id_pelajaran, nomor_latihan')
-                .in('id_pelajaran', pelIds);
-              totalCount = (latihans || []).length;
-
-              if (penggunaId) {
-                const { data: hasil } = await supabase
-                  .from('hasil_latihans')
-                  .select('id_pelajaran, nomor_latihan')
-                  .eq('id_pengguna', penggunaId)
-                  .in('id_pelajaran', pelIds);
-                const set = new Set<string>();
-                (hasil || []).forEach((h: any) => set.add(`${h.id_pelajaran}-${h.nomor_latihan}`));
-                completed = set.size;
-              }
-            }
+            const percent = await (async () => {
+              if (!penggunaId) return 0;
+              const rows = await getCompletedBagiansForModul(supabase as any, id, penggunaId);
+              return rows.length
+                ? Math.round(rows.reduce((acc, r) => acc + (r.progress || 0), 0) / rows.length)
+                : 0;
+            })();
 
             courseRows.push({
               id,
               title: modul.judul,
               description: modul.deskripsi,
-              progress: completed,
-              total: Math.max(totalCount, 1),
-              iconComponent: modul.nomor_modul % 2 ? (
-                <DataPieColor className="w-10 h-10" />
-              ) : (
-                <MoleculeColor className="w-10 h-10" />
-              ),
+              progress: percent,
+              total: 100,
+              iconComponent:
+                modul.nomor_modul % 2 ? (
+                  <DataPieColor className="w-10 h-10" />
+                ) : (
+                  <MoleculeColor className="w-10 h-10" />
+                ),
               category: 'Progres Kamu',
             });
           }
@@ -189,7 +190,7 @@ export default function BelajarPage() {
                   <ProgressCourseCard
                     {...course}
                     href={`/eksplorasi/${course.id}`}
-                    valueLabel={`${course.progress}/${course.total}`}
+                    valueLabel={`${course.progress}%`}
                     buttonText="Lanjutkan"
                   />
                 </div>

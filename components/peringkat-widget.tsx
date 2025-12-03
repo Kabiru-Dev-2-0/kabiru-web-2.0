@@ -44,6 +44,7 @@ export function PeringkatWidget({
   );
   const [localJourneyLabel, setLocalJourneyLabel] = useState<string>(journeyLabel);
   const [localJourneyValue, setLocalJourneyValue] = useState<number>(journeyValue);
+  const [localJourneyMax, setLocalJourneyMax] = useState<number>(100);
   const [isLoadingWidget, setIsLoadingWidget] = useState<boolean>(true);
   const sectionsSet = useMemo(() => new Set(displayedData), [displayedData]);
   const hasMissions = localMissions.length > 0;
@@ -87,6 +88,15 @@ export function PeringkatWidget({
     return { tierLabel, progress, total };
   };
 
+  const getExpTier = (expNum: number) => {
+    if (expNum < 1000) return { label: 'Newbie', current: expNum, max: 1000 };
+    if (expNum < 2200) return { label: 'Learner', current: expNum, max: 2200 };
+    if (expNum < 3600) return { label: 'Explorer', current: expNum, max: 3600 };
+    if (expNum < 5200) return { label: 'Skilled', current: expNum, max: 5200 };
+    if (expNum < 7000) return { label: 'Proficient', current: expNum, max: 7000 };
+    return { label: 'Proficient', current: expNum, max: 7000 };
+  };
+
   useEffect(() => {
     setLocalRank(rank);
   }, [rank]);
@@ -127,19 +137,31 @@ export function PeringkatWidget({
         }
       }
       if (sectionsSet.has('perjalanan')) {
-        const lsJL =
-          typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyLabel') : null;
-        const lsJV =
-          typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyValue') : null;
-        if (lsJL) {
-          setLocalJourneyLabel(lsJL);
-          hasAnyCache = true;
-        }
-        if (lsJV) {
-          const v = Number(lsJV);
-          if (!Number.isNaN(v)) {
-            setLocalJourneyValue(v);
+        const lsExpStr = typeof window !== 'undefined' ? localStorage.getItem('aizone.exp') : null;
+        if (lsExpStr) {
+          const expNum = Number(lsExpStr);
+          if (!Number.isNaN(expNum)) {
+            const tier = getExpTier(expNum);
+            setLocalJourneyLabel(tier.label);
+            setLocalJourneyValue(tier.current);
+            setLocalJourneyMax(tier.max);
             hasAnyCache = true;
+          }
+        } else {
+          const lsJL =
+            typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyLabel') : null;
+          const lsJV =
+            typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyValue') : null;
+          if (lsJL) {
+            setLocalJourneyLabel(lsJL);
+            hasAnyCache = true;
+          }
+          if (lsJV) {
+            const v = Number(lsJV);
+            if (!Number.isNaN(v)) {
+              setLocalJourneyValue(v);
+              hasAnyCache = true;
+            }
           }
         }
       }
@@ -186,23 +208,13 @@ export function PeringkatWidget({
             .single();
           if (expRow && typeof expRow.exp === 'number') {
             const expNum = expRow.exp as number;
-            let jl = 'Pemula';
-            let jv = 0;
-            if (expNum < 1000) {
-              jl = 'Pemula';
-              jv = Math.round(Math.max(0, Math.min(100, (expNum / 1000) * 100)));
-            } else if (expNum >= 1000 && expNum < 3000) {
-              jl = 'Mahir';
-              jv = Math.round(Math.max(0, Math.min(100, ((expNum - 1000) / 2000) * 100)));
-            } else {
-              jl = 'Ahli';
-              jv = 100;
-            }
-            setLocalJourneyLabel(jl);
-            setLocalJourneyValue(jv);
+            const tier = getExpTier(expNum);
+            setLocalJourneyLabel(tier.label);
+            setLocalJourneyValue(tier.current);
+            setLocalJourneyMax(tier.max);
             try {
-              localStorage.setItem('aizone.journeyLabel', jl);
-              localStorage.setItem('aizone.journeyValue', String(jv));
+              localStorage.setItem('aizone.journeyLabel', tier.label);
+              localStorage.setItem('aizone.exp', String(expNum));
             } catch {}
           }
         }
@@ -356,11 +368,11 @@ export function PeringkatWidget({
                     indicator: 'bg-[#F5A524]',
                   }}
                   color="warning"
-                  // label={journeyLabel}
-                  maxValue={100}
+                  label={localJourneyLabel}
+                  maxValue={localJourneyMax}
                   radius="full"
                   size="md"
-                  label={localJourneyLabel}
+                  // label={localJourneyLabel}
                   value={localJourneyValue}
                 />
               </Skeleton>

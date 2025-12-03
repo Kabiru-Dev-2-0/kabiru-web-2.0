@@ -243,7 +243,7 @@ export const FooterWithRobot = ({
             boxShadow: '0px 3px 0px 0px rgba(32, 89, 148, 1)',
           }}
         >
-          Periksa
+          {showNextButton ? 'Periksa' : 'Selesaikan'}
         </button>
       )}
     </div>
@@ -263,7 +263,11 @@ export default function ExerciseRenderer({
   onNext?: () => void;
   onComplete?: (isCorrect: boolean) => void;
   onAgentClick?: () => void;
-  onFooterPropsChange?: (props: { onSubmit: () => void; feedback: string; isCorrect: boolean }) => void;
+  onFooterPropsChange?: (props: {
+    onSubmit: () => void;
+    feedback: string;
+    isCorrect: boolean;
+  }) => void;
 }) {
   const styles = useStyles();
   const [answers, setAnswers] = useState<{ [key: string]: any }>({});
@@ -618,8 +622,6 @@ export default function ExerciseRenderer({
               })}
             </div>
           </div>
-
-          
         </motion.div>
       );
 
@@ -736,8 +738,6 @@ export default function ExerciseRenderer({
               </div>
             </DndContext>
           </div>
-
-          
         </motion.div>
       );
     case 'sorting':
@@ -837,8 +837,6 @@ export default function ExerciseRenderer({
             {/* Divider */}
             <div className="h-[1.5px] bg-black/15"></div>
           </div>
-
-          
         </motion.div>
       );
     case 'guessing':
@@ -888,8 +886,6 @@ export default function ExerciseRenderer({
               />
             </div>
           </div>
-
-          
         </motion.div>
       );
     case 'multiple_choice':
@@ -954,8 +950,6 @@ export default function ExerciseRenderer({
               })}
             </div>
           </div>
-
-          
         </motion.div>
       );
     default:

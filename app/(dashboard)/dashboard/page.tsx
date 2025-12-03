@@ -33,6 +33,7 @@ export default function DashboardPage() {
   >([]);
   const [completedModules, setCompletedModules] = useState<Modul[]>([]);
   const [loadingData, setLoadingData] = useState<boolean>(true);
+  const [hasAnyProgress, setHasAnyProgress] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -76,6 +77,9 @@ export default function DashboardPage() {
             .single();
           if (typeof row?.modul_dipilih === 'number') chosenId = row!.modul_dipilih as number;
         }
+
+        const allPercents = await Promise.all(moduls.map((m) => computePercentForModul(m.id)));
+        setHasAnyProgress(allPercents.some((p) => p > 0));
 
         const targetIds = [chosenId, ...moduls.map((m) => m.id)]
           .filter((v, i, arr) => typeof v === 'number' && arr.indexOf(v) === i)
@@ -145,15 +149,9 @@ export default function DashboardPage() {
               {/* Tooltip utama */}
               <div className="relative">
                 {/* Panah kiri atas */}
-                <div
-                  className="absolute -left-2 top-5 w-0 h-0 
-                                    border-t-[10px] border-t-transparent 
-                                    border-b-[10px] border-b-transparent 
-                                    border-r-[10px] border-r-[#006FEE]"
-                ></div>
-
-                <div className="px-6 py-8 w-full flex flex-col gap-[18px] bg-[#006FEE] rounded-lg shadow-xl relative z-0">
-                  <p className="text-lg leading-7 text-white">
+                <div className="absolute -left-2 top-4 w-5 h-5 bg-[#3674B5] rotate-45 rounded-sm"></div>
+                <div className="p-6 w-full flex flex-col gap-[18px] bg-[#3674B5] rounded-xl shadow-xl relative z-0">
+                  <p className="text-lg leading-7 text-white font-regular">
                     Hebat, kamu sudah memahami dasar logika dengan baik! 🎉
                     <br />
                     Tapi aku lihat kamu masih agak bingung di bagian looping dan efisiensi
@@ -165,7 +163,7 @@ export default function DashboardPage() {
                     color="default"
                     radius="sm"
                     size="md"
-                    className="bg-[#ffffff] text-[#2d5d94] font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#ffffff] transition-colors w-fit"
+                    className="bg-[#ffffff] text-[#2d5d94] font-regular text-md px-3 py-2.5 rounded-xl hover:bg-[#ffffff] transition-colors w-fit"
                     style={{
                       boxShadow: '0px 3px 0px 0px #E4E4E7',
                     }}
@@ -207,27 +205,39 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <>
-                  {ongoingCourses.map((course) => (
-                    <ProgressCourseCard
-                      key={course.id}
-                      category={course.category}
-                      description={course.description}
-                      iconComponent={course.iconComponent}
-                      progress={course.progress}
-                      title={course.title}
-                      total={course.total}
-                      valueLabel={`${course.progress}%`}
-                      href={`/belajar/${course.id}`}
-                      buttonText="Lanjutkan"
-                    />
-                  ))}
-                  {ongoingCourses.length === 0 ? (
-                    <Card className="w-[333px] border border-[#F4F4F5] shadow-sm" radius="lg">
-                      <CardBody className="p-5 gap-[14px]">
-                        <p className="text-sm leading-5 text-[#11181C]">Belum ada progres modul.</p>
-                      </CardBody>
-                    </Card>
-                  ) : null}
+                  {!hasAnyProgress ? (
+                    <p className="text-sm leading-5 text-[#848484] w-full text-center py-8">
+                      Belum ada modul yang kamu mulai.
+                      <br />
+                      Yuk, pilih topik pertama dan mulai petualangan belajarmu! 🚀
+                    </p>
+                  ) : (
+                    <>
+                      {ongoingCourses.map((course) => (
+                        <ProgressCourseCard
+                          key={course.id}
+                          category={course.category}
+                          description={course.description}
+                          iconComponent={course.iconComponent}
+                          progress={course.progress}
+                          title={course.title}
+                          total={course.total}
+                          valueLabel={`${course.progress}%`}
+                          href={`/belajar/${course.id}`}
+                          buttonText="Lanjutkan"
+                        />
+                      ))}
+                      {ongoingCourses.length === 0 ? (
+                        <Card className="w-[333px] border border-[#F4F4F5] shadow-sm" radius="lg">
+                          <CardBody className="p-5 gap-[14px]">
+                            <p className="text-sm leading-5 text-[#11181C]">
+                              Belum ada progres modul.
+                            </p>
+                          </CardBody>
+                        </Card>
+                      ) : null}
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -236,50 +246,61 @@ export default function DashboardPage() {
           <Divider className="bg-[rgba(17,17,17,0.15)]" />
 
           {/* Selesai Dipelajari Section */}
-          {completedModules.length > 0 ? (
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-2.5">
-                <CertificateColor className="w-10 h-10" />
-                <h2 className="text-2xl font-semibold leading-8 text-black">Selesai dipelajari</h2>
-              </div>
-
-              <div className="flex gap-5 flex-wrap">
-                {completedModules.map((m) => (
-                  <Card
-                    key={m.id}
-                    className="w-[333px] border border-[#F4F4F5] shadow-sm"
-                    radius="lg"
-                  >
-                    <CardBody className="p-5 gap-[14px]">
-                      <div className="flex items-center gap-3">
-                        <BotColor className="w-10 h-10" />
-                        <div className="flex-1 flex flex-col">
-                          <span className="text-base font-medium leading-6 text-[#71717A]">
-                            Learning Path
-                          </span>
-                          <span className="text-lg font-bold leading-7 text-black">{m.judul}</span>
-                        </div>
-                      </div>
-                      <p className="text-sm leading-5 text-[#11181C]">{m.deskripsi}</p>
-                      <Button
-                        color="primary"
-                        radius="full"
-                        size="sm"
-                        className="px-3 h-8 w-fit"
-                        as={undefined}
-                      >
-                        Ulas Materi
-                      </Button>
-                    </CardBody>
-                  </Card>
-                ))}
-              </div>
+          <div className="flex flex-col gap-5">
+            <div className="flex items-center gap-2.5">
+              <CertificateColor className="w-10 h-10" />
+              <h2 className="text-2xl font-semibold leading-8 text-black">Selesai dipelajari</h2>
             </div>
-          ) : null}
+
+            <div className="flex gap-5 flex-wrap">
+              {completedModules.length > 0 ? (
+                <>
+                  {completedModules.map((m) => (
+                    <Card
+                      key={m.id}
+                      className="w-[333px] border border-[#F4F4F5] shadow-sm"
+                      radius="lg"
+                    >
+                      <CardBody className="p-5 gap-[14px]">
+                        <div className="flex items-center gap-3">
+                          <BotColor className="w-10 h-10" />
+                          <div className="flex-1 flex flex-col">
+                            <span className="text-base font-medium leading-6 text-[#71717A]">
+                              Learning Path
+                            </span>
+                            <span className="text-lg font-bold leading-7 text-black">
+                              {m.judul}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-sm leading-5 text-[#11181C]">{m.deskripsi}</p>
+                        <Button
+                          color="primary"
+                          radius="full"
+                          size="sm"
+                          className="px-3 h-8 w-fit"
+                          as={undefined}
+                        >
+                          Ulas Materi
+                        </Button>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </>
+              ) : !loadingData ? (
+                <p className="text-sm leading-5 text-[#848484] w-full text-center py-8">
+                  Belum ada modul yang selesai.
+                  <br />
+                  Selesaikan satu modul untuk mulai mengumpulkan pencapaianmu! 🏅
+                </p>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         {/* Right Column */}
-        <div className="w-[300px] flex flex-col gap-6">
+        <div className="w-[300px]"></div>
+        <div className="w-[300px] flex flex-col gap-6 absolute top-24 right-9">
           {/* Peringkat Card */}
           <PeringkatWidget />
         </div>

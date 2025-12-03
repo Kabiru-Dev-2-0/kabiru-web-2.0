@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { Certificate16Color } from '@fluentui/react-icons';
 import { Notebook16Color } from '@fluentui/react-icons';
+import { Edit16Color } from '@fluentui/react-icons';
 
 interface DashboardHeaderProps {
   searchPlaceholder?: string;
@@ -62,15 +63,26 @@ export const DashboardHeader = ({
   const [lessonsSelesai, setLessonsSelesai] = useState<number>(0);
 
   const journeyLabel = useMemo(() => {
-    if (exp < 1000) return 'Pemula';
-    if (exp >= 1000 && exp < 3000) return 'Mahir';
-    return 'Ahli';
+    if (exp < 1000) return 'Newbie';
+    if (exp < 2200) return 'Learner';
+    if (exp < 3600) return 'Explorer';
+    if (exp < 5200) return 'Skilled';
+    if (exp < 7000) return 'Proficient';
+    return 'Proficient';
   }, [exp]);
 
   const expTier = useMemo(() => {
-    if (exp < 1000) return { label: 'Pemula (0–1000)', current: exp, max: 1000 };
-    if (exp >= 1000 && exp < 3000) return { label: 'Mahir (1000–3000)', current: exp, max: 3000 };
-    return { label: 'Ahli (≥3000)', current: exp, max: 3000 };
+    if (exp < 1000)
+      return { label: 'Newbie (0–1000)', current: exp, max: 1000 };
+    if (exp < 2200)
+      return { label: 'Learner (1000–2200)', current: exp, max: 2200 };
+    if (exp < 3600)
+      return { label: 'Explorer (2200–3600)', current: exp, max: 3600 };
+    if (exp < 5200)
+      return { label: 'Skilled (3600–5200)', current: exp, max: 5200 };
+    if (exp < 7000)
+      return { label: 'Proficient (5200–7000)', current: exp, max: 7000 };
+    return { label: 'Proficient (≥7000)', current: exp, max: 7000 };
   }, [exp]);
 
   // Prefill dari localStorage (client-only) agar cepat tampil tanpa menunggu fetch
@@ -314,7 +326,7 @@ export const DashboardHeader = ({
   }, [penggunaId, resolvedPenggunaId]);
 
   return (
-    <div className="flex justify-end w-full bg-white border-b border-[#E8E8E8] px-[22px] py-4">
+    <div className="flex justify-end w-full bg-white border-b border-[#E8E8E8] px-[22px] py-1">
       <div className="flex items-center gap-5">
         {/* Search Input */}
         {/* <div className="flex-1">
@@ -440,7 +452,6 @@ export const DashboardHeader = ({
                 <CardBody className="p-6 gap-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-[#006FEE]" />
                       <span className="text-2xl font-semibold text-black">Profil</span>
                     </div>
                     <Button
@@ -453,26 +464,36 @@ export const DashboardHeader = ({
                     </Button>
                   </div>
                   <div className="flex flex-col items-center gap-3">
-                    <div className="relative">
-                      <Avatar src={avatarUrl} className="w-20 h-20" />
+                    <div className="relative flex items-center justify-center">
+                      {/* Outer border container */}
+                      <div className="rounded-[14px] p-0 overflow-hidden" style={{
+                        background: 'white',
+                        boxShadow: '0 0 0 4px #3674B5'
+                      }}>
+                        <Avatar 
+                          src={avatarUrl} 
+                          className="w-20 h-20 rounded-[18px] bg-white object-cover"
+                        />
+                      </div>
                       <Button
                         isIconOnly
                         radius="full"
                         size="sm"
                         variant="light"
-                        className="absolute -right-3 -bottom-3"
+                        className="absolute -right-3 -bottom-3 p-1 bg-[#E4E4E7]/70"
                         onPress={() => {
                           setSelectedAvatar(avatarUrl);
                           setIsAvatarPickerOpen(true);
                         }}
                       >
-                        <EditRegular className="w-5 h-5 text-[#3674B5]" />
+                        <Edit16Color className="w-5 h-5 text-[#3674B5]" />
                       </Button>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-semibold text-black">
+                    <div className="flex justify-center items-center gap-1">
+                      <span className="text-xl font-semibold text-black ml-10">
                         {userName || 'Pengguna'}
                       </span>
+                      <Divider orientation="vertical" className="h-5 w-0.5 ml-2 bg-[#E4E4E7]" />
                       <Button
                         isIconOnly
                         radius="full"
@@ -483,7 +504,7 @@ export const DashboardHeader = ({
                           setIsNamePickerOpen(true);
                         }}
                       >
-                        <EditRegular className="w-5 h-5 text-[#3674B5]" />
+                        <Edit16Color className="w-fit h-auto" />
                       </Button>
                     </div>
                     <div className="flex items-center gap-1">
@@ -589,7 +610,7 @@ export const DashboardHeader = ({
               <Card radius="lg" className="bg-white shadow-2xl">
                 <CardBody className="p-6 gap-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-semibold text-black">Edit Nickname</span>
+                    <span className="text-2xl font-semibold text-black">Edit Username</span>
                     <Button
                       isIconOnly
                       radius="full"
@@ -615,10 +636,15 @@ export const DashboardHeader = ({
                   </div>
                   <div>
                     <Button
-                      color="primary"
-                      radius="lg"
-                      size="md"
-                      className="w-full"
+                      className="w-full bg-[#4281c7] text-white font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-none"
+                      style={{
+                        minHeight: '46px',
+                        backgroundColor: '#4281c7',
+                        color: '#fff',
+                        borderRadius: '12px',                  
+                        border: 'none',
+                        boxShadow: '0 4px 0 0 #205994',
+                      }}
                       isDisabled={
                         savingName || nameDraft.trim().length < 4 || nameDraft.trim().length > 10
                       }
@@ -707,47 +733,56 @@ export const DashboardHeader = ({
                       <DismissRegular className="w-6 h-6 text-[#71717A]" />
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-1 gap-y-3 justify-between">
-                    {[
-                      '/imageAssets/avatar/default.png',
-                      '/imageAssets/avatar/avatar-1.png',
-                      '/imageAssets/avatar/avatar-2.png',
-                      '/imageAssets/avatar/avatar-3.png',
-                      '/imageAssets/avatar/avatar-4.png',
-                      '/imageAssets/avatar/avatar-5.png',
-                      '/imageAssets/avatar/avatar-6.png',
-                      '/imageAssets/avatar/avatar-7.png',
-                      '/imageAssets/avatar/avatar-8.png',
-                      '/imageAssets/avatar/avatar-9.png',
-                      '/imageAssets/avatar/avatar-10.png',
-                      '/imageAssets/avatar/avatar-11.png',
-                      '/imageAssets/avatar/avatar-12.png',
-                      '/imageAssets/avatar/avatar-13.png',
-                      '/imageAssets/avatar/avatar-14.png',
-                      '/imageAssets/avatar/avatar-15.png',
-                      '/imageAssets/avatar/avatar-16.png',
-                      '/imageAssets/avatar/avatar-17.png',
-                    ].map((src) => (
-                      <button
-                        key={src}
-                        onClick={() => setSelectedAvatar(src)}
-                        className={`rounded-xl border-5 p-2 transition shadow-sm ${
-                          (selectedAvatar || avatarUrl) === src
-                            ? 'border-[#3674B5] shadow-[0px_6px_0px_0px_#3674B5]'
-                            : 'border-[#E4E4E7]'
-                        }`}
-                        aria-label={src}
-                      >
-                        <img src={src} alt="avatar" className="w-16 h-16 object-contain" />
-                      </button>
+                  <div className="flex flex-wrap gap-2 gap-y-3 justify-between">
+                        {[
+                          "/imageAssets/avatar/default.png",
+                          "/imageAssets/avatar/avatar-1.png",
+                          "/imageAssets/avatar/avatar-2.png",
+                          "/imageAssets/avatar/avatar-3.png",
+                          "/imageAssets/avatar/avatar-4.png",
+                          "/imageAssets/avatar/avatar-5.png",
+                          "/imageAssets/avatar/avatar-6.png",
+                          "/imageAssets/avatar/avatar-7.png",
+                          "/imageAssets/avatar/avatar-8.png",
+                          "/imageAssets/avatar/avatar-9.png",
+                          "/imageAssets/avatar/avatar-10.png",
+                          "/imageAssets/avatar/avatar-11.png",
+                          "/imageAssets/avatar/avatar-12.png",
+                          "/imageAssets/avatar/avatar-13.png",
+                          "/imageAssets/avatar/avatar-14.png",
+                          "/imageAssets/avatar/avatar-15.png",
+                          "/imageAssets/avatar/avatar-16.png",
+                          "/imageAssets/avatar/avatar-17.png",
+                        ].map((src) => (
+                          <button
+                            key={src}
+                            onClick={() => setSelectedAvatar(src)}
+                            className={`rounded-xl border-4 p-0 transition shadow-sm overflow-hidden ${
+                              (selectedAvatar || avatarUrl) === src
+                                ? "border-[#3674B5] shadow-[0px_6px_0px_0px_#3674B5]"
+                                : "border-[#E4E4E7]"
+                            }`}
+                            aria-label={src}
+                          >
+                            <img
+                              src={src}
+                              alt="avatar"
+                              className="w-18 h-18 object-contain"
+                            />
+                          </button>
                     ))}
                   </div>
                   <div className="mt-2">
                     <Button
-                      color="primary"
-                      radius="lg"
-                      size="md"
-                      className="w-full"
+                      className="w-full bg-[#4281c7] text-white font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-none"
+                      style={{
+                        minHeight: '46px',
+                        backgroundColor: '#4281c7',
+                        color: '#fff',
+                        borderRadius: '12px',                  
+                        border: 'none',
+                        boxShadow: '0 4px 0 0 #205994',
+                      }}
                       isDisabled={savingAvatar}
                       onPress={async () => {
                         const chosen = selectedAvatar || avatarUrl;

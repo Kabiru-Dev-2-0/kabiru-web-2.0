@@ -1,53 +1,59 @@
-"use client";
+'use client';
 
-import { CheckmarkCircleColor } from "@fluentui/react-icons";
-import { LockClosedFilled } from "@fluentui/react-icons";
+import { CheckmarkFilled } from '@fluentui/react-icons';
+import { LockClosedFilled } from '@fluentui/react-icons';
 
 interface StageNodeProps {
   stageNumber: number;
-  status: "completed" | "current" | "locked";
+  status: 'completed' | 'current' | 'locked';
   onClick?: () => void;
-  size?: "normal" | "large";
+  size?: 'normal' | 'large';
   marginTop?: number;
 }
 
-export function StageNode({ stageNumber, status, onClick, size = "normal", marginTop = 0 }: StageNodeProps) {
+export function StageNode({
+  stageNumber,
+  status,
+  onClick,
+  size = 'normal',
+  marginTop = 0,
+}: StageNodeProps) {
   const getStageColors = () => {
     switch (status) {
-      case "completed":
+      case 'completed':
         return {
-          fill: "#3674B5",
-          stroke: "#205994",
-          dropShadow: "#205994",
-          cursor: "cursor-pointer hover:scale-105",
+          fill: '#3674B5',
+          stroke: '#205994',
+          dropShadow: '#205994',
+          cursor: 'cursor-pointer hover:scale-105',
         };
-      case "current":
+      case 'current':
         return {
-          fill: "#F5A524",
-          stroke: "#C4841D",
-          dropShadow: "#C4841D",
-          cursor: "cursor-pointer hover:scale-105",
+          fill: '#F5A524',
+          stroke: '#C4841D',
+          dropShadow: '#C4841D',
+          cursor: 'cursor-pointer hover:scale-105',
         };
-      case "locked":
+      case 'locked':
         return {
-          fill: "#A1A1AA",
-          stroke: "#71717A",
-          dropShadow: "#71717A",
-          cursor: "cursor-not-allowed opacity-70",
+          fill: '#A1A1AA',
+          stroke: '#71717A',
+          dropShadow: '#71717A',
+          cursor: 'cursor-not-allowed opacity-70',
         };
     }
   };
 
   const colors = getStageColors();
-  const sizeValue = size === "large" ? 90 : 80;
-  const iconSize = size === "large" ? "w-14 h-14" : "w-12 h-12";
-  const textSize = size === "large" ? "text-[42px]" : "text-[36px]";
+  const sizeValue = size === 'large' ? 90 : 80;
+  const iconSize = size === 'large' ? 'w-14 h-14' : 'w-12 h-12';
+  const textSize = size === 'large' ? 'text-[42px]' : 'text-[36px]';
   const marginTopStyle = marginTop ? { marginTop: `${marginTop}px` } : {};
 
   return (
     <div
       className={`relative ${colors.cursor} transition-all duration-300 ease-out flex-shrink-0`}
-      onClick={status !== "locked" ? onClick : undefined}
+      onClick={status !== 'locked' ? onClick : undefined}
       style={{
         width: `${sizeValue}px`,
         height: `${sizeValue}px`,
@@ -87,22 +93,13 @@ export function StageNode({ stageNumber, status, onClick, size = "normal", margi
             <feColorMatrix
               type="matrix"
               values={
-                status === "locked"
-                  ? "0 0 0 0 0.443137 0 0 0 0 0.443137 0 0 0 0 0.478431 0 0 0 1 0"
-                  : "0 0 0 0 0.768627 0 0 0 0 0.517647 0 0 0 0 0.113725 0 0 0 1 0"
+                status === 'locked'
+                  ? '0 0 0 0 0.443137 0 0 0 0 0.443137 0 0 0 0 0.478431 0 0 0 1 0'
+                  : '0 0 0 0 0.768627 0 0 0 0 0.517647 0 0 0 0 0.113725 0 0 0 1 0'
               }
             />
-            <feBlend
-              mode="normal"
-              in2="BackgroundImageFix"
-              result="effect1_dropShadow"
-            />
-            <feBlend
-              mode="normal"
-              in="SourceGraphic"
-              in2="effect1_dropShadow"
-              result="shape"
-            />
+            <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow" />
+            <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape" />
           </filter>
         </defs>
         <g filter={`url(#filter_${status}_${stageNumber})`}>
@@ -120,13 +117,17 @@ export function StageNode({ stageNumber, status, onClick, size = "normal", margi
 
       {/* Content overlay */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
-        {status === "completed" && (
-          <CheckmarkCircleColor className={`${iconSize} text-white drop-shadow-lg`} />
+        {status === 'completed' && (
+          <img
+            src="/imageAssets/fluent-color_checkmark-circle-48.svg"
+            alt="checkmark"
+            className="${iconSize} text-white drop-shadow-xl"
+          />
         )}
-        {status === "locked" && (
+        {status === 'locked' && (
           <LockClosedFilled className={`${iconSize} text-white drop-shadow-lg`} />
         )}
-        {status === "current" && (
+        {status === 'current' && (
           <span className={`${textSize} font-extrabold text-white drop-shadow-lg`}>
             {stageNumber}
           </span>
@@ -135,4 +136,3 @@ export function StageNode({ stageNumber, status, onClick, size = "normal", margi
     </div>
   );
 }
-

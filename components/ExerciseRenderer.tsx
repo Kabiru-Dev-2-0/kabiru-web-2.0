@@ -162,6 +162,11 @@ export const FooterWithRobot = ({
   onNext?: () => void;
   onAgentClick?: () => void;
 }) => {
+  const robotImgSrc = feedback
+    ? isCorrect
+      ? '/imageAssets/correct.png'
+      : '/imageAssets/wrong.png'
+    : '/imageAssets/ask-ai.png';
   return (
     <div
       className={`fixed bottom-0 left-0 right-0 bg-white px-12 py-3.5 flex items-center justify-center gap-5 ${
@@ -181,44 +186,55 @@ export const FooterWithRobot = ({
         style={{ padding: 0 }}
       >
         <img
-          src="/imageAssets/motivational.png"
+          src={robotImgSrc}
           alt="Robot"
           className="w-[110px] h-[110px] absolute -left-4 -top-1"
         />
+      </button>
 
-        {/* Tooltip - Muncul saat ada feedback */}
-        {feedback && (
-          <div className="absolute left-[110px] bottom-[8px] flex flex-row items-end">
-            {/* Arrow - mengarah ke robot (ke kiri) */}
-            <div
-              className={`w-[19.66px] h-[19.66px] rotate-45 mr-[-10px] mb-[70px] z-10 ${
-                isCorrect ? 'bg-[#205994]' : 'bg-[#C20E4D]'
-              }`}
-              style={{ borderRadius: '2.035px' }}
-            />
+      {/* Tooltip - Muncul saat ada feedback */}
+      {feedback && (
+        <div className="absolute left-[150px] bottom-[8px] flex flex-row items-end">
+          {/* Arrow - mengarah ke robot (ke kiri) */}
+          <div
+            className={`w-[19.66px] h-[19.66px] rotate-45 mr-[-10px] mb-[70px] z-10 ${
+              isCorrect ? 'bg-[#205994]' : 'bg-[#205994]'
+            }`}
+            style={{ borderRadius: '2.035px' }}
+          />
 
-            {/* Tooltip Content */}
-            <div
-              className={`rounded-[14.32px] px-3.5 py-3.5 flex flex-col gap-1 min-w-[280px] ${
-                isCorrect ? 'bg-[#205994]' : 'bg-[#C20E4D]'
+          {/* Tooltip Content */}
+          <div
+            className={`rounded-[14.32px] px-3.5 py-3.5 flex flex-col gap-1 min-w-[280px] ${
+              isCorrect ? 'bg-[#205994]' : 'bg-[#205994]'
+            }`}
+          >
+            <p
+              className={`text-2xl font-semibold leading-[1.25em] ${
+                isCorrect ? 'text-[#74DFA2]' : 'text-[#FCA5A5]'
               }`}
             >
-              <p
-                className={`text-2xl font-semibold leading-[1.25em] ${
-                  isCorrect ? 'text-[#74DFA2]' : 'text-[#FCA5A5]'
-                }`}
+              {isCorrect ? 'Jawaban benar!' : 'Jawaban salah!'}
+            </p>
+            <p className="text-base font-medium text-white leading-[1.25em]">
+              {isCorrect
+                ? 'Kamu sudah memahami konsepnya, ayo lanjut ke soal berikutnya'
+                : 'Coba periksa lagi jawabanmu dan pastikan semuanya sudah benar'}
+            </p>
+            {!isCorrect && (
+              <button
+                type="button"
+                aria-label="Buka AI Chat"
+                onClick={onAgentClick}
+                className="bg-[#ffffff] text-[#3674B5] font-semibold px-4 py-2 rounded-xl hover:bg-[#b1b1b1] cursor-pointer w-fit"
+                style={{ boxShadow: '0px 3px 0px 0px #bababa' }}
               >
-                {isCorrect ? 'Jawaban benar!' : 'Jawaban salah!'}
-              </p>
-              <p className="text-base font-medium text-white leading-[1.25em]">
-                {isCorrect
-                  ? 'Kamu sudah memahami konsepnya, ayo lanjut ke soal berikutnya'
-                  : 'Coba periksa lagi jawabanmu dan pastikan semuanya sudah benar'}
-              </p>
-            </div>
+                Tanya Asisten
+              </button>
+            )}
           </div>
-        )}
-      </button>
+        </div>
+      )}
 
       {/* Spacer */}
       <div className="flex-1"></div>
@@ -257,6 +273,7 @@ export default function ExerciseRenderer({
   onComplete,
   onAgentClick,
   onFooterPropsChange,
+  onWrong,
 }: {
   exercises: any[];
   currentIndex?: number;
@@ -268,6 +285,7 @@ export default function ExerciseRenderer({
     feedback: string;
     isCorrect: boolean;
   }) => void;
+  onWrong?: (prompt: string) => void;
 }) {
   const styles = useStyles();
   const [answers, setAnswers] = useState<{ [key: string]: any }>({});
@@ -385,6 +403,7 @@ export default function ExerciseRenderer({
         }, 5000);
       }
     } else {
+      if (onWrong) onWrong(exercise?.prompt || '');
       // Jika salah, hilangkan tooltip setelah 3 detik
       setTimeout(() => {
         setFeedback('');

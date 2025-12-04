@@ -39,6 +39,10 @@ export default function Quiz() {
   const [isCompletedView, setIsCompletedView] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [finalExp, setFinalExp] = useState<number | null>(null);
+  const [wrongAttempts, setWrongAttempts] = useState(0);
+  const [wrongPrompts, setWrongPrompts] = useState<string[]>([]);
+  const [finalAdvice, setFinalAdvice] = useState('');
+  const [adviceLoading, setAdviceLoading] = useState(false);
 
   // Chat overlay state
   const [chatOpen, setChatOpen] = useState(false);
@@ -57,6 +61,10 @@ export default function Quiz() {
   };
 
   const handleAgentClick = () => setChatOpen(true);
+  const handleWrong = (prompt: string) => {
+    setWrongAttempts((n) => n + 1);
+    setWrongPrompts((prev) => (prev.includes(prompt) ? prev : [...prev, prompt]));
+  };
   const handleSendMessage = async () => {
     const content = chatInput.trim();
     if (!content || isAsking) return;
@@ -263,6 +271,30 @@ export default function Quiz() {
         }
         setFinalScore(nilai);
         setIsCompletedView(true);
+        try {
+          if (wrongPrompts.length > 0) {
+            setAdviceLoading(true);
+            const res = await fetch('/api/advice', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                wrong_prompts: wrongPrompts,
+                modul: modulParam,
+                bagian: bagianParam,
+              }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              const text = typeof data.answer === 'string' ? data.answer : '';
+              setFinalAdvice(text);
+            } else {
+              setFinalAdvice('');
+            }
+          }
+        } catch {
+        } finally {
+          setAdviceLoading(false);
+        }
       }
     } catch (error) {
       console.error('Error submitting hasil:', error);
@@ -288,10 +320,34 @@ export default function Quiz() {
 
   if (isCompletedView) {
     return (
-      <div className="min-h-screen bg-[#FCFDFD] flex flex-col items-center justify-center">
-        <img src="/imageAssets/motivational.png" alt="Agent" className="w-[260px] h-auto mb-6" />
+      <div className="min-h-screen bg-[#FCFDFD] flex flex-col items-center justify-center w-full gap-1">
+        <img src="/imageAssets/winner.png" alt="Agent" className="w-[260px] h-auto mb-6" />
         <p className="text-[40px] leading-[48px] font-bold text-[#3674B5]">+100 EXP</p>
-        <p className="mt-3 text-lg text-[#3F3F46]">Hebat! Kamu berhasil menyelesaikannya!</p>
+        {wrongPrompts.length <= 0 ? (
+          <p className="text-3xl leading-[48px] font-bold text-[#000000]">
+            Hebat! Kamu berhasil menyelesaikannya!
+          </p>
+        ) : null}
+        {wrongPrompts.length > 0 ? (
+          <p className="text-3xl leading-[48px] font-bold text-[#000000]">
+            Hebat! Namun kamu salah menjawab beberapa soal!
+          </p>
+        ) : null}
+
+        {!(wrongPrompts.length > 0 && finalAdvice) ? (
+          <p className="mt-3 text-lg text-[#3F3F46] text-center w-[80%]">
+            Hebat! Kamu menjawab semua soal dengan benar. Pertahankan!
+          </p>
+        ) : null}
+        {wrongPrompts.length > 0 ? (
+          finalAdvice ? (
+            <p className="mt-3 text-lg text-[#3F3F46] text-center w-[80%]">{finalAdvice}</p>
+          ) : adviceLoading ? (
+            <p className="mt-3 text-lg text-[#71717A] text-center w-[80%]">
+              Menyusun saran singkat…
+            </p>
+          ) : null
+        ) : null}
         <Button
           className="mt-6 bg-[#3674B5] text-white px-6"
           radius="md"
@@ -312,7 +368,7 @@ export default function Quiz() {
   return (
     <div className="min-h-screen bg-[#FCFDFD] flex flex-col">
       {/* Header dengan Progress Bar - Fixed */}
-      <div className="w-full bg-white border-b border-[#E8E8E8] px-12 py-4 fixed top-0 left-0 right-0 z-50">
+      <div className="w-full bg-white border-b border-[#E8E8E8] px-12 py-4 fixed top-0 left-0 right-0 z-999">
         <div className="flex items-center justify-center gap-5">
           <div className="w-[100px] flex items-center">
             <Button
@@ -385,7 +441,7 @@ export default function Quiz() {
             <AnimatePresence>
               {chatOpen && (
                 <motion.div
-                  className="w-[30%] h-[94%]"
+                  className="w-[30%] min-w-[340px] flex-shrink-0 h-[94%]"
                   initial={{ opacity: 0, x: -540, y: 200, scale: 0.98 }}
                   animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
                   exit={{ opacity: 0, x: -540, y: 200, scale: 0.98 }}
@@ -393,7 +449,7 @@ export default function Quiz() {
                   layout
                 >
                   <Card
-                    className="border-2 border-[#E4E4E7] bg-white rounded-[18px] shadow-[0px_2px_0px_0px_rgba(228,228,231,1)] h-[100%]"
+                    className="border-2 border-[#E4E4E7] bg-white rounded-[18px] shadow-[0px_2px_0px_0px_rgba(228,228,231,1)] h-[60vh]"
                     radius="lg"
                   >
                     <CardBody className="px-4 py-10 flex flex-col gap-4">
@@ -429,7 +485,7 @@ export default function Quiz() {
                               <div
                                 className={`rounded-[18px] px-4 py-3 max-w-[280px] text-sm leading-[1.55em] ${
                                   m.role === 'ai'
-                                    ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]'
+                                    ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)] overflow-x-auto'
                                     : 'bg-[#F5A524] text-white shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
                                 }`}
                                 dangerouslySetInnerHTML={
@@ -492,6 +548,7 @@ export default function Quiz() {
                 onComplete={handleExerciseComplete}
                 onAgentClick={handleAgentClick}
                 onFooterPropsChange={setFooterProps}
+                onWrong={handleWrong}
               />
             </motion.div>
           </motion.div>

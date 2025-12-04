@@ -113,12 +113,17 @@ Jawaban:`;
     }
     const genJson = await genRes.json();
     const parts = genJson?.candidates?.[0]?.content?.parts || [];
-    const answer = Array.isArray(parts)
+    const raw = Array.isArray(parts)
       ? parts
           .map((p: any) => p?.text)
           .filter(Boolean)
           .join('\n')
       : '';
+    const answer = (raw || '')
+      .replace(/^```(?:html|HTML)?\s*/g, '')
+      .replace(/\s*```$/g, '')
+      .replace(/```/g, '')
+      .trim();
 
     return NextResponse.json({ answer, contexts, documentsFound: (documents as any[]).length });
   } catch (error: any) {

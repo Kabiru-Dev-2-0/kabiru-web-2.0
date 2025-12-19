@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       .map((m: any) => `${m?.role === 'user' ? 'User' : 'AI'}: ${m?.text ?? ''}`)
       .join('\n');
 
-    const prompt = `Peran: Kamu adalah "AIZone Study Companion", agen pendamping pembelajaran yang sabar dan membantu.
+    const prompt = `Peran: Kamu adalah "Kabi AI Agent", agen pendamping pembelajaran yang sabar dan membantu.
 
 Pertanyaan Pengguna:
 ${question}
@@ -98,10 +98,11 @@ Format Keluaran (WAJIB):
 - Gunakan hanya tag: <section>, <h3>, <p>, <ol>, <ul>, <li>, <strong>, <em>, <pre>, <code>.
 - Jangan gunakan <script>, <style>, <a>, <img>, atau tag selain yang diizinkan.
 - Strukturkan jawaban dengan satu <section> yang berisi heading (<h3>), paragraf (<p>), dan poin langkah (<ol>/<ul>). Untuk cuplikan kode gunakan <pre><code>.
+- Jangan sebut kalau anda mengambil informasi dari materi atau RAG secara langsung.
 
 Jawaban:`;
     const genRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

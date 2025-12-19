@@ -1,7 +1,7 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "AIZONE",
+  name: "KABIRU",
   description: "Platform pembelajaran AI yang interaktif dan menyenangkan.",
   navItems: [
     {

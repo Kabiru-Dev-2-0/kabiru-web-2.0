@@ -1,11 +1,7 @@
 'use client';
 import { Card, CardBody } from '@heroui/card';
-import { Button } from '@heroui/button';
 import { Podium } from '@/components/podium';
 import { RankingCard } from '@/components/ranking-card';
-import { MotivationalTooltip } from '@/components/motivational-tooltip';
-import { StarColor, PawColor } from '@fluentui/react-icons';
-import { Progress } from '@heroui/progress';
 import { Skeleton } from '@heroui/skeleton';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
@@ -179,8 +175,7 @@ export default function PeringkatPage() {
         </div>
 
         {/* Right Column - Widgets */}
-        <div className="w-[300px]"></div>
-        <div className="w-[300px] flex flex-col gap-6 absolute top-24 right-9">
+        <div className="w-[300px] flex flex-col gap-6">
           {/* Motivational Image with Tooltip */}
           <div className="flex flex-row items-center relative w-full h-[225px]">
             <div className="absolute right-26 top-22 -translate-x-1/4 px-4 py-2 w-[230px] flex gap-[18px] bg-[#006FEE] rounded-2xl shadow-xl z-10">

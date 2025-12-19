@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import ExerciseRenderer, { FooterWithRobot } from '@/components/ExerciseRenderer';
+import ExerciseRenderer, { FooterWithRobot } from '@/components/exercise-renderer';
 import { fetchExercises, submitHasilLatihan } from './quizAction';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import {
@@ -295,6 +295,16 @@ export default function Quiz() {
         } finally {
           setAdviceLoading(false);
         }
+        try {
+          const supabase = createClient();
+          const { data: authData } = await supabase.auth.getUser();
+          const user = authData?.user;
+          if (user?.id && wrongPrompts.length <= 0) {
+            await supabase
+              .rpc('update_quiz_sempurna_completion_challenge', { p_uuid: user.id })
+              .match(() => {});
+          }
+        } catch {}
       }
     } catch (error) {
       console.error('Error submitting hasil:', error);
@@ -351,6 +361,7 @@ export default function Quiz() {
         <Button
           className="mt-6 bg-[#3674B5] text-white px-6"
           radius="md"
+          isDisabled={adviceLoading}
           onPress={() => {
             if (modulParam && bagianParam) {
               router.push(`/belajar/${modulParam}/${bagianParam}`);

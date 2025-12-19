@@ -162,6 +162,7 @@ export const FooterWithRobot = ({
   onNext?: () => void;
   onAgentClick?: () => void;
 }) => {
+  const [isFinishing, setIsFinishing] = useState(false);
   const robotImgSrc = feedback
     ? isCorrect
       ? '/imageAssets/correct.png'
@@ -253,8 +254,13 @@ export const FooterWithRobot = ({
         </button>
       ) : (
         <button
-          onClick={onSubmit}
-          className="bg-[#3674B5] text-white font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#2d5d94] transition-colors"
+          onClick={() => {
+            if (!showNextButton && isCorrect && isFinishing) return;
+            if (!showNextButton && isCorrect) setIsFinishing(true);
+            onSubmit();
+          }}
+          disabled={!showNextButton && isCorrect && isFinishing}
+          className="bg-[#3674B5] text-white font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#2d5d94] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             boxShadow: '0px 3px 0px 0px rgba(32, 89, 148, 1)',
           }}

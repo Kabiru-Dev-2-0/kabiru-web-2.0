@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ProgressCourseCard } from '@/components/progress-course-card';
+import { ModulProgressCard } from '@/components/modul-progress-card';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Divider } from '@heroui/divider';
@@ -34,6 +34,14 @@ export default function DashboardPage() {
   const [completedModules, setCompletedModules] = useState<Modul[]>([]);
   const [loadingData, setLoadingData] = useState<boolean>(true);
   const [hasAnyProgress, setHasAnyProgress] = useState<boolean>(false);
+  const [selectedOngoing, setSelectedOngoing] = useState<{
+    id: number;
+    modulNumber: number;
+    title: string;
+    description: string;
+    completedCount: number;
+    totalCount: number;
+  } | null>(null);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -80,6 +88,27 @@ export default function DashboardPage() {
 
         const allPercents = await Promise.all(moduls.map((m) => computePercentForModul(m.id)));
         setHasAnyProgress(allPercents.some((p) => p > 0));
+
+        if (chosenId) {
+          const modul = moduls.find((m) => m.id === chosenId) || null;
+          if (modul && penggunaId) {
+            const rows = await getCompletedBagiansForModul(supabase as any, modul.id, penggunaId);
+            const totalCount = rows.length;
+            const completedCount = rows.filter((r) => r.status === 'done').length;
+            setSelectedOngoing({
+              id: modul.id,
+              modulNumber: modul.nomor_modul,
+              title: modul.judul,
+              description: modul.deskripsi,
+              completedCount,
+              totalCount,
+            });
+          } else {
+            setSelectedOngoing(null);
+          }
+        } else {
+          setSelectedOngoing(null);
+        }
 
         const targetIds = [chosenId, ...moduls.map((m) => m.id)]
           .filter((v, i, arr) => typeof v === 'number' && arr.indexOf(v) === i)
@@ -213,21 +242,16 @@ export default function DashboardPage() {
                     </p>
                   ) : (
                     <>
-                      {ongoingCourses.map((course) => (
-                        <ProgressCourseCard
-                          key={course.id}
-                          category={course.category}
-                          description={course.description}
-                          iconComponent={course.iconComponent}
-                          progress={course.progress}
-                          title={course.title}
-                          total={course.total}
-                          valueLabel={`${course.progress}%`}
-                          href={`/belajar/${course.id}`}
-                          buttonText="Lanjutkan"
+                      {selectedOngoing ? (
+                        <ModulProgressCard
+                          modulNumber={selectedOngoing.modulNumber}
+                          title={selectedOngoing.title}
+                          description={selectedOngoing.description}
+                          completedCount={selectedOngoing.completedCount}
+                          totalCount={selectedOngoing.totalCount}
+                          href={`/belajar/${selectedOngoing.id}`}
                         />
-                      ))}
-                      {ongoingCourses.length === 0 ? (
+                      ) : (
                         <Card className="w-[333px] border border-[#F4F4F5] shadow-sm" radius="lg">
                           <CardBody className="p-5 gap-[14px]">
                             <p className="text-sm leading-5 text-[#11181C]">
@@ -235,7 +259,7 @@ export default function DashboardPage() {
                             </p>
                           </CardBody>
                         </Card>
-                      ) : null}
+                      )}
                     </>
                   )}
                 </>
@@ -299,8 +323,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Column */}
-        <div className="w-[300px]"></div>
-        <div className="w-[300px] flex flex-col gap-6 absolute top-24 right-9">
+        <div className="w-[300px] flex flex-col gap-6 justify-between items-start">
           {/* Peringkat Card */}
           <PeringkatWidget />
         </div>

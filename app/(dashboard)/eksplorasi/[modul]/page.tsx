@@ -10,6 +10,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeftRegular } from '@fluentui/react-icons';
 import { getCompletedBagiansForModul } from '@/utils/supabase/progress-helpers';
 import { PeringkatWidget } from '@/components/peringkat-widget';
+import { CircularProgress } from '@heroui/progress';
 
 interface Modul {
   id: number;
@@ -269,30 +270,18 @@ export default function EksplorasiDetailPage() {
                       </div>
                     </div>
                     <div className="relative w-[80px] h-[80px]">
-                      <svg className="w-full h-full transform -rotate-90">
-                        <circle
-                          cx="38"
-                          cy="38"
-                          r="30"
-                          stroke="#ffffff40"
-                          strokeWidth="8"
-                          fill="none"
-                        />
-                        <circle
-                          cx="38"
-                          cy="38"
-                          r="30"
-                          stroke="#F5A524"
-                          strokeWidth="8"
-                          strokeDasharray={`${2 * Math.PI * 29}`}
-                          strokeDashoffset={`${(1 - overallProgress / 100) * (2 * Math.PI * 29)}`}
-                          fill="none"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-white font-bold">{overallProgress}%</span>
-                      </div>
+                      <CircularProgress
+                        aria-label="Percentage"
+                        classNames={{
+                          svg: 'w-24 h-24 drop-shadow-md',
+                          indicator: 'stroke-[#F5A524]',
+                          track: 'stroke-[#ffffff]/35',
+                          value: 'text-md font-semibold text-[#FFFFFF]',
+                        }}
+                        showValueLabel={true}
+                        strokeWidth={4}
+                        value={overallProgress}
+                      />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
@@ -343,8 +332,7 @@ export default function EksplorasiDetailPage() {
             </div>
           </div>
         </div>
-        <div className="w-[300px]"></div>
-        <div className="w-[300px] flex flex-col gap-6 absolute top-24 right-9">
+        <div className="w-[300px] flex flex-col gap-6">
           <PeringkatWidget />
         </div>
       </div>

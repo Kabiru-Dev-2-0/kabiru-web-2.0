@@ -4,7 +4,6 @@ import { Button } from '@heroui/button';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Link from 'next/link';
-import { siteConfig } from '@/config/site';
 import { useRouter } from 'next/navigation';
 
 interface Modul {

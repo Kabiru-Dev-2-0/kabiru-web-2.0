@@ -95,7 +95,9 @@ export function StageNode({
               values={
                 status === 'locked'
                   ? '0 0 0 0 0.443137 0 0 0 0 0.443137 0 0 0 0 0.478431 0 0 0 1 0'
-                  : '0 0 0 0 0.768627 0 0 0 0 0.517647 0 0 0 0 0.113725 0 0 0 1 0'
+                  : status === 'completed'
+                    ? '0 0 0 0 0.125491 0 0 0 0 0.349020 0 0 0 0 0.580393 0 0 0 1 0'
+                    : '0 0 0 0 0.768627 0 0 0 0 0.517647 0 0 0 0 0.113725 0 0 0 1 0'
               }
             />
             <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow" />

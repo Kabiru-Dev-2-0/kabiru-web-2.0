@@ -1,20 +1,20 @@
-import {heroui} from "@heroui/theme"
+import { heroui } from '@heroui/theme';
 
 /** @type {import('tailwindcss').Config} */
 const config = {
   content: [
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
-    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+    './node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
       fontFamily: {
-        sans: ["'Encode Sans'", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)"],
+        sans: ["'Encode Sans'", 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)'],
       },
       animation: {
-        'bounce': 'bounce 3s ease-in-out infinite',
+        bounce: 'bounce 3s ease-in-out infinite',
       },
       keyframes: {
         bounce: {
@@ -30,8 +30,8 @@ const config = {
       },
     },
   },
-  darkMode: "class",
+  darkMode: 'class',
   plugins: [heroui()],
-}
+};
 
 module.exports = config;

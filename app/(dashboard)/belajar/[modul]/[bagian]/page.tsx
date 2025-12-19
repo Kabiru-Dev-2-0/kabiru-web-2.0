@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { CircularProgress } from '@heroui/progress';
 
 interface Stage {
   id: number;
@@ -243,8 +244,8 @@ export default function BagianPage() {
   if (loading) {
     return (
       <div className="flex-1 relative">
-        <div className="px-6 sticky top-0 z-[999]">
-          <div className="sticky bg-white p-2 top-0 w-[100%] z-[999]"></div>
+        <div className="px-6 sticky top-0 z-[20]">
+          <div className="sticky bg-white p-2 top-0 w-[100%] z-[20]"></div>
           <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
             <CardBody className="p-[14px_32px] gap-5">
               <div className="flex items-center gap-6">
@@ -296,8 +297,8 @@ export default function BagianPage() {
 
   return (
     <div className="flex-1 relative">
-      <div className="px-6 sticky top-0 z-[999]">
-        <div className="sticky bg-white p-2 top-0 w-[100%] z-[999]"></div>
+      <div className="px-6 sticky top-0 z-[20]">
+        <div className="sticky bg-white p-2 top-0 w-[100%] z-[20]"></div>
         <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white" radius="lg">
           <CardBody className="p-[14px_32px] gap-5">
             <div className="flex items-center gap-6">
@@ -322,24 +323,18 @@ export default function BagianPage() {
                 </div>
 
                 <div className="relative w-[72px] h-[72px]">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle cx="36" cy="36" r="32" stroke="#D9D9D9" strokeWidth="8" fill="none" />
-                    <circle
-                      cx="36"
-                      cy="36"
-                      r="32"
-                      stroke="#FF921F"
-                      strokeWidth="8"
-                      fill="none"
-                      strokeDasharray={`${2 * Math.PI * 32}`}
-                      strokeDashoffset={`${2 * Math.PI * 32 * (1 - overallProgress / 100)}`}
-                      strokeLinecap="round"
-                      className="transition-all duration-500"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-base font-bold text-[#FF921F]">{overallProgress}%</span>
-                  </div>
+                  <CircularProgress
+                    aria-label="Percentage"
+                    classNames={{
+                      svg: 'w-20 h-20 drop-shadow-md',
+                      indicator: 'stroke-[#F5A524]',
+                      track: 'stroke-[#ffffff]/35',
+                      value: 'text-md font-semibold text-[#F5A524]',
+                    }}
+                    showValueLabel={true}
+                    strokeWidth={4}
+                    value={overallProgress}
+                  />
                 </div>
               </div>
             </div>

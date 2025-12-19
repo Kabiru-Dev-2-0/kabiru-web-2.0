@@ -31,7 +31,7 @@ INSERT INTO tantangans (tipe, judul, deskripsi, threshold_bronze, threshold_silv
 VALUES
   ('login_harian', 'Login Harian', 'Bronze 3 hari beruntun, Silver 5, Gold 7', 3, 5, 7, TRUE),
   ('quiz_beruntun', 'Quiz Beruntun', 'Bronze 3 quiz beruntun, Silver 5, Gold 7', 3, 5, 7, TRUE),
-  ('modul_selesai', 'Modul Selesai', 'Bronze 1 modul, Silver 2, Gold 3', 1, 2, 3, TRUE)
+  ('modul_selesai', 'Quiz Sempurna', 'Bronze 1, Silver 2, Gold 3 quiz sempurna', 1, 2, 3, TRUE)
 ON CONFLICT (tipe) DO UPDATE SET
   judul = EXCLUDED.judul,
   deskripsi = EXCLUDED.deskripsi,
@@ -248,6 +248,34 @@ BEGIN
   PERFORM update_quiz_streak_challenge(p_id_pengguna);
 END $$;
 
+CREATE OR REPLACE FUNCTION update_quiz_sempurna_completion_challenge(
+  p_uuid UUID
+) RETURNS VOID LANGUAGE plpgsql AS $$
+DECLARE
+  v_pengguna_id BIGINT;
+  v_tantangan_id BIGINT := 3;
+BEGIN
+  SELECT id INTO v_pengguna_id FROM penggunas WHERE uuid = p_uuid;
+  IF v_pengguna_id IS NULL THEN RETURN; END IF;
+
+  INSERT INTO tantangan_pengguna (id_tantangan, id_pengguna)
+  VALUES (v_tantangan_id, v_pengguna_id)
+  ON CONFLICT (id_tantangan, id_pengguna) DO NOTHING;
+
+  UPDATE tantangan_pengguna
+  SET
+    current_value = current_value + 1,
+    best_value = GREATEST(best_value, current_value + 1),
+    last_updated_at = NOW()
+  WHERE id_tantangan = v_tantangan_id AND id_pengguna = v_pengguna_id;
+
+  PERFORM set_badge_level(
+    v_tantangan_id,
+    v_pengguna_id,
+    (SELECT best_value FROM tantangan_pengguna WHERE id_tantangan = v_tantangan_id AND id_pengguna = v_pengguna_id)
+  );
+END $$;
+
 -- 3) Modul Selesai: jumlah modul yang seluruh latihannya telah dikerjakan
 CREATE OR REPLACE FUNCTION update_module_completion_challenge(
   p_id_pengguna BIGINT
@@ -316,6 +344,7 @@ DROP TRIGGER IF EXISTS trg_hasil_latihans_update_challenges ON hasil_latihans;
 CREATE TRIGGER trg_hasil_latihans_update_challenges
 AFTER INSERT OR UPDATE OR DELETE ON hasil_latihans
 FOR EACH ROW EXECUTE FUNCTION on_hasil_latihans_insert_update_challenges();
+END $$;
 
 CREATE OR REPLACE FUNCTION reset_quiz_streak(
   p_uuid UUID
@@ -420,3 +449,23 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION get_leaderboard(INT, INT, INT, INT) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION grant_exp_for_claim(
+  p_uuid UUID,
+  p_amount INT
+) RETURNS VOID LANGUAGE plpgsql AS $$
+DECLARE
+  v_pengguna_id BIGINT;
+BEGIN
+  IF p_amount IS NULL OR p_amount <= 0 THEN
+    RETURN;
+  END IF;
+  SELECT id INTO v_pengguna_id FROM penggunas WHERE uuid = p_uuid;
+  IF v_pengguna_id IS NULL THEN
+    RETURN;
+  END IF;
+  INSERT INTO data_penggunas (id_pengguna, exp)
+  VALUES (v_pengguna_id, p_amount)
+  ON CONFLICT (id_pengguna) DO UPDATE
+    SET exp = COALESCE(data_penggunas.exp, 0) + EXCLUDED.exp;
+END $$;

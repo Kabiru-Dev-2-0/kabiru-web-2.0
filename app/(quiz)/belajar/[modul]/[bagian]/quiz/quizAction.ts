@@ -96,6 +96,7 @@ export async function submitHasilLatihan(params: {
 
   const currentExp = expRows?.exp || 0;
   const newExp = currentExp + 100;
+  const expToAdd = 100;
 
   const { error: expError } = await supabase
     .from('data_penggunas')
@@ -106,6 +107,17 @@ export async function submitHasilLatihan(params: {
   if (expError) {
     console.error('Error adding EXP:', expError);
     // Jangan gagalkan submit hasil jika EXP gagal, cukup log error
+  } else {
+    // Update streak harian setelah EXP berhasil ditambahkan
+    try {
+      await supabase.rpc('streak_harian_update', {
+        p_id_pengguna: penggunaData.id,
+        p_exp: expToAdd,
+      });
+    } catch (streakError) {
+      console.error('Error updating streak:', streakError);
+      // Jangan gagalkan submit hasil jika streak gagal, cukup log error
+    }
   }
 
   return { data: data?.[0] || null, error: null };

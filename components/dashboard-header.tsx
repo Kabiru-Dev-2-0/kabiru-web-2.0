@@ -71,7 +71,7 @@ export const DashboardHeader = ({
   const [modulSelesai, setModulSelesai] = useState<number>(0);
   const [lessonsSelesai, setLessonsSelesai] = useState<number>(0);
   const [currentStreak, setCurrentStreak] = useState<number | null>(null);
-  const [isStreakLoading, setIsStreakLoading] = useState<boolean>(false);
+  const [isStreakLoading, setIsStreakLoading] = useState<boolean>(true);
 
   const journeyLabel = useMemo(() => {
     if (exp < 1000) return "Newbie";
@@ -184,7 +184,10 @@ export const DashboardHeader = ({
         setExp(expRow?.exp || 0);
         if (typeof expRow?.current_streak === "number") {
           setCurrentStreak(expRow.current_streak);
+        } else {
+          setCurrentStreak(0);
         }
+        setIsStreakLoading(false);
         try {
           localStorage.setItem("aizone.userName", expRow?.username || "");
           localStorage.setItem("aizone.exp", String(expRow?.exp || 0));
@@ -448,10 +451,10 @@ export const DashboardHeader = ({
             <img
               src="/imageAssets/exp-icon.png"
               alt="EXP Icon"
-              className="w-10 h-10 md:w-10 md:h-10 object-contain mr-1"
+              className="w-10 h-10 object-contain"
               style={{ display: "inline-block", verticalAlign: "middle" }}
             />
-            <Skeleton isLoaded={!isLoading} className="rounded-md w-14">
+            <Skeleton isLoaded={!isLoading} className="rounded-md min-w-[56px]">
               <span className="text-2xl font-[800] text-[#006FEE]">{exp}</span>
             </Skeleton>
           </div>
@@ -459,15 +462,14 @@ export const DashboardHeader = ({
           {/* STREAK */}
           <div className="flex items-center gap-1">
             <span
-              className="text-3xl md:text-2xl"
-              style={{ display: "inline-block", verticalAlign: "middle" }}
+              className="text-3xl leading-none inline-flex items-center"
               aria-label="Streak"
             >
               🔥
             </span>
             <Skeleton
-              isLoaded={mounted && !isStreakLoading}
-              className="rounded-md w-14"
+              isLoaded={!isLoading && !isStreakLoading}
+              className="rounded-md min-w-[56px]"
             >
               <span className="text-2xl font-[800] text-[#F97316]">
                 {currentStreak ?? 0}

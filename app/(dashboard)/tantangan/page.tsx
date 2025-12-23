@@ -588,7 +588,7 @@ export default function TantanganPage() {
                 />
                 <MissionCard
                   icon={<FlagColor className="w-[42px] h-[42px]" />}
-                  title="Kerjakan latihan soal tanpa salah"
+                  title="Selesaikan unit pembelajaran"
                   progress={quizTier.progress}
                   total={quizTier.total || 7}
                   done={quizTier.tierLabel === "DONE"}
@@ -625,7 +625,7 @@ export default function TantanganPage() {
                 />
                 <MissionCard
                   icon={<PaintBrushColor className="w-[42px] h-[42px]" />}
-                  title="Selesaikan unit pembelajaran"
+                  title="Kerjakan latihan soal tanpa salah"
                   progress={modulTier.progress}
                   total={modulTier.total || 3}
                   done={modulTier.tierLabel === "DONE"}

@@ -42,8 +42,8 @@ export const MissionCard = ({
       }`}
       radius="lg"
     >
-      <CardBody className="p-[14px_18px_20px]">
-        <div className="flex items-center gap-3">
+      <CardBody className="p-[14px_16px]">
+        <div className="flex items-center gap-4">
           {/* Icon */}
           <div className="flex items-center justify-center w-[42px] h-[42px] flex-shrink-0">
             {icon}

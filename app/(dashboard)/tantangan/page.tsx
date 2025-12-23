@@ -732,7 +732,9 @@ export default function TantanganPage() {
 
         {/* Right Column - Widgets */}
         <div className="w-[300px] flex flex-col gap-6">
-          <PeringkatWidget displayedData={["peringkat", "perjalanan"]} />
+          <PeringkatWidget
+            displayedData={["peringkat", "misiHarian", "perjalanan"]}
+          />
         </div>
       </div>
     </div>

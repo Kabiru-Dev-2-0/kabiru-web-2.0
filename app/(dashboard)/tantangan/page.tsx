@@ -495,37 +495,55 @@ export default function TantanganPage() {
             radius="lg"
           >
             <CardBody className="p-5 gap-4">
-              <div className="flex gap-2">
+              <div className="relative bg-[#F4F4F5] rounded-2xl flex px-3 py-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setViewStage("bronze")}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                  className={`flex-1 rounded-[14px] font-bold transition-all duration-200 ${
                     viewStage === "bronze"
-                      ? "bg-[#006FEE] text-white shadow-md"
-                      : "bg-[#E5E7EB] text-[#9CA3AF] hover:bg-[#D1D5DB]"
+                      ? "bg-[#3577B8] text-white shadow-[0_4px_0_#265C91]" // Colors & shadow match the image
+                      : "bg-transparent text-[#3577B8] hover:bg-[#DCE4EE]"
                   }`}
+                  style={{
+                    fontFamily: "'Encode', sans-serif",
+                    fontSize: 20,
+                    paddingTop: 12,
+                    paddingBottom: 12,
+                  }}
                 >
                   Tahap 1
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewStage("silver")}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                  className={`flex-1 rounded-[14px] font-bold transition-all duration-200 ${
                     viewStage === "silver"
-                      ? "bg-[#006FEE] text-white shadow-md"
-                      : "bg-[#E5E7EB] text-[#9CA3AF] hover:bg-[#D1D5DB]"
+                      ? "bg-[#3577B8] text-white shadow-[0_4px_0_#265C91]"
+                      : "bg-transparent text-[#3577B8] hover:bg-[#DCE4EE]"
                   }`}
+                  style={{
+                    fontFamily: "'Encode', sans-serif",
+                    fontSize: 20,
+                    paddingTop: 12,
+                    paddingBottom: 12,
+                  }}
                 >
                   Tahap 2
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewStage("gold")}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                  className={`flex-1 rounded-[14px] font-bold transition-all duration-200 ${
                     viewStage === "gold"
-                      ? "bg-[#006FEE] text-white shadow-md"
-                      : "bg-[#E5E7EB] text-[#9CA3AF] hover:bg-[#D1D5DB]"
+                      ? "bg-[#3577B8] text-white shadow-[0_4px_0_#265C91]"
+                      : "bg-transparent text-[#3577B8] hover:bg-[#DCE4EE]"
                   }`}
+                  style={{
+                    fontFamily: "'Encode', sans-serif",
+                    fontSize: 20,
+                    paddingTop: 12,
+                    paddingBottom: 12,
+                  }}
                 >
                   Tahap 3
                 </button>

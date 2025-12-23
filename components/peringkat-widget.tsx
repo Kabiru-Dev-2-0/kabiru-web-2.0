@@ -8,8 +8,17 @@ import {
   TrophyColor,
   StarColor,
   PawColor,
+  MoleculeFilled,
+  DesignIdeasFilled,
+  GameChatFilled,
+  BuildingGovernmentFilled,
   FlagColor,
   PaintBrushColor,
+  Paw24Color,
+  Molecule24Color,
+  DesignIdeas24Color,
+  GameChat20Color,
+  BuildingGovernment24Color,
 } from "@fluentui/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
@@ -62,6 +71,51 @@ export function PeringkatWidget({
   const [isLoadingWidget, setIsLoadingWidget] = useState<boolean>(true);
   const [isJourneyLevelsOpen, setIsJourneyLevelsOpen] =
     useState<boolean>(false);
+  const journeyLevels = useMemo(
+    () => [
+      {
+        key: "newbie",
+        label: "Newbie",
+        min: 0,
+        max: 1000,
+        desc: "Mulai perjalananmu dari dasar-dasar komunikasi.",
+        icon: Paw24Color,
+      },
+      {
+        key: "learner",
+        label: "Learner",
+        min: 1000,
+        max: 2200,
+        desc: "Mulai nyaman belajar dan berlatih secara konsisten.",
+        icon: Molecule24Color,
+      },
+      {
+        key: "explorer",
+        label: "Explorer",
+        min: 2200,
+        max: 3600,
+        desc: "Mengeksplorasi lebih banyak topik dan situasi.",
+        icon: DesignIdeas24Color,
+      },
+      {
+        key: "skilled",
+        label: "Skilled",
+        min: 3600,
+        max: 5200,
+        desc: "Kemampuan makin terasah dan terasa natural.",
+        icon: GameChat20Color,
+      },
+      {
+        key: "proficient",
+        label: "Proficient",
+        min: 5200,
+        max: null,
+        desc: "Sudah sangat mahir dan siap tantangan lanjutan.",
+        icon: BuildingGovernment24Color,
+      },
+    ],
+    []
+  );
   const sectionsSet = useMemo(() => new Set(displayedData), [displayedData]);
   const hasMissions = localMissions.length > 0;
   const currentMission = useMemo(() => {
@@ -377,12 +431,17 @@ export function PeringkatWidget({
               <Button
                 as={Link}
                 href={href}
-                color="primary"
-                radius="full"
-                size="sm"
                 variant="light"
+                className="text-[#3674B5] cursor-pointer border-none outline-none shadow-none bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent m-0 p-0"
+                style={{
+                  color: "#3674B5",
+                  cursor: "pointer",
+                  backgroundColor: "transparent",
+                  padding: 0,
+                  margin: 0,
+                }}
               >
-                Lihat Semua
+                lihat semua
               </Button>
             </div>
 
@@ -418,12 +477,17 @@ export function PeringkatWidget({
               <Button
                 as={Link}
                 href={missionHref}
-                color="primary"
-                radius="full"
-                size="sm"
                 variant="light"
+                className="text-[#3674B5] cursor-pointer border-none outline-none shadow-none bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent m-0 p-0"
+                style={{
+                  color: "#3674B5",
+                  cursor: "pointer",
+                  backgroundColor: "transparent",
+                  padding: 0,
+                  margin: 0,
+                }}
               >
-                Lihat Semua
+                lihat semua
               </Button>
             </div>
 
@@ -482,13 +546,18 @@ export function PeringkatWidget({
                 </span>
               </div>
               <Button
-                isIconOnly
-                color="primary"
-                radius="full"
-                size="sm"
                 variant="light"
+                className="text-[#3674B5] cursor-pointer border-none outline-none shadow-none bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent m-0 p-0"
+                style={{
+                  color: "#3674B5",
+                  cursor: "pointer",
+                  backgroundColor: "transparent",
+                  padding: 0,
+                  margin: 0,
+                }}
+                onPress={() => setIsJourneyLevelsOpen(true)}
               >
-                →
+                lihat semua
               </Button>
             </div>
 
@@ -519,6 +588,98 @@ export function PeringkatWidget({
           </CardBody>
         </Card>
       ) : null}
+
+      {/* Journey Levels Modal */}
+      <Modal
+        isOpen={isJourneyLevelsOpen}
+        onOpenChange={setIsJourneyLevelsOpen}
+        placement="center"
+        backdrop="blur"
+        size="lg"
+      >
+        <ModalContent className="max-w-[720px] w-full">
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Level Perjalanan
+              </ModalHeader>
+              <ModalBody className="max-h-[70vh] overflow-y-auto">
+                <div className="flex flex-col gap-3">
+                  {journeyLevels.map((lvl) => {
+                    const Icon = lvl.icon;
+                    const exp = localJourneyValue;
+                    const min = lvl.min;
+                    const max = lvl.max ?? Math.max(exp, min + 1);
+                    const raw =
+                      max === null || max <= min
+                        ? 1
+                        : (exp - min) / (max - min);
+                    const clamped = Math.min(1, Math.max(0, raw));
+                    const percent = Math.round(clamped * 100);
+                    const rangeLabel =
+                      lvl.max == null
+                        ? `${lvl.min}+ XP`
+                        : `${lvl.min} - ${lvl.max - 1} XP`;
+                    const isActive =
+                      exp >= lvl.min && (lvl.max == null || exp < lvl.max);
+
+                    return (
+                      <div
+                        key={lvl.key}
+                        className={`flex flex-col gap-1 rounded-2xl border px-4 py-3 ${
+                          isActive
+                            ? "border-[#F5A524] bg-white"
+                            : "border-[#E5E7EB] bg-white"
+                        }`}
+                      >
+                        {/* Header: icon + title + range */}
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-[32px] h-[32px]" />
+                          <div className="flex-1 flex items-start justify-between gap-3">
+                            <span className="text-xl font-bold text-[#F5A524] leading-tight">
+                              {lvl.label}
+                            </span>
+                            <span className="text-lg font-semibold text-[#6B7280] leading-tight">
+                              {rangeLabel}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        {lvl.desc ? (
+                          <p className="text-md text-[#111827] leading-snug">
+                            {lvl.desc}
+                          </p>
+                        ) : null}
+
+                        {/* Progress bar + percentage */}
+                        <div className="flex items-center gap-3">
+                          <Progress
+                            aria-label={`${lvl.label} progress`}
+                            classNames={{
+                              base: "w-full",
+                              track: "bg-[#E5E7EB]",
+                              indicator: "bg-[#F5A524]",
+                            }}
+                            maxValue={100}
+                            radius="full"
+                            size="md"
+                            value={percent}
+                            showValueLabel={false}
+                          />
+                          <span className="text-lg font-semibold text-[#111827]">
+                            {percent}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

@@ -16,3 +16,5 @@ UNIQUE (id_pengguna, activity_date);
 -- ALTER TABLE public.user_daily_learning_summary
 -- DROP CONSTRAINT IF EXISTS user_daily_learning_summary_unique_per_day;
 
+
+

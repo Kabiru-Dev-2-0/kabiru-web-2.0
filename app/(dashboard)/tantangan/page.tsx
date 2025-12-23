@@ -1,19 +1,24 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { MissionCard } from '@/components/mission-card';
-import { StarColor, FlagColor, PaintBrushColor } from '@fluentui/react-icons';
-import { createClient } from '@/utils/supabase/client';
-import { PeringkatWidget } from '@/components/peringkat-widget';
-import { Card, CardBody } from '@heroui/card';
-import { CheckmarkCircleColor } from '@fluentui/react-icons';
-import { Button } from '@heroui/button';
+"use client";
+import { useEffect, useState } from "react";
+import { MissionCard } from "@/components/mission-card";
+import {
+  StarColor,
+  FlagColor,
+  PaintBrushColor,
+  TrophyColor,
+} from "@fluentui/react-icons";
+import { createClient } from "@/utils/supabase/client";
+import { PeringkatWidget } from "@/components/peringkat-widget";
+import { Card, CardBody } from "@heroui/card";
+import { CheckmarkCircleColor } from "@fluentui/react-icons";
+import { Button } from "@heroui/button";
 
 type ChallengeRow = {
-  tipe: 'login_harian' | 'quiz_beruntun' | 'quiz_sempurna';
+  tipe: "login_harian" | "quiz_beruntun" | "quiz_sempurna";
   judul: string;
   current_value: number;
   best_value: number;
-  badge_level: 'none' | 'bronze' | 'silver' | 'gold';
+  badge_level: "none" | "bronze" | "silver" | "gold";
   threshold_bronze: number;
   threshold_silver: number;
   threshold_gold: number;
@@ -25,38 +30,52 @@ type ClaimFlags = {
   tantangan3_isclaimed: boolean;
 };
 
+type IndividualClaimFlags = {
+  login_claimed_bronze: boolean;
+  login_claimed_silver: boolean;
+  login_claimed_gold: boolean;
+  quiz_claimed_bronze: boolean;
+  quiz_claimed_silver: boolean;
+  quiz_claimed_gold: boolean;
+  modul_claimed_bronze: boolean;
+  modul_claimed_silver: boolean;
+  modul_claimed_gold: boolean;
+};
+
 function getGlobalStage(rows?: ChallengeRow[] | null) {
-  if (!rows || rows.length === 0) return 'bronze' as const;
+  if (!rows || rows.length === 0) return "bronze" as const;
   const allBronze = rows.every((r) => r.best_value >= r.threshold_bronze);
   const allSilver = rows.every((r) => r.best_value >= r.threshold_silver);
   const allGold = rows.every((r) => r.best_value >= r.threshold_gold);
-  if (allGold) return 'completed' as const;
-  if (allSilver) return 'gold' as const;
-  if (allBronze) return 'silver' as const;
-  return 'bronze' as const;
+  if (allGold) return "completed" as const;
+  if (allSilver) return "gold" as const;
+  if (allBronze) return "silver" as const;
+  return "bronze" as const;
 }
 
 function getTierInfo(
   row: ChallengeRow | undefined,
-  stage: 'bronze' | 'silver' | 'gold' | 'completed'
+  stage: "bronze" | "silver" | "gold" | "completed"
 ) {
-  if (!row) return { tierLabel: 'Bronze', progress: 0, total: 0 };
+  if (!row) return { tierLabel: "Bronze", progress: 0, total: 0 };
   const thresholds = {
     bronze: row.threshold_bronze,
     silver: row.threshold_silver,
     gold: row.threshold_gold,
   };
-  const total = stage === 'completed' ? row.threshold_gold : thresholds[stage];
+  const total = stage === "completed" ? row.threshold_gold : thresholds[stage];
   const isDone =
-    stage === 'completed' ? row.best_value >= row.threshold_gold : row.best_value >= total;
+    stage === "completed"
+      ? row.best_value >= row.threshold_gold
+      : row.best_value >= total;
   const progress = isDone ? total : Math.min(row.current_value, total);
   const tierLabel = isDone
-    ? 'DONE'
-    : stage === 'bronze'
-      ? 'Bronze'
-      : stage === 'silver'
-        ? 'Silver'
-        : 'Gold';
+    ? "DONE"
+    : stage === "bronze"
+      ? "Bronze"
+      : stage === "silver"
+        ? "Silver"
+        : "Gold";
   return { tierLabel, progress, total };
 }
 
@@ -64,7 +83,9 @@ export default function TantanganPage() {
   const [challenges, setChallenges] = useState<ChallengeRow[] | null>(null);
   const [penggunaId, setPenggunaId] = useState<number | null>(null);
   const [claimFlags, setClaimFlags] = useState<ClaimFlags | null>(null);
-  const [claimLoading, setClaimLoading] = useState(false);
+  const [individualClaimFlags, setIndividualClaimFlags] =
+    useState<IndividualClaimFlags | null>(null);
+  const [claimLoading, setClaimLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -74,28 +95,30 @@ export default function TantanganPage() {
         const user = authData?.user;
         if (!user) return;
         const { data: pengguna } = await supabase
-          .from('penggunas')
-          .select('id')
-          .eq('uuid', user.id)
+          .from("penggunas")
+          .select("id")
+          .eq("uuid", user.id)
           .single();
         const penggunaId = pengguna?.id as number | undefined;
         if (!penggunaId) return;
         setPenggunaId(penggunaId);
 
         const { data } = await supabase
-          .from('v_tantangan_progress')
+          .from("v_tantangan_progress")
           .select(
-            'tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold'
+            "tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold"
           )
-          .eq('id_pengguna', penggunaId);
+          .eq("id_pengguna", penggunaId);
 
         const rows = Array.isArray(data) ? (data as ChallengeRow[]) : [];
         if (rows.length) setChallenges(rows);
 
         const { data: dp } = await supabase
-          .from('data_penggunas')
-          .select('tantangan1_isclaimed, tantangan2_isclaimed, tantangan3_isclaimed')
-          .eq('id_pengguna', penggunaId)
+          .from("data_penggunas")
+          .select(
+            "tantangan1_isclaimed, tantangan2_isclaimed, tantangan3_isclaimed"
+          )
+          .eq("id_pengguna", penggunaId)
           .single();
         if (dp) {
           setClaimFlags({
@@ -105,95 +128,322 @@ export default function TantanganPage() {
           });
         }
 
-        await supabase.rpc('log_daily_login', { p_uuid: user.id }).match(() => {});
+        // Load individual claim flags from database
+        const { data: claimsData } = await supabase
+          .from("tantangan_claims")
+          .select("tipe_tantangan, tier")
+          .eq("id_pengguna", penggunaId);
+
+        const flags: IndividualClaimFlags = {
+          login_claimed_bronze: false,
+          login_claimed_silver: false,
+          login_claimed_gold: false,
+          quiz_claimed_bronze: false,
+          quiz_claimed_silver: false,
+          quiz_claimed_gold: false,
+          modul_claimed_bronze: false,
+          modul_claimed_silver: false,
+          modul_claimed_gold: false,
+        };
+
+        if (claimsData && Array.isArray(claimsData)) {
+          claimsData.forEach(
+            (claim: { tipe_tantangan: string; tier: string }) => {
+              if (claim.tipe_tantangan === "login_harian") {
+                if (claim.tier === "bronze") flags.login_claimed_bronze = true;
+                if (claim.tier === "silver") flags.login_claimed_silver = true;
+                if (claim.tier === "gold") flags.login_claimed_gold = true;
+              }
+              if (claim.tipe_tantangan === "quiz_beruntun") {
+                if (claim.tier === "bronze") flags.quiz_claimed_bronze = true;
+                if (claim.tier === "silver") flags.quiz_claimed_silver = true;
+                if (claim.tier === "gold") flags.quiz_claimed_gold = true;
+              }
+              if (claim.tipe_tantangan === "quiz_sempurna") {
+                if (claim.tier === "bronze") flags.modul_claimed_bronze = true;
+                if (claim.tier === "silver") flags.modul_claimed_silver = true;
+                if (claim.tier === "gold") flags.modul_claimed_gold = true;
+              }
+            }
+          );
+        }
+
+        setIndividualClaimFlags(flags);
+
+        await supabase
+          .rpc("log_daily_login", { p_uuid: user.id })
+          .match(() => {});
       } catch {}
     };
     load();
   }, []);
 
-  const loginRow = challenges?.find((r) => r.tipe === 'login_harian');
-  const quizRow = challenges?.find((r) => r.tipe === 'quiz_beruntun');
-  const modulRow = challenges?.find((r) => r.tipe === 'quiz_sempurna');
+  const loginRow = challenges?.find((r) => r.tipe === "login_harian");
+  const quizRow = challenges?.find((r) => r.tipe === "quiz_beruntun");
+  const modulRow = challenges?.find((r) => r.tipe === "quiz_sempurna");
   const stage = getGlobalStage(challenges);
-  const [viewStage, setViewStage] = useState<'bronze' | 'silver' | 'gold' | 'completed'>('bronze');
+  const [viewStage, setViewStage] = useState<
+    "bronze" | "silver" | "gold" | "completed"
+  >("bronze");
   const loginTier = getTierInfo(loginRow, viewStage);
   const quizTier = getTierInfo(quizRow, viewStage);
   const modulTier = getTierInfo(modulRow, viewStage);
 
-  const stageForClaim = viewStage === 'completed' ? 'gold' : viewStage;
-  const isAllDoneForStage = (st: 'bronze' | 'silver' | 'gold') => {
-    const rows = [loginRow, quizRow, modulRow].filter(Boolean) as ChallengeRow[];
+  // Determine if current stage is unlocked
+  const isStageUnlocked = (st: "bronze" | "silver" | "gold") => {
+    if (st === "bronze") return true;
+    if (st === "silver") {
+      const rows = [loginRow, quizRow, modulRow].filter(
+        Boolean
+      ) as ChallengeRow[];
+      return rows.every((r) => r.best_value >= r.threshold_bronze);
+    }
+    if (st === "gold") {
+      const rows = [loginRow, quizRow, modulRow].filter(
+        Boolean
+      ) as ChallengeRow[];
+      return rows.every((r) => r.best_value >= r.threshold_silver);
+    }
+    return false;
+  };
+
+  const currentStageUnlocked =
+    viewStage === "bronze" ||
+    isStageUnlocked(viewStage === "completed" ? "gold" : viewStage);
+
+  // Check if individual challenge is completed for current stage
+  const isChallengeCompleted = (
+    row: ChallengeRow | undefined,
+    st: "bronze" | "silver" | "gold"
+  ) => {
+    if (!row) return false;
+    const threshold =
+      st === "bronze"
+        ? row.threshold_bronze
+        : st === "silver"
+          ? row.threshold_silver
+          : row.threshold_gold;
+    return row.best_value >= threshold;
+  };
+
+  // Check if individual challenge is claimed for current stage
+  const isChallengeClaimed = (
+    challengeType: "login" | "quiz" | "modul",
+    st: "bronze" | "silver" | "gold"
+  ) => {
+    if (!individualClaimFlags) return false;
+    const key = `${challengeType}_claimed_${st}` as keyof IndividualClaimFlags;
+    return !!individualClaimFlags[key];
+  };
+
+  // Get EXP reward for each challenge based on stage
+  const getExpReward = (
+    challengeType: "login" | "quiz" | "modul",
+    st: "bronze" | "silver" | "gold"
+  ) => {
+    if (challengeType === "login") {
+      return st === "bronze" ? 20 : st === "silver" ? 40 : 70;
+    }
+    if (challengeType === "quiz") {
+      return st === "bronze" ? 30 : st === "silver" ? 70 : 100;
+    }
+    if (challengeType === "modul") {
+      return st === "bronze" ? 50 : st === "silver" ? 100 : 150;
+    }
+    return 0;
+  };
+
+  const stageForClaim = viewStage === "completed" ? "gold" : viewStage;
+  const isAllDoneForStage = (st: "bronze" | "silver" | "gold") => {
+    const rows = [loginRow, quizRow, modulRow].filter(
+      Boolean
+    ) as ChallengeRow[];
     if (rows.length !== 3) return false;
     return rows.every((r) => {
       const threshold =
-        st === 'bronze'
+        st === "bronze"
           ? r.threshold_bronze
-          : st === 'silver'
+          : st === "silver"
             ? r.threshold_silver
             : r.threshold_gold;
       return r.best_value >= threshold;
     });
   };
-  const isClaimedForStage = (st: 'bronze' | 'silver' | 'gold') => {
+  const isClaimedForStage = (st: "bronze" | "silver" | "gold") => {
     if (!claimFlags) return false;
-    return st === 'bronze'
+    return st === "bronze"
       ? !!claimFlags.tantangan1_isclaimed
-      : st === 'silver'
+      : st === "silver"
         ? !!claimFlags.tantangan2_isclaimed
         : !!claimFlags.tantangan3_isclaimed;
   };
-  const canClaim = isAllDoneForStage(stageForClaim) && !isClaimedForStage(stageForClaim);
+  const canClaim =
+    isAllDoneForStage(stageForClaim) && !isClaimedForStage(stageForClaim);
 
-  const handleClaim = async () => {
+  const handleIndividualClaim = async (
+    challengeType: "login" | "quiz" | "modul",
+    st: "bronze" | "silver" | "gold"
+  ) => {
     if (!penggunaId) return;
-    setClaimLoading(true);
+    const claimKey = `${challengeType}_${st}`;
+    setClaimLoading((prev) => ({ ...prev, [claimKey]: true }));
+
     try {
       const supabase = createClient();
       const { data } = await supabase
-        .from('v_tantangan_progress')
+        .from("v_tantangan_progress")
         .select(
-          'tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold'
+          "tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold"
         )
-        .eq('id_pengguna', penggunaId);
+        .eq("id_pengguna", penggunaId);
       const rows = Array.isArray(data) ? (data as ChallengeRow[]) : [];
-      const lr = rows.find((r) => r.tipe === 'login_harian');
-      const qr = rows.find((r) => r.tipe === 'quiz_beruntun');
-      const mr = rows.find((r) => r.tipe === 'quiz_sempurna');
+
+      const challengeMap = {
+        login: "login_harian",
+        quiz: "quiz_beruntun",
+        modul: "quiz_sempurna",
+      } as const;
+
+      const row = rows.find((r) => r.tipe === challengeMap[challengeType]);
+      if (!row) {
+        setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
+        return;
+      }
+
+      const threshold =
+        st === "bronze"
+          ? row.threshold_bronze
+          : st === "silver"
+            ? row.threshold_silver
+            : row.threshold_gold;
+
+      if (row.best_value < threshold) {
+        setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
+        return;
+      }
+
+      // Claim reward using database function (includes EXP grant)
+      const expAmount = getExpReward(challengeType, st);
+      const challengeTypeDb = challengeMap[challengeType];
+
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData?.user;
+        if (user?.id && expAmount > 0) {
+          const { data: result, error: claimError } = await supabase.rpc(
+            "claim_tantangan_reward",
+            {
+              p_uuid: user.id,
+              p_tipe_tantangan: challengeTypeDb,
+              p_tier: st,
+              p_exp_amount: expAmount,
+            }
+          );
+
+          if (claimError || !result?.success) {
+            console.error(
+              "Failed to claim reward:",
+              claimError || result?.error
+            );
+            setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
+            return;
+          }
+
+          // Update local claim flags
+          setIndividualClaimFlags((prev) => {
+            if (!prev) return prev;
+            const key =
+              `${challengeType}_claimed_${st}` as keyof IndividualClaimFlags;
+            return { ...prev, [key]: true };
+          });
+
+          // Trigger EXP refresh in dashboard header
+          // Method 1: Update localStorage (header reads from localStorage as fallback)
+          try {
+            const { data: expData } = await supabase
+              .from("data_penggunas")
+              .select("exp")
+              .eq("id_pengguna", penggunaId)
+              .single();
+            if (expData?.exp !== undefined) {
+              localStorage.setItem("aizone.exp", String(expData.exp));
+              // Method 2: Dispatch custom event for header to listen
+              window.dispatchEvent(
+                new CustomEvent("exp-updated", {
+                  detail: { exp: expData.exp },
+                })
+              );
+            }
+          } catch (expError) {
+            // Ignore error, realtime subscription should handle it
+            console.error("Error fetching updated EXP:", expError);
+          }
+        }
+      } catch (error) {
+        console.error("Error claiming reward:", error);
+        setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
+        return;
+      }
+    } finally {
+      setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
+    }
+  };
+
+  const handleClaim = async () => {
+    if (!penggunaId) return;
+    setClaimLoading((prev) => ({ ...prev, stage: true }));
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("v_tantangan_progress")
+        .select(
+          "tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold"
+        )
+        .eq("id_pengguna", penggunaId);
+      const rows = Array.isArray(data) ? (data as ChallengeRow[]) : [];
+      const lr = rows.find((r) => r.tipe === "login_harian");
+      const qr = rows.find((r) => r.tipe === "quiz_beruntun");
+      const mr = rows.find((r) => r.tipe === "quiz_sempurna");
       const valid =
         !!lr &&
         !!qr &&
         !!mr &&
         [lr, qr, mr].every((r) => {
           const threshold =
-            stageForClaim === 'bronze'
+            stageForClaim === "bronze"
               ? r.threshold_bronze
-              : stageForClaim === 'silver'
+              : stageForClaim === "silver"
                 ? r.threshold_silver
                 : r.threshold_gold;
           return r.best_value >= threshold;
         });
       if (!valid) {
-        setClaimLoading(false);
+        setClaimLoading((prev) => ({ ...prev, stage: false }));
         return;
       }
       const column =
-        stageForClaim === 'bronze'
-          ? 'tantangan1_isclaimed'
-          : stageForClaim === 'silver'
-            ? 'tantangan2_isclaimed'
-            : 'tantangan3_isclaimed';
+        stageForClaim === "bronze"
+          ? "tantangan1_isclaimed"
+          : stageForClaim === "silver"
+            ? "tantangan2_isclaimed"
+            : "tantangan3_isclaimed";
       const { error } = await supabase
-        .from('data_penggunas')
+        .from("data_penggunas")
         .update({ [column]: true })
-        .eq('id_pengguna', penggunaId);
+        .eq("id_pengguna", penggunaId);
       if (!error) {
-        const amount = stageForClaim === 'bronze' ? 200 : stageForClaim === 'silver' ? 300 : 500;
+        const amount =
+          stageForClaim === "bronze"
+            ? 200
+            : stageForClaim === "silver"
+              ? 300
+              : 500;
         try {
           const { data: authData } = await supabase.auth.getUser();
           const user = authData?.user;
           if (user?.id) {
             await supabase
-              .rpc('grant_exp_for_claim', { p_uuid: user.id, p_amount: amount })
+              .rpc("grant_exp_for_claim", { p_uuid: user.id, p_amount: amount })
               .match(() => {});
           }
         } catch {}
@@ -204,14 +454,35 @@ export default function TantanganPage() {
                 [column]: true,
               }
             : {
-                tantangan1_isclaimed: column === 'tantangan1_isclaimed',
-                tantangan2_isclaimed: column === 'tantangan2_isclaimed',
-                tantangan3_isclaimed: column === 'tantangan3_isclaimed',
+                tantangan1_isclaimed: column === "tantangan1_isclaimed",
+                tantangan2_isclaimed: column === "tantangan2_isclaimed",
+                tantangan3_isclaimed: column === "tantangan3_isclaimed",
               }
         );
+
+        // Trigger EXP refresh in dashboard header
+        try {
+          const { data: expData } = await supabase
+            .from("data_penggunas")
+            .select("exp")
+            .eq("id_pengguna", penggunaId)
+            .single();
+          if (expData?.exp !== undefined) {
+            localStorage.setItem("aizone.exp", String(expData.exp));
+            // Dispatch custom event for header to listen
+            window.dispatchEvent(
+              new CustomEvent("exp-updated", {
+                detail: { exp: expData.exp },
+              })
+            );
+          }
+        } catch (expError) {
+          // Ignore error, realtime subscription should handle it
+          console.error("Error fetching updated EXP:", expError);
+        }
       }
     } finally {
-      setClaimLoading(false);
+      setClaimLoading((prev) => ({ ...prev, stage: false }));
     }
   };
 
@@ -224,125 +495,211 @@ export default function TantanganPage() {
             radius="lg"
           >
             <CardBody className="p-5 gap-4">
-              {(() => {
-                const stageIndex =
-                  stage === 'bronze' ? 0 : stage === 'silver' ? 1 : stage === 'gold' ? 2 : 3;
-                const viewIndex =
-                  viewStage === 'bronze'
-                    ? 0
-                    : viewStage === 'silver'
-                      ? 1
-                      : viewStage === 'gold'
-                        ? 2
-                        : 3;
-                const nodeClass = (idx: number) =>
-                  stageIndex > idx
-                    ? 'bg-[#17C964]'
-                    : stageIndex === idx
-                      ? 'bg-[#17C964]'
-                      : 'bg-[#E5E7EB]';
-                const lineClass = (idx: number) =>
-                  stageIndex > idx ? 'bg-[#17C964]' : 'bg-[#E5E7EB]';
-                const labelClass = (idx: number) =>
-                  viewIndex === idx
-                    ? 'text-[#17C964] font-semibold cursor-pointer'
-                    : 'text-[#9CA3AF] cursor-pointer';
-                return (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        className={`w-3 h-3 rounded-full ${nodeClass(0)}`}
-                        onClick={() => setViewStage('bronze')}
-                        aria-label="Bronze"
-                      />
-                      <div className={`h-[2px] flex-1 ${lineClass(0)}`} />
-                      <button
-                        type="button"
-                        className={`w-3 h-3 rounded-full ${nodeClass(1)}`}
-                        onClick={() => setViewStage('silver')}
-                        aria-label="Silver"
-                      />
-                      <div className={`h-[2px] flex-1 ${lineClass(1)}`} />
-                      <button
-                        type="button"
-                        className={`w-3 h-3 rounded-full ${nodeClass(2)}`}
-                        onClick={() => setViewStage('gold')}
-                        aria-label="Gold"
-                      />
-                      {stage === 'completed' && (
-                        <button
-                          type="button"
-                          onClick={() => setViewStage('completed')}
-                          aria-label="Selesai"
-                        >
-                          <CheckmarkCircleColor className="w-6 h-6 text-[#17C964]" />
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={labelClass(0)} onClick={() => setViewStage('bronze')}>
-                        Bronze
-                      </span>
-                      <span className={labelClass(1)} onClick={() => setViewStage('silver')}>
-                        Silver
-                      </span>
-                      <span className={labelClass(2)} onClick={() => setViewStage('gold')}>
-                        {stage === 'completed' ? 'Selesai' : 'Gold'}
-                      </span>
-                    </div>
-                  </>
-                );
-              })()}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewStage("bronze")}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                    viewStage === "bronze"
+                      ? "bg-[#006FEE] text-white shadow-md"
+                      : "bg-[#E5E7EB] text-[#9CA3AF] hover:bg-[#D1D5DB]"
+                  }`}
+                >
+                  Tahap 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewStage("silver")}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                    viewStage === "silver"
+                      ? "bg-[#006FEE] text-white shadow-md"
+                      : "bg-[#E5E7EB] text-[#9CA3AF] hover:bg-[#D1D5DB]"
+                  }`}
+                >
+                  Tahap 2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewStage("gold")}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                    viewStage === "gold"
+                      ? "bg-[#006FEE] text-white shadow-md"
+                      : "bg-[#E5E7EB] text-[#9CA3AF] hover:bg-[#D1D5DB]"
+                  }`}
+                >
+                  Tahap 3
+                </button>
+              </div>
               <div className="flex flex-col gap-5 mt-2">
                 <MissionCard
                   icon={<StarColor className="w-[42px] h-[42px]" />}
-                  title={`Login Harian — Tingkat ${loginTier.tierLabel}`}
+                  title="Login harian"
                   progress={loginTier.progress}
                   total={loginTier.total || 7}
-                  done={loginTier.tierLabel === 'DONE'}
+                  done={loginTier.tierLabel === "DONE"}
+                  isClaimed={isChallengeClaimed(
+                    "login",
+                    viewStage === "completed" ? "gold" : viewStage
+                  )}
+                  expReward={getExpReward(
+                    "login",
+                    viewStage === "completed" ? "gold" : viewStage
+                  )}
+                  canClaim={
+                    isChallengeCompleted(
+                      loginRow,
+                      viewStage === "completed" ? "gold" : viewStage
+                    ) &&
+                    !isChallengeClaimed(
+                      "login",
+                      viewStage === "completed" ? "gold" : viewStage
+                    )
+                  }
+                  onClaim={() =>
+                    handleIndividualClaim(
+                      "login",
+                      viewStage === "completed" ? "gold" : viewStage
+                    )
+                  }
+                  isClaimLoading={
+                    claimLoading[
+                      `login_${viewStage === "completed" ? "gold" : viewStage}`
+                    ] || false
+                  }
+                  isDisabled={!currentStageUnlocked}
                 />
-                <span className="text-sm text-[#71717A]">
-                  Tingkat saat ini: {loginTier.tierLabel}
-                </span>
                 <MissionCard
                   icon={<FlagColor className="w-[42px] h-[42px]" />}
-                  title={`Quiz Beruntun — Tingkat ${quizTier.tierLabel}`}
+                  title="Kerjakan latihan soal tanpa salah"
                   progress={quizTier.progress}
                   total={quizTier.total || 7}
-                  done={quizTier.tierLabel === 'DONE'}
+                  done={quizTier.tierLabel === "DONE"}
+                  isClaimed={isChallengeClaimed(
+                    "quiz",
+                    viewStage === "completed" ? "gold" : viewStage
+                  )}
+                  expReward={getExpReward(
+                    "quiz",
+                    viewStage === "completed" ? "gold" : viewStage
+                  )}
+                  canClaim={
+                    isChallengeCompleted(
+                      quizRow,
+                      viewStage === "completed" ? "gold" : viewStage
+                    ) &&
+                    !isChallengeClaimed(
+                      "quiz",
+                      viewStage === "completed" ? "gold" : viewStage
+                    )
+                  }
+                  onClaim={() =>
+                    handleIndividualClaim(
+                      "quiz",
+                      viewStage === "completed" ? "gold" : viewStage
+                    )
+                  }
+                  isClaimLoading={
+                    claimLoading[
+                      `quiz_${viewStage === "completed" ? "gold" : viewStage}`
+                    ] || false
+                  }
+                  isDisabled={!currentStageUnlocked}
                 />
-                <span className="text-sm text-[#71717A]">
-                  Tingkat saat ini: {quizTier.tierLabel}
-                </span>
                 <MissionCard
                   icon={<PaintBrushColor className="w-[42px] h-[42px]" />}
-                  title={`Quiz Sempurna — Tingkat ${modulTier.tierLabel}`}
+                  title="Selesaikan unit pembelajaran"
                   progress={modulTier.progress}
                   total={modulTier.total || 3}
-                  done={modulTier.tierLabel === 'DONE'}
+                  done={modulTier.tierLabel === "DONE"}
+                  isClaimed={isChallengeClaimed(
+                    "modul",
+                    viewStage === "completed" ? "gold" : viewStage
+                  )}
+                  expReward={getExpReward(
+                    "modul",
+                    viewStage === "completed" ? "gold" : viewStage
+                  )}
+                  canClaim={
+                    isChallengeCompleted(
+                      modulRow,
+                      viewStage === "completed" ? "gold" : viewStage
+                    ) &&
+                    !isChallengeClaimed(
+                      "modul",
+                      viewStage === "completed" ? "gold" : viewStage
+                    )
+                  }
+                  onClaim={() =>
+                    handleIndividualClaim(
+                      "modul",
+                      viewStage === "completed" ? "gold" : viewStage
+                    )
+                  }
+                  isClaimLoading={
+                    claimLoading[
+                      `modul_${viewStage === "completed" ? "gold" : viewStage}`
+                    ] || false
+                  }
+                  isDisabled={!currentStageUnlocked}
                 />
-                <span className="text-sm text-[#71717A]">
-                  Tingkat saat ini: {modulTier.tierLabel}
-                </span>
+                <MissionCard
+                  icon={
+                    <div className="w-[42px] h-[42px] flex items-center justify-center">
+                      <svg
+                        width="42"
+                        height="42"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5Z"
+                          fill="#06B6D4"
+                        />
+                        <path
+                          d="M19.43 12.97C19.47 12.66 19.5 12.34 19.5 12C19.5 11.66 19.47 11.34 19.43 11.03L21.54 9.37C21.73 9.22 21.78 8.95 21.66 8.73L19.66 5.27C19.54 5.05 19.27 4.96 19.05 5.05L16.56 6.05C16.04 5.65 15.5 5.32 14.87 5.07L14.49 2.42C14.46 2.18 14.25 2 14 2H10C9.75 2 9.54 2.18 9.51 2.42L9.13 5.07C8.5 5.32 7.96 5.66 7.44 6.05L4.95 5.05C4.73 4.96 4.46 5.05 4.34 5.27L2.34 8.73C2.21 8.95 2.27 9.22 2.46 9.37L4.57 11.03C4.53 11.34 4.5 11.67 4.5 12C4.5 12.33 4.53 12.65 4.57 12.97L2.46 14.63C2.27 14.78 2.21 15.05 2.34 15.27L4.34 18.73C4.46 18.95 4.73 19.03 4.95 18.95L7.44 17.95C7.96 18.34 8.5 18.68 9.13 18.93L9.51 21.58C9.54 21.82 9.75 22 10 22H14C14.25 22 14.46 21.82 14.49 21.58L14.87 18.93C15.5 18.67 16.04 18.34 16.56 17.95L19.05 18.95C19.27 19.03 19.54 18.95 19.66 18.73L21.66 15.27C21.78 15.05 21.73 14.78 21.54 14.63L19.43 12.97ZM12 15.5C10.067 15.5 8.5 13.933 8.5 12C8.5 10.067 10.067 8.5 12 8.5C13.933 8.5 15.5 10.067 15.5 12C15.5 13.933 13.933 15.5 12 15.5Z"
+                          fill="#06B6D4"
+                        />
+                      </svg>
+                    </div>
+                  }
+                  title="Selesaikan semua pada tahap ini"
+                  progress={
+                    [
+                      isChallengeCompleted(
+                        loginRow,
+                        viewStage === "completed" ? "gold" : viewStage
+                      ),
+                      isChallengeCompleted(
+                        quizRow,
+                        viewStage === "completed" ? "gold" : viewStage
+                      ),
+                      isChallengeCompleted(
+                        modulRow,
+                        viewStage === "completed" ? "gold" : viewStage
+                      ),
+                    ].filter(Boolean).length
+                  }
+                  total={3}
+                  done={isAllDoneForStage(
+                    viewStage === "completed" ? "gold" : viewStage
+                  )}
+                  isClaimed={isClaimedForStage(
+                    viewStage === "completed" ? "gold" : viewStage
+                  )}
+                  expReward={
+                    viewStage === "bronze"
+                      ? 100
+                      : viewStage === "silver"
+                        ? 150
+                        : 200
+                  }
+                  canClaim={canClaim}
+                  onClaim={handleClaim}
+                  isClaimLoading={claimLoading.stage || false}
+                  isDisabled={!currentStageUnlocked}
+                />
               </div>
-              {canClaim && (
-                <div className="flex justify-end mt-2">
-                  <Button
-                    color="default"
-                    radius="sm"
-                    size="md"
-                    className="bg-[#ffffff] text-[#2d5d94] border-1 font-semibold text-md px-4 py-2.5 rounded-xl hover:bg-[#ffffff] transition-colors w-fit"
-                    style={{
-                      boxShadow: '0px 3px 0px 0px #2d5d94',
-                    }}
-                    isDisabled={claimLoading}
-                    onPress={handleClaim}
-                  >
-                    Terima Hadiah
-                  </Button>
-                </div>
-              )}
             </CardBody>
           </Card>
 
@@ -357,7 +714,7 @@ export default function TantanganPage() {
 
         {/* Right Column - Widgets */}
         <div className="w-[300px] flex flex-col gap-6">
-          <PeringkatWidget displayedData={['peringkat', 'perjalanan']} />
+          <PeringkatWidget displayedData={["peringkat", "perjalanan"]} />
         </div>
       </div>
     </div>

@@ -124,3 +124,5 @@ GRANT EXECUTE ON FUNCTION public.get_current_streak(bigint) TO authenticated;
 --    SELECT streak_harian_update(<id_pengguna_kamu>, 100);
 --    SELECT current_streak, last_streak_date FROM data_penggunas WHERE id_pengguna = <id_pengguna_kamu>;
 
+
+

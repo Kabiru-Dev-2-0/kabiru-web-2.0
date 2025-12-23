@@ -140,6 +140,27 @@ export const DashboardHeader = ({
     setMounted(true);
   }, []);
 
+  // Listen for custom exp-updated event (fallback if realtime doesn't work)
+  useEffect(() => {
+    const handleExpUpdate = (event: CustomEvent<{ exp: number }>) => {
+      if (typeof event.detail?.exp === "number") {
+        setExp(event.detail.exp);
+        try {
+          localStorage.setItem("aizone.exp", String(event.detail.exp));
+        } catch {}
+      }
+    };
+
+    window.addEventListener("exp-updated", handleExpUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener(
+        "exp-updated",
+        handleExpUpdate as EventListener
+      );
+    };
+  }, []);
+
   // Fallback fetch jika props SSR tidak diberikan
   useEffect(() => {
     async function loadExp() {

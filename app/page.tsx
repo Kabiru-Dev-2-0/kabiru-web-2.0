@@ -57,15 +57,6 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="flex flex-col gap-6">
-            <Chip
-              color="secondary"
-              variant="flat"
-              className="w-fit"
-              startContent={<RocketRegular className="w-4 h-4" />}
-            >
-              Platform Pembelajaran AI Interaktif
-            </Chip>
-
             <h1 className="text-5xl md:text-6xl font-bold leading-tight">
               Belajar{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#006FEE] to-[#7828C8]">

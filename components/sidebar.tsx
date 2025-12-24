@@ -107,14 +107,11 @@ export const Sidebar = () => {
   return (
     <div className="h-full w-[306px] bg-white border-r border-[#E8E8E8] flex flex-col gap-8 p-6">
       {/* Logo */}
-      <div className="flex justify-between items-center gap-[138px]">
-        <div className="w-[140px] h-[42px] relative">
-          <img
-            src="/imageAssets/LogoApp.png"
-            alt="AIZONE Logo"
-            className="w-full h-full object-contain"
-          />
+      <div className="flex items-center px-4 gap-5">
+        <div className="">
+          <img src="/imageAssets/kabiru-logo.png" alt="Kabiru Logo" className="w-10 h-10" />
         </div>
+        <h2 className="text-2xl font-black text-[#205994]">Kabiru</h2>
       </div>
 
       {/* Navigation */}

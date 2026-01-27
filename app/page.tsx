@@ -31,7 +31,7 @@ export default function Home() {
         <div className="w-full flex justify-center">
           <nav className="w-full max-w-[1440px] px-12 py-4 inline-flex justify-start items-center gap-8">
             {/* Logo */}
-            <div className="flex items-center">
+            <div className="flex justify-start items-start w-[250px]">
               <img
                 className="w-36 h-10 object-contain"
                 src="imageAssets/logo-header.png"
@@ -41,29 +41,29 @@ export default function Home() {
 
             {/* Center navigation */}
             <div className="flex-1 hidden md:flex justify-center items-center gap-6">
-              <button className="text-zinc-500 text-lg font-medium leading-7 hover:text-zinc-800">
+              <button className="text-zinc-500 text-lg font-normal leading-7 hover:text-zinc-800">
                 Beranda
               </button>
-              <button className="text-zinc-500 text-lg font-medium leading-7 hover:text-zinc-800">
+              <button className="text-zinc-500 text-lg font-normal leading-7 hover:text-zinc-800">
                 Fitur
               </button>
-              <button className="text-zinc-500 text-lg font-medium leading-7 hover:text-zinc-800">
+              <button className="text-zinc-500 text-lg font-normal leading-7 hover:text-zinc-800">
                 Tentang Kami
               </button>
             </div>
 
             {/* Right actions */}
-            <div className="flex justify-start items-center gap-3.5">
+            <div className="flex justify-end w-[250px] items-start gap-4">
               <Link
                 href="/login"
-                className="h-12 px-5 bg-zinc-100 rounded-xl flex items-center justify-center gap-2 text-zinc-500 text-lg font-medium leading-7 hover:bg-zinc-200"
+                className="h-12 px-4 bg-zinc-100 rounded-xl flex items-center justify-center gap-2 text-zinc-500 text-lg font-medium leading-7 hover:bg-zinc-200"
               >
                 Masuk
               </Link>
               <Button
                 as={Link}
                 href="/register"
-                className="h-12 px-5 rounded-xl flex items-center justify-center gap-2 text-zinc-50 text-lg font-medium leading-7 bg-[#3674B5] hover:bg-[#285486]"
+                className="h-12 px-4 rounded-xl flex items-center justify-center gap-2 text-zinc-50 text-lg font-medium leading-7 bg-[#3674B5] hover:bg-[#285486]"
               >
                 Daftar Gratis
               </Button>
@@ -686,8 +686,16 @@ export default function Home() {
                     className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/30 transition-colors"
                     aria-label="Facebook"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" fill="none" className="w-5 h-5 text-white">
-                      <path d="M10.159 16.5V9.75h2.25l.3-2.25h-2.55V6.451c0-.651.13-.901.84-.901h1.71V3.75H11.01c-2.05 0-2.601.962-2.601 2.581V7.5H6v2.25h2.409v6.75h1.75Z" fill="currentColor"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 18 18"
+                      fill="none"
+                      className="w-5 h-5 text-white"
+                    >
+                      <path
+                        d="M10.159 16.5V9.75h2.25l.3-2.25h-2.55V6.451c0-.651.13-.901.84-.901h1.71V3.75H11.01c-2.05 0-2.601.962-2.601 2.581V7.5H6v2.25h2.409v6.75h1.75Z"
+                        fill="currentColor"
+                      />
                     </svg>
                   </Link>
                   <Link
@@ -695,8 +703,16 @@ export default function Home() {
                     className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/30 transition-colors"
                     aria-label="LinkedIn"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" fill="none" className="w-5 h-5 text-white">
-                      <path d="M6.165 7.5H3.93v6.75h2.235V7.5ZM5.048 6.621c.753 0 1.216-.501 1.216-1.13-.013-.641-.463-1.13-1.202-1.13-.74 0-1.215.489-1.215 1.13 0 .629.462 1.13 1.189 1.13h.012ZM14.07 12.41v-2.686c0-1.356-.726-1.989-1.7-1.989-.782 0-1.131.432-1.328.735v-1.26H8.807c.03.835 0 6.04 0 6.04h2.236v-3.374c0-.181.013-.361.066-.49.146-.362.48-.736 1.04-.736.733 0 1.027.555 1.027 1.368v3.232H14.07Z" fill="currentColor"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 18 18"
+                      fill="none"
+                      className="w-5 h-5 text-white"
+                    >
+                      <path
+                        d="M6.165 7.5H3.93v6.75h2.235V7.5ZM5.048 6.621c.753 0 1.216-.501 1.216-1.13-.013-.641-.463-1.13-1.202-1.13-.74 0-1.215.489-1.215 1.13 0 .629.462 1.13 1.189 1.13h.012ZM14.07 12.41v-2.686c0-1.356-.726-1.989-1.7-1.989-.782 0-1.131.432-1.328.735v-1.26H8.807c.03.835 0 6.04 0 6.04h2.236v-3.374c0-.181.013-.361.066-.49.146-.362.48-.736 1.04-.736.733 0 1.027.555 1.027 1.368v3.232H14.07Z"
+                        fill="currentColor"
+                      />
                     </svg>
                   </Link>
                   <Link
@@ -704,8 +720,16 @@ export default function Home() {
                     className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/30 transition-colors"
                     aria-label="Twitter"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" fill="none" className="w-5 h-5 text-white">
-                      <path d="M15.637 6.581c.007.104.007.21.007.316 0 3.233-2.46 6.963-6.963 6.963v-.002A6.92 6.92 0 0 1 3 12.493a5.025 5.025 0 0 0 3.694-1.036 2.455 2.455 0 0 1-2.291-1.704c.377.074.765.06 1.126-.043A2.453 2.453 0 0 1 3.9 7.312v-.031a2.45 2.45 0 0 0 1.108.306A2.456 2.456 0 0 1 3.837 4.27c.427.242.91.388 1.426.405A6.96 6.96 0 0 0 9.05 4.988a2.457 2.457 0 0 1 4.18 2.236c.388-.077.755-.218 1.085-.413a2.464 2.464 0 0 1-1.079 1.356 4.927 4.927 0 0 0 1.407-.386 5.276 5.276 0 0 1-1.226 1.267Z" fill="currentColor"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 18 18"
+                      fill="none"
+                      className="w-5 h-5 text-white"
+                    >
+                      <path
+                        d="M15.637 6.581c.007.104.007.21.007.316 0 3.233-2.46 6.963-6.963 6.963v-.002A6.92 6.92 0 0 1 3 12.493a5.025 5.025 0 0 0 3.694-1.036 2.455 2.455 0 0 1-2.291-1.704c.377.074.765.06 1.126-.043A2.453 2.453 0 0 1 3.9 7.312v-.031a2.45 2.45 0 0 0 1.108.306A2.456 2.456 0 0 1 3.837 4.27c.427.242.91.388 1.426.405A6.96 6.96 0 0 0 9.05 4.988a2.457 2.457 0 0 1 4.18 2.236c.388-.077.755-.218 1.085-.413a2.464 2.464 0 0 1-1.079 1.356 4.927 4.927 0 0 0 1.407-.386 5.276 5.276 0 0 1-1.226 1.267Z"
+                        fill="currentColor"
+                      />
                     </svg>
                   </Link>
                 </div>

@@ -126,3 +126,5 @@ GRANT EXECUTE ON FUNCTION public.get_current_streak(bigint) TO authenticated;
 
 
 
+
+

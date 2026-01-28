@@ -33,19 +33,18 @@ export const LearningPathCard = ({
   onClick,
 }: LearningPathCardProps) => {
   const iconIndex = ((nomor - 1) % 3) + 1;
-  const imgSrc = `/imageAssets/modul-${iconIndex}.png`;
+  const imgSrc = imageUrl || `/imageAssets/modul-${iconIndex}.png`;
   return (
-    <Card className="w-full border border-[#F4F4F5] shadow-sm bg-white max-w-[30%]" radius="lg">
+    <Card className="w-full border border-[#F4F4F5] shadow-sm bg-white" radius="lg">
       <CardBody className="p-4 gap-4">
         {/* Header Section */}
         {/* Image Section */}
-        <div className="w-full h-[180px] rounded-lg flex items-center justify-center">
+        <div className="w-full h-[180px] relative rounded-lg overflow-hidden">
           <Image
             src={imgSrc}
             alt={`Modul ${nomor}`}
-            width={180}
-            height={180}
-            className="object-contain h-full w-auto"
+            fill
+            className="object-cover"
           />
         </div>
         <div className="flex flex-col gap-3">
@@ -63,7 +62,7 @@ export const LearningPathCard = ({
           {/* Footer Section */}
           <div className="flex flex-col items-center justify-between gap-5 px-3 pb-3 pt-0 min-h-[7.7rem] text-wrap w-inherit">
             <p
-              className="text-xs font-regular leading-4 text-[#7a7a7a] flex-1 text-justify w-full"
+              className="text-s font-regular leading-4 text-[#7a7a7a] flex-1 text-left w-full"
               style={{
                 display: '-webkit-box',
                 WebkitBoxOrient: 'vertical' as any,

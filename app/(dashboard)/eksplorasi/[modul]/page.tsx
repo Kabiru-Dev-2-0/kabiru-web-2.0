@@ -23,6 +23,7 @@ interface Pelajaran {
   judul: string;
   bagian: number;
   id_modul: number;
+  deskripsi?: string;
 }
 
 export default function EksplorasiDetailPage() {
@@ -76,7 +77,7 @@ export default function EksplorasiDetailPage() {
 
       const { data: pelajaransData, error: errPel } = await supabase
         .from('pelajarans')
-        .select('id, judul, bagian, id_modul')
+        .select('id, judul, bagian, id_modul, deskripsi')
         .eq('id_modul', modulId)
         .order('bagian', { ascending: true });
       if (errPel) {
@@ -107,13 +108,13 @@ export default function EksplorasiDetailPage() {
       setError(null);
       try {
         if (typeof window !== 'undefined') {
-          localStorage.setItem(`aizone.eksplorasi.modul.${modulId}`, JSON.stringify(mod || null));
+          localStorage.setItem(`aizone.eksplorasi.modul.${modulId}.v2`, JSON.stringify(mod || null));
           localStorage.setItem(
-            `aizone.eksplorasi.pelajarans.${modulId}`,
+            `aizone.eksplorasi.pelajarans.${modulId}.v2`,
             JSON.stringify(pelajaransData || [])
           );
           localStorage.setItem(
-            `aizone.eksplorasi.overall.${modulId}`,
+            `aizone.eksplorasi.overall.${modulId}.v2`,
             JSON.stringify(
               typeof overallProgress === 'number' && !Number.isNaN(overallProgress)
                 ? overallProgress
@@ -126,9 +127,9 @@ export default function EksplorasiDetailPage() {
     };
     try {
       if (typeof window !== 'undefined') {
-        const modStr = localStorage.getItem(`aizone.eksplorasi.modul.${modulId}`);
-        const pelStr = localStorage.getItem(`aizone.eksplorasi.pelajarans.${modulId}`);
-        const ovStr = localStorage.getItem(`aizone.eksplorasi.overall.${modulId}`);
+        const modStr = localStorage.getItem(`aizone.eksplorasi.modul.${modulId}.v2`);
+        const pelStr = localStorage.getItem(`aizone.eksplorasi.pelajarans.${modulId}.v2`);
+        const ovStr = localStorage.getItem(`aizone.eksplorasi.overall.${modulId}.v2`);
         let used = false;
         if (modStr) {
           try {
@@ -247,65 +248,61 @@ export default function EksplorasiDetailPage() {
     <div className="flex-1 overflow-y-auto">
       <div className="flex gap-8 p-6">
         <div className="flex-1 flex flex-col gap-8">
-          <Card className="border-2 border-[#E4E4E7] shadow-sm bg-white w-full" radius="lg">
-            <CardBody className="p-0 m-0">
-              <div className="flex items-center gap-6">
-                <div className="flex-1 bg-[#3674B5] rounded-xl p-6 flex flex-col items-start justify-between">
-                  <div className="flex items-start justify-between gap-6 w-full">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        as={Link}
-                        href={`/eksplorasi`}
-                        isIconOnly
-                        variant="light"
-                        color="primary"
-                        size="lg"
-                        className="min-w-0 w-8 h-8"
-                      >
-                        <ArrowLeftRegular className="w-8 h-8 text-[#ffffff] text-bold" />
-                      </Button>
-                      <div>
-                        <h1 className="text-2xl font-semibold text-white">{modul.judul}</h1>
-                        <p className="text-white/90">{modul.deskripsi}</p>
-                      </div>
-                    </div>
-                    <div className="relative w-[80px] h-[80px]">
-                      <CircularProgress
-                        aria-label="Percentage"
-                        classNames={{
-                          svg: 'w-24 h-24 drop-shadow-md',
-                          indicator: 'stroke-[#F5A524]',
-                          track: 'stroke-[#ffffff]/35',
-                          value: 'text-md font-semibold text-[#FFFFFF]',
-                        }}
-                        showValueLabel={true}
-                        strokeWidth={4}
-                        value={overallProgress}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
+          <div className="w-full p-8 bg-[#3674B5] rounded-2xl shadow-[0px_6px_0px_0px_#205994] outline outline-2 outline-offset-[-2px] outline-sky-800 inline-flex justify-start items-start gap-5">
+            <div className="flex-1 inline-flex flex-col justify-start items-start gap-5">
+              <div className="self-stretch flex flex-col justify-start items-start gap-3.5">
+                <div className="self-stretch flex flex-col justify-start items-start">
+                  <div className="self-stretch inline-flex justify-center items-center gap-2.5">
                     <Button
                       as={Link}
-                      href={`/belajar/${modul.id}`}
-                      scroll={false}
-                      prefetch
-                      color="default"
-                      radius="sm"
-                      size="md"
-                      className="bg-[#ffffff] text-[#2d5d94] font-semibold px-5 py-2.5 rounded-xl hover:bg-[#ffffff] transition-colors w-fit"
-                      style={{
-                        boxShadow: '0px 3px 0px 0px #E4E4E7',
-                      }}
-                      onClick={selectModul}
+                      href={`/eksplorasi`}
+                      isIconOnly
+                      variant="light"
+                      className="min-w-0 w-8 h-8 p-0 data-[hover=true]:bg-transparent"
                     >
-                      Pelajari Materi Ini
+                      <ArrowLeftRegular className="w-8 h-8 text-white font-bold" />
                     </Button>
+                    <div className="flex-1 justify-center text-white text-2xl font-bold font-sans leading-8">
+                      {modul.judul}
+                    </div>
+                  </div>
+                </div>
+                <div className="self-stretch inline-flex justify-center items-center gap-2.5">
+                  <div className="flex-1 justify-center text-white text-base font-medium font-sans leading-6">
+                    {modul.deskripsi}
                   </div>
                 </div>
               </div>
-            </CardBody>
-          </Card>
+              <div className="self-stretch flex flex-col justify-center items-start gap-2.5">
+                <Button
+                  as={Link}
+                  href={`/belajar/${modul.id}`}
+                  scroll={false}
+                  prefetch
+                  onClick={selectModul}
+                  className="h-10 px-4 bg-white rounded-xl shadow-[0px_3px_0px_0px_rgba(228,228,231,1.00)] outline outline-1 outline-offset-[-1px] outline-zinc-200 inline-flex justify-center items-center gap-2"
+                >
+                  <div className="justify-center text-[#3674B5] text-sm font-semibold font-sans leading-5">
+                    Pelajari Materi Ini
+                  </div>
+                </Button>
+              </div>
+            </div>
+            <div className="w-28 h-28 relative flex items-center justify-center">
+              <CircularProgress
+                aria-label="Percentage"
+                classNames={{
+                  svg: 'w-28 h-28 drop-shadow-md',
+                  indicator: 'stroke-[#F5A524]',
+                  track: 'stroke-[#ffffff]/35',
+                  value: 'text-lg font-semibold text-white',
+                }}
+                showValueLabel={true}
+                strokeWidth={4}
+                value={overallProgress}
+              />
+            </div>
+          </div>
           <div className="flex gap-8">
             <div className="flex-1 flex flex-col gap-4">
               {pelajarans.map((bagian) => (
@@ -323,7 +320,9 @@ export default function EksplorasiDetailPage() {
                       </div>
                       <div className="flex flex-col">
                         <div className="text-xl font-semibold text-[#3F3F46]">{bagian.judul}</div>
-                        <div className="text-[#A1A1AA] text-sm">Materi bagian {bagian.bagian}</div>
+                        <div className="text-[#A1A1AA] text-sm">
+                          {bagian.deskripsi || `Materi bagian ${bagian.bagian}`}
+                        </div>
                       </div>
                     </div>
                   </CardBody>

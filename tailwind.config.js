@@ -10,7 +10,7 @@ const config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["'Encode Sans'", 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-encode-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)'],
       },
       animation: {

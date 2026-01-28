@@ -6,7 +6,7 @@ import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import {
   Bot24Color,
-  BookRegular,
+  BookRegular, 
   TrophyRegular,
   PeopleRegular,
   ArrowRightRegular,

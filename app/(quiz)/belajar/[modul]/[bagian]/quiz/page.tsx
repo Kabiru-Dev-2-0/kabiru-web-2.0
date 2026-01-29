@@ -78,7 +78,7 @@ export default function Quiz() {
         const t = ex.type;
         if (t === 'multiple_choice') {
           const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
-          quizContext = `Jenis: Pilihan Ganda\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${ex?.data?.question || ''}\nPilihan: ${opts}`;
+          quizContext = `Jenis: Pilihan Ganda\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${ex?.pertanyaan || ex?.data?.question || ''}\nPilihan: ${opts}`;
         } else if (t === 'fill_in_the_blank') {
           const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
           const tpl = typeof ex?.template_code === 'string' ? ex.template_code : '';
@@ -91,12 +91,12 @@ export default function Quiz() {
           const buckets = Array.isArray(ex?.data?.buckets) ? ex.data.buckets.join(', ') : '';
           quizContext = `Jenis: Kelompokkan\nPrompt: ${ex?.prompt || ''}\nItems: ${items}\nKategori: ${buckets}`;
         } else if (t === 'sorting') {
-          const q = ex?.data?.question || '';
+          const q = ex?.pertanyaan || ex?.data?.question || '';
           const lines = Array.isArray(ex?.data?.code_lines) ? ex.data.code_lines.join(' | ') : '';
           quizContext = `Jenis: Mengurutkan\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${q}\nItems: ${lines}`;
         } else if (t === 'checkbox') {
           const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
-          quizContext = `Jenis: Pilihan Ganda (Checkbox)\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${ex?.data?.question || ''}\nPilihan: ${opts}`;
+          quizContext = `Jenis: Pilihan Ganda (Checkbox)\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${ex?.pertanyaan || ex?.data?.question || ''}\nPilihan: ${opts}`;
         } else {
           quizContext = `Prompt: ${ex?.prompt || ''}`;
         }

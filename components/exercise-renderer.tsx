@@ -849,7 +849,7 @@ export default function ExerciseRenderer({
           {/* Main Content */}
           <div className="flex flex-col gap-8">
             <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
-              {exercise.data.question || 'Urutkan item berikut:'}
+              {exercise.pertanyaan || exercise.data.question || 'Urutkan item berikut:'}
             </p>
 
             {/* Sortable Items */}
@@ -943,7 +943,7 @@ export default function ExerciseRenderer({
           {/* Main Content */}
           <div className="flex flex-col gap-8">
             <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
-              {exercise.data.question}
+              {exercise.pertanyaan || exercise.data.question}
             </p>
             <p className="text-sm text-gray-500 italic">Pilih semua jawaban yang benar</p>
 
@@ -1034,7 +1034,7 @@ export default function ExerciseRenderer({
           {/* Main Content */}
           <div className="flex flex-col gap-8">
             <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
-              {exercise.data.question}
+              {exercise.pertanyaan || exercise.data.question}
             </p>
 
             {/* Options - Card Style */}

@@ -45,11 +45,12 @@ export default function BagianPage() {
       return;
     }
 
-    // Fetch pelajaran berdasarkan bagian
+    // Fetch pelajaran berdasarkan bagian dan modul
     const { data: pelajaranData, error: errPelajaran } = await supabase
       .from('pelajarans')
       .select('id, judul, bagian')
       .eq('bagian', parseInt(bagian))
+      .eq('id_modul', modulId)
       .single();
 
     if (errPelajaran || !pelajaranData) {
@@ -110,7 +111,7 @@ export default function BagianPage() {
     const stagesWithStatus: Stage[] = (latihansData || []).map((latihan, index) => {
       // Cari hasil latihan berdasarkan nomor_latihan
       const hasilLatihan = hasilLatihansData?.find(
-        (hl) => hl.nomor_latihan === latihan.nomor_latihan
+        (hl) => hl.nomor_latihan === latihan.nomor_latihan,
       );
 
       let status: 'completed' | 'current' | 'locked' = 'locked';
@@ -132,7 +133,7 @@ export default function BagianPage() {
         // Cek apakah latihan sebelumnya sudah selesai
         const prevLatihan = latihansData?.[index - 1];
         const prevHasil = hasilLatihansData?.find(
-          (hl) => hl.nomor_latihan === prevLatihan?.nomor_latihan
+          (hl) => hl.nomor_latihan === prevLatihan?.nomor_latihan,
         );
 
         console.log(`  - Checking prev latihan ${prevLatihan?.nomor_latihan}:`, prevHasil);
@@ -170,15 +171,15 @@ export default function BagianPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem(
           `aizone.bagian.pelajaran.${modulId}.${bagian}`,
-          JSON.stringify(pelajaranData || null)
+          JSON.stringify(pelajaranData || null),
         );
         localStorage.setItem(
           `aizone.bagian.stages.${modulId}.${bagian}`,
-          JSON.stringify(stagesWithStatus || [])
+          JSON.stringify(stagesWithStatus || []),
         );
         localStorage.setItem(
           `aizone.bagian.overall.${modulId}.${bagian}`,
-          JSON.stringify(progress)
+          JSON.stringify(progress),
         );
       }
     } catch {}
@@ -236,7 +237,7 @@ export default function BagianPage() {
       // Sertakan id_pelajaran agar quiz terfilter ke pelajaran yang dipilih
       const pelajaranId = pelajaran?.id;
       router.push(
-        `/belajar/${modulId}/${bagian}/quiz?id=${nomorLatihan}${pelajaranId ? `&pelajaran=${pelajaranId}` : ''}`
+        `/belajar/${modulId}/${bagian}/quiz?id=${nomorLatihan}${pelajaranId ? `&pelajaran=${pelajaranId}` : ''}`,
       );
     }
   };

@@ -94,6 +94,9 @@ export default function Quiz() {
           const q = ex?.data?.question || '';
           const lines = Array.isArray(ex?.data?.code_lines) ? ex.data.code_lines.join(' | ') : '';
           quizContext = `Jenis: Mengurutkan\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${q}\nItems: ${lines}`;
+        } else if (t === 'checkbox') {
+          const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
+          quizContext = `Jenis: Pilihan Ganda (Checkbox)\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${ex?.data?.question || ''}\nPilihan: ${opts}`;
         } else {
           quizContext = `Prompt: ${ex?.prompt || ''}`;
         }

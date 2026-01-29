@@ -362,7 +362,7 @@ export default function ExerciseRenderer({
 
       // Filter undefined/null values
       const filledAnswers = userAnswerArray.filter(
-        (ans: any) => ans !== undefined && ans !== null && ans !== ''
+        (ans: any) => ans !== undefined && ans !== null && ans !== '',
       );
 
       // Cek: jumlah jawaban harus sama dengan jumlah blank yang diharapkan
@@ -371,7 +371,7 @@ export default function ExerciseRenderer({
       } else {
         // Cek setiap jawaban sesuai dengan correct_answers
         correct = filledAnswers.every(
-          (ans: string, idx: number) => ans === exercise.data.correct_answers[idx]
+          (ans: string, idx: number) => ans === exercise.data.correct_answers[idx],
         );
       }
     } else if (exercise.type === 'drag_and_drop') {
@@ -392,6 +392,15 @@ export default function ExerciseRenderer({
       correct = userAnswer.join(',') === exercise.data.correct_order.join(',');
     } else if (exercise.type === 'guessing' || exercise.type === 'multiple_choice') {
       correct = userAnswer === exercise.data.correct;
+    } else if (exercise.type === 'checkbox') {
+      const correctOptions = exercise.data.correct_options || [];
+      const userSelected = Array.isArray(userAnswer) ? userAnswer : [];
+      // Cek jumlah sama dan setiap pilihan user ada di jawaban benar
+      if (userSelected.length !== correctOptions.length) {
+        correct = false;
+      } else {
+        correct = userSelected.every((opt: string) => correctOptions.includes(opt));
+      }
     }
 
     setIsCorrect(correct);
@@ -429,6 +438,9 @@ export default function ExerciseRenderer({
     }
     if (exercise.type === 'guessing' || exercise.type === 'multiple_choice') {
       return handleSubmit(answers.answer);
+    }
+    if (exercise.type === 'checkbox') {
+      return handleSubmit(answers.selected || []);
     }
     return handleSubmit(answers);
   }, [exercise, answers]);
@@ -909,6 +921,97 @@ export default function ExerciseRenderer({
                 onChange={(e) => setAnswers({ answer: e.target.value })}
                 className="px-6 py-4 border-2 border-[#E4E4E7] rounded-[14px] text-lg focus:outline-none focus:border-[#3674B5] transition-colors"
               />
+            </div>
+          </div>
+        </motion.div>
+      );
+    case 'checkbox':
+      return (
+        <motion.div
+          className="flex flex-col gap-12"
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
+          layout
+        >
+          {/* Instruction Card */}
+          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] p-8 flex flex-col gap-5">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.25em]">{exercise.prompt}</p>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex flex-col gap-8">
+            <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
+              {exercise.data.question}
+            </p>
+            <p className="text-sm text-gray-500 italic">Pilih semua jawaban yang benar</p>
+
+            {/* Options - Card Style */}
+            <div className="flex flex-col gap-3.5">
+              {exercise.data.options.map((opt: string) => {
+                const selected = (answers.selected || []).includes(opt);
+                const showCorrect = isCorrect && selected;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      if (isCorrect) return;
+                      const current = answers.selected || [];
+                      const newSelected = current.includes(opt)
+                        ? current.filter((x: string) => x !== opt)
+                        : [...current, opt];
+                      setAnswers({ selected: newSelected });
+                    }}
+                    disabled={isCorrect}
+                    className={`flex items-stretch gap-5 px-6 py-[18px] border-2 rounded-[14px] transition-all ${
+                      showCorrect
+                        ? 'bg-[#E8FAF0] border-[#17C964]'
+                        : selected
+                          ? 'bg-[#3674B5] border-[#205994]'
+                          : 'bg-white border-[#E4E4E7] hover:border-[#3674B5]'
+                    }`}
+                    style={{
+                      boxShadow: showCorrect
+                        ? '0px 4px 0px 0px rgba(23, 201, 100, 1)'
+                        : selected
+                          ? '0px 4px 0px 0px rgba(32, 89, 148, 1)'
+                          : '0px 4px 0px 0px rgba(228, 228, 231, 1)',
+                    }}
+                  >
+                    {/* Checkbox Icon Mock */}
+                    <div
+                      className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+                        showCorrect
+                          ? 'border-[#12A150] bg-[#12A150]'
+                          : selected
+                            ? 'border-white bg-white'
+                            : 'border-[#A1A1AA]'
+                      }`}
+                    >
+                      {(showCorrect || selected) && (
+                        <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+                          <path
+                            d="M1 5L4.5 8.5L13 1"
+                            stroke={showCorrect ? 'white' : '#3674B5'}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+
+                    <p
+                      className={`text-xl font-medium leading-[1.6em] text-left flex-1 ${
+                        showCorrect ? 'text-[#12A150]' : selected ? 'text-white' : 'text-[#3F3F46]'
+                      }`}
+                    >
+                      {opt}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </motion.div>

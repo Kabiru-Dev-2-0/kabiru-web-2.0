@@ -974,12 +974,38 @@ export default function ExerciseRenderer({
 
           {/* Main Content */}
           <div className="flex flex-col gap-8">
+<<<<<<< Updated upstream
             <div
               className="text-xl font-medium text-[#27272A] leading-[1.2em] ql-editor"
               dangerouslySetInnerHTML={{
                 __html: getQuestionHtml(exercise),
               }}
             />
+=======
+            {/* Display Template Code if exists */}
+            {exercise.template_code && (
+              <div className="bg-white border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden">
+                <Editor
+                  height="200px"
+                  defaultLanguage="javascript"
+                  value={exercise.template_code.replace(/\\n/g, '\n')}
+                  options={{
+                    readOnly: true,
+                    fontSize: 16,
+                    minimap: { enabled: false },
+                    scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+                    lineNumbers: 'on',
+                    folding: false,
+                    padding: { top: 16, bottom: 16 },
+                  }}
+                />
+              </div>
+            )}
+
+            <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
+              {exercise.pertanyaan || exercise.data.question || 'Urutkan item berikut:'}
+            </p>
+>>>>>>> Stashed changes
 
             {/* Sortable Items */}
             <DndContext
@@ -1192,12 +1218,38 @@ export default function ExerciseRenderer({
 
           {/* Main Content */}
           <div className="flex flex-col gap-8">
+<<<<<<< Updated upstream
             <div
               className="text-xl font-medium text-[#27272A] leading-[1.2em] ql-editor"
               dangerouslySetInnerHTML={{
                 __html: getQuestionHtml(exercise),
               }}
             />
+=======
+            {/* Display Template Code if exists */}
+            {exercise.template_code && (
+              <div className="bg-white border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden">
+                <Editor
+                  height="200px"
+                  defaultLanguage="javascript"
+                  value={exercise.template_code.replace(/\\n/g, '\n')}
+                  options={{
+                    readOnly: true,
+                    fontSize: 16,
+                    minimap: { enabled: false },
+                    scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+                    lineNumbers: 'on',
+                    folding: false,
+                    padding: { top: 16, bottom: 16 },
+                  }}
+                />
+              </div>
+            )}
+
+            <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
+              {exercise.pertanyaan || exercise.data.question}
+            </p>
+>>>>>>> Stashed changes
 
             {/* Options - Card Style */}
             <div className="flex flex-col gap-3.5">

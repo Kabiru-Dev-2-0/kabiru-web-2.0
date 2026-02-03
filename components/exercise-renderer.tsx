@@ -336,9 +336,22 @@ export default function ExerciseRenderer({
 
     for (const src of sources) {
       if (!src) continue;
-      if (typeof src === 'string' && src.trim()) {
-        return src;
+
+      // Handle string type
+      if (typeof src === 'string') {
+        // Strip HTML tags and check if there's any actual content
+        const stripped = src.replace(/<[^>]*>/g, '').trim();
+        if (stripped) {
+          return src;
+        }
+        // If stripped content is empty but it has images or other non-text elements, it might still be valid
+        // But specifically filter out empty paragraph with break line which is common editor artifact
+        if (src.includes('<img') || src.includes('<iframe')) {
+          return src;
+        }
+        continue;
       }
+
       if (Array.isArray(src) && src.length > 0) {
         return src.map(String).join('<br/>');
       }
@@ -378,6 +391,17 @@ export default function ExerciseRenderer({
     setAnswers({});
     setFeedback('');
     setIsCorrect(false);
+  }, [exercise]);
+
+  useEffect(() => {
+    console.log('Exercise Data:', exercise);
+    console.log('Question Sources:', {
+      pertanyaan: exercise.pertanyaan,
+      dataPertanyaan: exercise.data?.pertanyaan,
+      question: exercise.question,
+      dataQuestion: exercise.data?.question,
+      getQuestionHtml: getQuestionHtml(exercise),
+    });
   }, [exercise]);
 
   // Handler untuk klik jawaban - BARU untuk inline blanks
@@ -623,14 +647,13 @@ export default function ExerciseRenderer({
 
           {/* Main Content */}
           <div className="flex flex-col gap-8">
-            {(exercise.pertanyaan || exercise.data.question) && (
-              <div
-                className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{
-                  __html: exercise.pertanyaan || exercise.data.question || '',
-                }}
-              />
-            )}
+            <div
+              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{
+                __html:
+                  getQuestionHtml(exercise) || exercise.pertanyaan || exercise.data?.question || '',
+              }}
+            />
             {isMultiLine ? (
               /* Code Block Style untuk multi-line code */
               <div className="bg-[#1e1e1e] rounded-[14px] p-6 font-mono text-base">
@@ -1171,9 +1194,10 @@ export default function ExerciseRenderer({
             )}
 
             <div
-              className="text-xl font-medium text-[#27272A] leading-[1.2em] ql-editor"
+              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{
-                __html: getQuestionHtml(exercise),
+                __html:
+                  getQuestionHtml(exercise) || exercise.pertanyaan || exercise.data?.question || '',
               }}
             />
 

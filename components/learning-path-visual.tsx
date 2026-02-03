@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { StageNode } from "./stage-node";
-import { MotivationalTooltip } from "./motivational-tooltip";
-import Image from "next/image";
+import { StageNode } from './stage-node';
+import { MotivationalTooltip } from './motivational-tooltip';
+import Image from 'next/image';
 
 interface Stage {
   id: number;
-  status: "completed" | "current" | "locked";
+  status: 'completed' | 'current' | 'locked';
 }
 
 interface LearningPathVisualProps {
@@ -20,7 +20,7 @@ export function LearningPathVisual({ stages, onStageClick }: LearningPathVisualP
   while (paddedStages.length < stages.length) {
     paddedStages.push({
       id: paddedStages.length + 1,
-      status: "locked"
+      status: 'locked',
     });
   }
 
@@ -28,7 +28,7 @@ export function LearningPathVisual({ stages, onStageClick }: LearningPathVisualP
     <div className="relative w-full flex justify-center items-start py-8 px-6 min-h-screen">
       {/* Background gradient overlay */}
       <div className="absolute bottom-0 left-0 right-0 h-[300px] bg-gradient-to-b from-transparent to-[#FCFDFD] pointer-events-none z-0" />
-      
+
       {/* Main container with left character and center stages */}
       <div className="relative flex gap-8 w-full max-w-[900px] z-10 justify-center">
         {/* Center - Hexagonal learning path */}
@@ -73,11 +73,11 @@ export function LearningPathVisual({ stages, onStageClick }: LearningPathVisualP
             </div>
             {/* Row 3: Stage 5, 6, 7 */}
             <div className="flex items-start gap-x-15">
-              {paddedStages[4] && (
+              {paddedStages[6] && (
                 <StageNode
-                  stageNumber={5}
-                  status={paddedStages[4].status}
-                  onClick={() => onStageClick(paddedStages[4].id)}
+                  stageNumber={7}
+                  status={paddedStages[6].status}
+                  onClick={() => onStageClick(paddedStages[6].id)}
                   marginTop={60}
                 />
               )}
@@ -89,11 +89,11 @@ export function LearningPathVisual({ stages, onStageClick }: LearningPathVisualP
                   marginTop={30}
                 />
               )}
-              {paddedStages[6] && (
+              {paddedStages[4] && (
                 <StageNode
-                  stageNumber={7}
-                  status={paddedStages[6].status}
-                  onClick={() => onStageClick(paddedStages[6].id)}
+                  stageNumber={5}
+                  status={paddedStages[4].status}
+                  onClick={() => onStageClick(paddedStages[4].id)}
                   marginTop={0}
                 />
               )}
@@ -134,4 +134,3 @@ export function LearningPathVisual({ stages, onStageClick }: LearningPathVisualP
     </div>
   );
 }
-

@@ -1,16 +1,10 @@
-"use client";
-import { useEffect, useState, useCallback } from "react";
-import { Card } from "@heroui/card";
-import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
-import {
-  ProgressBar,
-  Select,
-  RadioGroup,
-  Radio,
-  makeStyles,
-} from "@fluentui/react-components";
-import Editor from "@monaco-editor/react";
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import { Card } from '@heroui/card';
+import { Button } from '@heroui/button';
+import { Input } from '@heroui/input';
+import { ProgressBar, Select, RadioGroup, Radio, makeStyles } from '@fluentui/react-components';
+import Editor from '@monaco-editor/react';
 import {
   DndContext,
   closestCenter,
@@ -18,20 +12,20 @@ import {
   useDroppable,
   DragOverlay,
   useDraggable,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   CheckmarkCircleRegular,
   ChevronRightRegular,
   DismissCircleRegular,
-} from "@fluentui/react-icons";
-import { motion } from "framer-motion";
+} from '@fluentui/react-icons';
+import { motion } from 'framer-motion';
 
 const richTextStyles = `
   .prose {
@@ -60,42 +54,42 @@ const richTextStyles = `
 
 const useStyles = makeStyles({
   select: {
-    padding: "8px",
-    borderRadius: "4px",
-    border: "1px solid #E8E8E8",
-    fontSize: "14px",
+    padding: '8px',
+    borderRadius: '4px',
+    border: '1px solid #E8E8E8',
+    fontSize: '14px',
   },
   radioGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
   },
   feedback: {
-    fontSize: "16px",
-    fontWeight: "600",
-    marginTop: "16px",
+    fontSize: '16px',
+    fontWeight: '600',
+    marginTop: '16px',
   },
   feedbackCorrect: {
-    color: "#22c55e",
+    color: '#22c55e',
   },
   feedbackIncorrect: {
-    color: "#ef4444",
+    color: '#ef4444',
   },
   droppable: {
-    padding: "16px",
-    border: "1px solid #E8E8E8",
-    borderRadius: "4px",
-    marginBottom: "16px",
-    backgroundColor: "#f9fafb",
-    height: "fit-content",
+    padding: '16px',
+    border: '1px solid #E8E8E8',
+    borderRadius: '4px',
+    marginBottom: '16px',
+    backgroundColor: '#f9fafb',
+    height: 'fit-content',
   },
   draggable: {
-    padding: "8px",
-    backgroundColor: "white",
-    border: "1px solid #E8E8E8",
-    borderRadius: "4px",
-    marginBottom: "8px",
-    cursor: "grab",
+    padding: '8px',
+    backgroundColor: 'white',
+    border: '1px solid #E8E8E8',
+    borderRadius: '4px',
+    marginBottom: '8px',
+    cursor: 'grab',
   },
 });
 
@@ -117,20 +111,16 @@ const DroppableContainer = ({
       ref={setNodeRef}
       className={styles.droppable}
       style={{
-        backgroundColor: isOver ? "#e0f2fe" : "#f9fafb",
-        minHeight: "80px",
+        backgroundColor: isOver ? '#e0f2fe' : '#f9fafb',
+        minHeight: '80px',
       }}
     >
       <h3 className="text-sm font-medium mb-2">{title}</h3>
       <div className="space-y-2">
         {items.length === 0 ? (
-          <div className="text-gray-400 text-sm italic py-2">
-            Kosong - drag items ke sini
-          </div>
+          <div className="text-gray-400 text-sm italic py-2">Kosong - drag items ke sini</div>
         ) : (
-          items.map((item) => (
-            <DraggableItem key={item} id={item} content={item} />
-          ))
+          items.map((item) => <DraggableItem key={item} id={item} content={item} />)
         )}
       </div>
     </div>
@@ -147,18 +137,15 @@ const DraggableItem = ({
   content: string;
   isCorrect?: boolean;
 }) => {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
 
   const combinedStyle = {
-    transform: transform
-      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-      : undefined,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.5 : 1,
-    cursor: "grab",
+    cursor: 'grab',
     boxShadow: isCorrect
-      ? "0px 4px 0px 0px rgba(23, 201, 100, 1)"
-      : "0px 4px 0px 0px rgba(228, 228, 231, 1)",
+      ? '0px 4px 0px 0px rgba(23, 201, 100, 1)'
+      : '0px 4px 0px 0px rgba(228, 228, 231, 1)',
   };
 
   return (
@@ -169,13 +156,13 @@ const DraggableItem = ({
       {...listeners}
       className={`border-2 rounded-[14px] px-6 py-3.5 flex items-center justify-center gap-5 transition-colors ${
         isCorrect
-          ? "bg-[#E8FAF0] border-[#17C964] hover:border-[#17C964]"
-          : "bg-white border-[#E4E4E7] hover:border-[#3674B5]"
+          ? 'bg-[#E8FAF0] border-[#17C964] hover:border-[#17C964]'
+          : 'bg-white border-[#E4E4E7] hover:border-[#3674B5]'
       }`}
     >
       <p
         className={`text-xl font-medium text-center leading-[1.6em] ${
-          isCorrect ? "text-[#12A150]" : "text-[#3F3F46]"
+          isCorrect ? 'text-[#12A150]' : 'text-[#3F3F46]'
         }`}
       >
         {content}
@@ -203,17 +190,17 @@ export const FooterWithRobot = ({
   const [isFinishing, setIsFinishing] = useState(false);
   const robotImgSrc = feedback
     ? isCorrect
-      ? "/imageAssets/correct.png"
-      : "/imageAssets/wrong.png"
-    : "/imageAssets/ask-ai.png";
+      ? '/imageAssets/correct.png'
+      : '/imageAssets/wrong.png'
+    : '/imageAssets/ask-ai.png';
   return (
     <div
       className={`fixed bottom-0 left-0 right-0 bg-white px-12 py-3.5 flex items-center justify-center gap-5 ${
         feedback
           ? isCorrect
-            ? "border-t border-[#17C964]"
-            : "border-t border-[#F31260]"
-          : "border-t border-[#D4D4D8]"
+            ? 'border-t border-[#17C964]'
+            : 'border-t border-[#F31260]'
+          : 'border-t border-[#D4D4D8]'
       }`}
     >
       {/* Robot Container */}
@@ -237,28 +224,28 @@ export const FooterWithRobot = ({
           {/* Arrow - mengarah ke robot (ke kiri) */}
           <div
             className={`w-[19.66px] h-[19.66px] rotate-45 mr-[-10px] mb-[70px] z-10 ${
-              isCorrect ? "bg-[#205994]" : "bg-[#205994]"
+              isCorrect ? 'bg-[#205994]' : 'bg-[#205994]'
             }`}
-            style={{ borderRadius: "2.035px" }}
+            style={{ borderRadius: '2.035px' }}
           />
 
           {/* Tooltip Content */}
           <div
             className={`rounded-[14.32px] px-3.5 py-3.5 flex flex-col gap-1 min-w-[280px] ${
-              isCorrect ? "bg-[#205994]" : "bg-[#205994]"
+              isCorrect ? 'bg-[#205994]' : 'bg-[#205994]'
             }`}
           >
             <p
               className={`text-2xl font-semibold leading-[1.25em] ${
-                isCorrect ? "text-[#74DFA2]" : "text-[#FCA5A5]"
+                isCorrect ? 'text-[#74DFA2]' : 'text-[#FCA5A5]'
               }`}
             >
-              {isCorrect ? "Jawaban benar!" : "Jawaban salah!"}
+              {isCorrect ? 'Jawaban benar!' : 'Jawaban salah!'}
             </p>
             <p className="text-base font-medium text-white leading-[1.25em]">
               {isCorrect
-                ? "Kamu sudah memahami konsepnya, ayo lanjut ke soal berikutnya"
-                : "Coba periksa lagi jawabanmu dan pastikan semuanya sudah benar"}
+                ? 'Kamu sudah memahami konsepnya, ayo lanjut ke soal berikutnya'
+                : 'Coba periksa lagi jawabanmu dan pastikan semuanya sudah benar'}
             </p>
             {!isCorrect && (
               <button
@@ -266,7 +253,7 @@ export const FooterWithRobot = ({
                 aria-label="Buka AI Chat"
                 onClick={onAgentClick}
                 className="bg-[#ffffff] text-[#3674B5] font-semibold px-4 py-2 rounded-xl hover:bg-[#b1b1b1] cursor-pointer w-fit"
-                style={{ boxShadow: "0px 3px 0px 0px #bababa" }}
+                style={{ boxShadow: '0px 3px 0px 0px #bababa' }}
               >
                 Tanya Asisten
               </button>
@@ -284,7 +271,7 @@ export const FooterWithRobot = ({
           onClick={onNext}
           className="bg-[#3674B5] text-white font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#2d5d94] transition-colors flex items-center gap-2"
           style={{
-            boxShadow: "0px 3px 0px 0px rgba(32, 89, 148, 1)",
+            boxShadow: '0px 3px 0px 0px rgba(32, 89, 148, 1)',
           }}
         >
           Selanjutnya
@@ -300,10 +287,10 @@ export const FooterWithRobot = ({
           disabled={!showNextButton && isCorrect && isFinishing}
           className="bg-[#3674B5] text-white font-semibold text-lg px-5 py-2.5 rounded-xl hover:bg-[#2d5d94] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            boxShadow: "0px 3px 0px 0px rgba(32, 89, 148, 1)",
+            boxShadow: '0px 3px 0px 0px rgba(32, 89, 148, 1)',
           }}
         >
-          {showNextButton ? "Periksa" : "Selesaikan"}
+          {showNextButton ? 'Periksa' : 'Selesaikan'}
         </button>
       )}
     </div>
@@ -333,7 +320,7 @@ export default function ExerciseRenderer({
 }) {
   const styles = useStyles();
   const [answers, setAnswers] = useState<{ [key: string]: any }>({});
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState('');
   const [isCorrect, setIsCorrect] = useState(false);
   const exercise = exercises[currentIndex];
 
@@ -366,7 +353,7 @@ export default function ExerciseRenderer({
   // Inject rich text styles for rendered HTML prompts/questions
   useEffect(() => {
     try {
-      const styleElement = document.createElement("style");
+      const styleElement = document.createElement('style');
       styleElement.textContent = richTextStyles;
       document.head.appendChild(styleElement);
       return () => {
@@ -378,24 +365,24 @@ export default function ExerciseRenderer({
   }, []);
 
   // ⬆️ Taruh ini di bagian atas komponen ExerciseRenderer (sebelum switch)
-  const [editorValue, setEditorValue] = useState("");
+  const [editorValue, setEditorValue] = useState('');
   const [totalBlanks, setTotalBlanks] = useState(0);
 
   // Set initial editor value & blank count tiap kali exercise berubah
   useEffect(() => {
-    if (exercise.type === "fill_in_the_blank") {
-      setEditorValue(exercise.template_code.replace(/\\n/g, "\n"));
+    if (exercise.type === 'fill_in_the_blank') {
+      setEditorValue(exercise.template_code.replace(/\\n/g, '\n'));
       setTotalBlanks((exercise.template_code.match(/____/g) || []).length);
     }
     // Reset state saat exercise berubah
     setAnswers({});
-    setFeedback("");
+    setFeedback('');
     setIsCorrect(false);
   }, [exercise]);
 
   // Handler untuk klik jawaban - BARU untuk inline blanks
   const handleOptionClick = (opt: string, blankIndex?: number) => {
-    if (exercise.type !== "fill_in_the_blank") return;
+    if (exercise.type !== 'fill_in_the_blank') return;
 
     setAnswers((prev) => {
       // Jika blankIndex diberikan (klik pada blank), isi blank tersebut
@@ -426,23 +413,21 @@ export default function ExerciseRenderer({
 
   const handleReset = () => {
     setAnswers({});
-    if (exercise.type === "fill_in_the_blank") {
-      setEditorValue(exercise.template_code.replace(/\\n/g, "\n"));
+    if (exercise.type === 'fill_in_the_blank') {
+      setEditorValue(exercise.template_code.replace(/\\n/g, '\n'));
     }
   };
 
   const handleSubmit = (userAnswer: any) => {
     let correct = false;
-    if (exercise.type === "fill_in_the_blank") {
+    if (exercise.type === 'fill_in_the_blank') {
       // Pastikan semua blank terisi dan jumlahnya sesuai
       const expectedLength = exercise.data.correct_answers.length;
-      const userAnswerArray = Array.isArray(userAnswer)
-        ? userAnswer
-        : Object.values(userAnswer);
+      const userAnswerArray = Array.isArray(userAnswer) ? userAnswer : Object.values(userAnswer);
 
       // Filter undefined/null values
       const filledAnswers = userAnswerArray.filter(
-        (ans: any) => ans !== undefined && ans !== null && ans !== "",
+        (ans: any) => ans !== undefined && ans !== null && ans !== '',
       );
 
       // Cek: jumlah jawaban harus sama dengan jumlah blank yang diharapkan
@@ -451,11 +436,10 @@ export default function ExerciseRenderer({
       } else {
         // Cek setiap jawaban sesuai dengan correct_answers
         correct = filledAnswers.every(
-          (ans: string, idx: number) =>
-            ans === exercise.data.correct_answers[idx],
+          (ans: string, idx: number) => ans === exercise.data.correct_answers[idx],
         );
       }
-    } else if (exercise.type === "drag_and_drop") {
+    } else if (exercise.type === 'drag_and_drop') {
       const buckets = Object.keys(exercise.data.correct_assignment);
       correct = buckets.every((bucket: string) => {
         const correctAns = exercise.data.correct_assignment[bucket];
@@ -463,37 +447,30 @@ export default function ExerciseRenderer({
         if (!Array.isArray(correctAns) || !Array.isArray(user)) return false;
         if (user.length !== correctAns.length) return false;
         // Bandingkan hasil sort (urutan tidak penting)
-        return [...user]
-          .sort()
-          .every((itm, idx) => itm === [...correctAns].sort()[idx]);
+        return [...user].sort().every((itm, idx) => itm === [...correctAns].sort()[idx]);
       });
       // PERBAIKAN: Juga pastikan container 'items' kosong (semua sudah dipindahkan)
-      if (correct && userAnswer["items"] && userAnswer["items"].length > 0) {
+      if (correct && userAnswer['items'] && userAnswer['items'].length > 0) {
         correct = false;
       }
-    } else if (exercise.type === "sorting") {
-      correct = userAnswer.join(",") === exercise.data.correct_order.join(",");
-    } else if (
-      exercise.type === "guessing" ||
-      exercise.type === "multiple_choice"
-    ) {
+    } else if (exercise.type === 'sorting') {
+      correct = userAnswer.join(',') === exercise.data.correct_order.join(',');
+    } else if (exercise.type === 'guessing' || exercise.type === 'multiple_choice') {
       correct = userAnswer === exercise.data.correct;
-    } else if (exercise.type === "checkbox") {
+    } else if (exercise.type === 'checkbox') {
       const correctOptions = exercise.data.correct_options || [];
       const userSelected = Array.isArray(userAnswer) ? userAnswer : [];
       // Cek jumlah sama dan setiap pilihan user ada di jawaban benar
       if (userSelected.length !== correctOptions.length) {
         correct = false;
       } else {
-        correct = userSelected.every((opt: string) =>
-          correctOptions.includes(opt),
-        );
+        correct = userSelected.every((opt: string) => correctOptions.includes(opt));
       }
     }
 
     setIsCorrect(correct);
-    const exerciseSummary = "Benar! +" + exercise.points + " poin 🏆";
-    setFeedback(correct ? exerciseSummary : "Salah, coba lagi! 😔");
+    const exerciseSummary = 'Benar! +' + exercise.points + ' poin 🏆';
+    setFeedback(correct ? exerciseSummary : 'Salah, coba lagi! 😔');
 
     if (correct) {
       // Panggil onComplete untuk menandai soal selesai dan kirim status benar
@@ -506,28 +483,28 @@ export default function ExerciseRenderer({
         }, 5000);
       }
     } else {
-      if (onWrong) onWrong(exercise?.prompt || "");
+      if (onWrong) onWrong(exercise?.prompt || '');
       // Jika salah, hilangkan tooltip setelah 3 detik
       setTimeout(() => {
-        setFeedback("");
+        setFeedback('');
       }, 3000);
     }
   };
 
   const footerOnSubmit = useCallback(() => {
-    if (exercise.type === "fill_in_the_blank") {
+    if (exercise.type === 'fill_in_the_blank') {
       return handleSubmit(Object.values(answers));
     }
-    if (exercise.type === "drag_and_drop") {
+    if (exercise.type === 'drag_and_drop') {
       return handleSubmit(answers as any);
     }
-    if (exercise.type === "sorting") {
+    if (exercise.type === 'sorting') {
       return handleSubmit(answers.items || exercise.data.code_lines);
     }
-    if (exercise.type === "guessing" || exercise.type === "multiple_choice") {
+    if (exercise.type === 'guessing' || exercise.type === 'multiple_choice') {
       return handleSubmit(answers.answer);
     }
-    if (exercise.type === "checkbox") {
+    if (exercise.type === 'checkbox') {
       return handleSubmit(answers.selected || []);
     }
     return handleSubmit(answers);
@@ -550,7 +527,7 @@ export default function ExerciseRenderer({
     // Cek apakah target adalah container atau item
     // Jika target adalah item, ambil container parent-nya
     const buckets = exercise.data.buckets || [];
-    const allContainers = ["items", ...buckets];
+    const allContainers = ['items', ...buckets];
 
     let finalTargetContainer = targetContainerId;
 
@@ -568,7 +545,7 @@ export default function ExerciseRenderer({
       if (!allContainers.includes(finalTargetContainer)) {
         const initialItems = exercise.data.items || [];
         if (initialItems.includes(targetContainerId)) {
-          finalTargetContainer = "items";
+          finalTargetContainer = 'items';
         }
       }
     }
@@ -582,15 +559,13 @@ export default function ExerciseRenderer({
     });
 
     // Jika 'items' belum ada di answers, inisialisasi dengan semua items
-    if (!answers["items"]) {
-      newAnswers["items"] = [...(exercise.data.items || [])];
+    if (!answers['items']) {
+      newAnswers['items'] = [...(exercise.data.items || [])];
     }
 
     // Hapus item dari semua containers
     allContainers.forEach((container) => {
-      newAnswers[container] = newAnswers[container].filter(
-        (item) => item !== draggedItemId,
-      );
+      newAnswers[container] = newAnswers[container].filter((item) => item !== draggedItemId);
     });
 
     // Tambahkan item ke target container
@@ -606,13 +581,12 @@ export default function ExerciseRenderer({
     const { active, over } = event;
     if (!over) return;
 
-    if (type === "drag_and_drop") {
+    if (type === 'drag_and_drop') {
       handleDragEndNew(event);
-    } else if (type === "sorting") {
+    } else if (type === 'sorting') {
       const items = Array.from(answers.items || exercise.data.code_lines);
       const sourceIndex = active.data.current?.sortable.index;
-      const destIndex =
-        over.data.current?.sortable.index || items.indexOf(over.id);
+      const destIndex = over.data.current?.sortable.index || items.indexOf(over.id);
       const [reorderedItem] = items.splice(sourceIndex, 1);
       items.splice(destIndex, 0, reorderedItem);
       setAnswers({ items });
@@ -620,15 +594,15 @@ export default function ExerciseRenderer({
   };
 
   switch (exercise.type) {
-    case "fill_in_the_blank":
+    case 'fill_in_the_blank':
       // Parse template_code untuk mendapatkan parts dan blanks
       // Ganti \\n dengan newline yang sebenarnya
-      const normalizedCode = exercise.template_code.replace(/\\n/g, "\n");
-      const templateParts = normalizedCode.split("____");
+      const normalizedCode = exercise.template_code.replace(/\\n/g, '\n');
+      const templateParts = normalizedCode.split('____');
       const blanksCount = templateParts.length - 1;
 
       // Cek apakah ini kode multi-line (ada newline)
-      const isMultiLine = normalizedCode.includes("\n");
+      const isMultiLine = normalizedCode.includes('\n');
 
       return (
         <motion.div
@@ -636,29 +610,34 @@ export default function ExerciseRenderer({
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 220, damping: 24 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
           layout
         >
           {/* Instruction Card - Sesuai Figma */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
             <div
               className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || "" }}
+              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
             />
           </div>
 
           {/* Main Content */}
           <div className="flex flex-col gap-8">
+            {(exercise.pertanyaan || exercise.data.question) && (
+              <div
+                className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: exercise.pertanyaan || exercise.data.question || '',
+                }}
+              />
+            )}
             {isMultiLine ? (
               /* Code Block Style untuk multi-line code */
               <div className="bg-[#1e1e1e] rounded-[14px] p-6 font-mono text-base">
                 {templateParts.map((part: string, idx: number) => (
                   <span key={idx}>
                     {/* Text part dengan preserved whitespace */}
-                    <span
-                      className="text-[#d4d4d4]"
-                      style={{ whiteSpace: "pre" }}
-                    >
+                    <span className="text-[#d4d4d4]" style={{ whiteSpace: 'pre' }}>
                       {part}
                     </span>
 
@@ -667,18 +646,16 @@ export default function ExerciseRenderer({
                       <span
                         className={`inline-block min-w-[80px] px-3 py-1.5 mx-1 rounded-lg cursor-pointer transition-all ${
                           answers[idx]
-                            ? "bg-[#3674B5] border-2 border-[#205994]"
-                            : "bg-[#374151] border-b-2 border-[#6b7280]"
+                            ? 'bg-[#3674B5] border-2 border-[#205994]'
+                            : 'bg-[#374151] border-b-2 border-[#6b7280]'
                         }`}
                         style={{
-                          color: answers[idx] ? "#ffffff" : "#9ca3af",
-                          boxShadow: answers[idx]
-                            ? "0px 2px 0px 0px rgba(32, 89, 148, 1)"
-                            : "none",
+                          color: answers[idx] ? '#ffffff' : '#9ca3af',
+                          boxShadow: answers[idx] ? '0px 2px 0px 0px rgba(32, 89, 148, 1)' : 'none',
                         }}
                         onClick={() => answers[idx] && handleClearBlank(idx)}
                       >
-                        {answers[idx] || "____"}
+                        {answers[idx] || '____'}
                       </span>
                     )}
                   </span>
@@ -701,24 +678,18 @@ export default function ExerciseRenderer({
                       <div
                         className={`flex items-center justify-center min-w-[90px] h-auto cursor-pointer transition-all ${
                           answers[idx]
-                            ? "bg-[#3674B5] border-2 border-[#205994] rounded-[14px] px-4 py-2"
-                            : "border-b-2 border-black px-2 py-1 hover:border-[#3674B5]"
+                            ? 'bg-[#3674B5] border-2 border-[#205994] rounded-[14px] px-4 py-2'
+                            : 'border-b-2 border-black px-2 py-1 hover:border-[#3674B5]'
                         }`}
                         style={{
-                          boxShadow: answers[idx]
-                            ? "0px 3px 0px 0px rgba(32, 89, 148, 1)"
-                            : "none",
+                          boxShadow: answers[idx] ? '0px 3px 0px 0px rgba(32, 89, 148, 1)' : 'none',
                         }}
                         onClick={() => answers[idx] && handleClearBlank(idx)}
                       >
                         {answers[idx] ? (
-                          <span className="text-xl font-semibold text-white">
-                            {answers[idx]}
-                          </span>
+                          <span className="text-xl font-semibold text-white">{answers[idx]}</span>
                         ) : (
-                          <span className="text-xl font-medium text-transparent">
-                            ____
-                          </span>
+                          <span className="text-xl font-medium text-transparent">____</span>
                         )}
                       </div>
                     )}
@@ -739,22 +710,22 @@ export default function ExerciseRenderer({
                     disabled={isUsed}
                     className={`border-2 rounded-[14px] px-6 py-3.5 flex items-center justify-center gap-5 transition-all ${
                       showCorrect
-                        ? "bg-[#E8FAF0] border-[#17C964] cursor-not-allowed"
+                        ? 'bg-[#E8FAF0] border-[#17C964] cursor-not-allowed'
                         : isUsed
-                          ? "bg-white border-[#E4E4E7] opacity-50 cursor-not-allowed"
-                          : "bg-white border-[#E4E4E7] hover:border-[#3674B5] cursor-pointer"
+                          ? 'bg-white border-[#E4E4E7] opacity-50 cursor-not-allowed'
+                          : 'bg-white border-[#E4E4E7] hover:border-[#3674B5] cursor-pointer'
                     }`}
                     style={{
                       boxShadow: showCorrect
-                        ? "0px 4px 0px 0px rgba(23, 201, 100, 1)"
+                        ? '0px 4px 0px 0px rgba(23, 201, 100, 1)'
                         : isUsed
-                          ? "none"
-                          : "0px 4px 0px 0px rgba(228, 228, 231, 1)",
+                          ? 'none'
+                          : '0px 4px 0px 0px rgba(228, 228, 231, 1)',
                     }}
                   >
                     <p
                       className={`text-xl font-medium text-center leading-[1.6em] ${
-                        showCorrect ? "text-[#12A150]" : "text-[#3F3F46]"
+                        showCorrect ? 'text-[#12A150]' : 'text-[#3F3F46]'
                       }`}
                     >
                       {opt}
@@ -767,17 +738,17 @@ export default function ExerciseRenderer({
         </motion.div>
       );
 
-    case "drag_and_drop":
+    case 'drag_and_drop':
       // LOGIKA BARU - Lebih sederhana
       const buckets = exercise.data.buckets || [];
-      const allContainers = ["items", ...buckets];
+      const allContainers = ['items', ...buckets];
 
       // Inisialisasi containers
       const containerItems: { [key: string]: string[] } = {};
 
       // Jika answers kosong, semua items ada di 'items'
       if (Object.keys(answers).length === 0) {
-        containerItems["items"] = [...(exercise.data.items || [])];
+        containerItems['items'] = [...(exercise.data.items || [])];
         buckets.forEach((bucket: string) => {
           containerItems[bucket] = [];
         });
@@ -790,15 +761,13 @@ export default function ExerciseRenderer({
         // Pastikan tidak ada item yang hilang atau duplikat
         const allAssignedItems = new Set<string>();
         allContainers.forEach((container) => {
-          containerItems[container].forEach((item) =>
-            allAssignedItems.add(item),
-          );
+          containerItems[container].forEach((item) => allAssignedItems.add(item));
         });
 
         // Tambahkan items yang belum ter-assign ke 'items'
         exercise.data.items.forEach((item: string) => {
           if (!allAssignedItems.has(item)) {
-            containerItems["items"].push(item);
+            containerItems['items'].push(item);
           }
         });
       }
@@ -809,14 +778,14 @@ export default function ExerciseRenderer({
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 220, damping: 24 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
           layout
         >
           {/* Instruction Card - Sesuai Figma */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
             <div
               className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || "" }}
+              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
             />
           </div>
 
@@ -825,7 +794,7 @@ export default function ExerciseRenderer({
             {/* DndContext harus membungkus SEMUA draggable items */}
             <DndContext
               collisionDetection={closestCenter}
-              onDragEnd={(event) => handleDragEnd(event, "drag_and_drop")}
+              onDragEnd={(event) => handleDragEnd(event, 'drag_and_drop')}
             >
               {/* Buckets/Categories - Sesuai Figma */}
               <div className="flex flex-col gap-6">
@@ -843,15 +812,13 @@ export default function ExerciseRenderer({
                         ref={setNodeRef}
                         className="bg-white border-2 border-[#E4E4E7] rounded-[14px] p-5 flex flex-col gap-5"
                         style={{
-                          backgroundColor: isOver ? "#e0f2fe" : "white",
-                          transition: "background-color 0.2s",
+                          backgroundColor: isOver ? '#e0f2fe' : 'white',
+                          transition: 'background-color 0.2s',
                         }}
                       >
                         <div className="flex items-stretch gap-2.5">
                           <div className="flex items-center gap-2 flex-1">
-                            <h3 className="text-xl font-semibold text-[#3674B5]">
-                              {bucket}
-                            </h3>
+                            <h3 className="text-xl font-semibold text-[#3674B5]">{bucket}</h3>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2 min-h-[60px]">
@@ -880,7 +847,7 @@ export default function ExerciseRenderer({
 
               {/* Items to Drag - Sesuai Figma */}
               <div className="flex flex-wrap gap-3.5">
-                {containerItems["items"].map((item) => (
+                {containerItems['items'].map((item) => (
                   <DraggableItem key={item} id={item} content={item} />
                 ))}
               </div>
@@ -888,7 +855,7 @@ export default function ExerciseRenderer({
           </div>
         </motion.div>
       );
-    case "sorting":
+    case 'sorting':
       // Komponen SortableItem dengan icon menu - Sesuai Figma
       const SortableItem = ({
         id,
@@ -899,22 +866,16 @@ export default function ExerciseRenderer({
         children: React.ReactNode;
         isCorrect?: boolean;
       }) => {
-        const {
-          attributes,
-          listeners,
-          setNodeRef,
-          transform,
-          transition,
-          isDragging,
-        } = useSortable({ id });
+        const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+          useSortable({ id });
 
         const combinedStyle = {
           transform: CSS.Transform.toString(transform),
           transition,
           opacity: isDragging ? 0.5 : 1,
           boxShadow: itemCorrect
-            ? "0px 4px 0px 0px rgba(23, 201, 100, 1)"
-            : "0px 4px 0px 0px rgba(228, 228, 231, 1)",
+            ? '0px 4px 0px 0px rgba(23, 201, 100, 1)'
+            : '0px 4px 0px 0px rgba(228, 228, 231, 1)',
         };
 
         return (
@@ -925,28 +886,22 @@ export default function ExerciseRenderer({
             {...listeners}
             className={`flex items-center gap-5 px-6 py-3.5 border-2 rounded-[14px] cursor-grab transition-colors ${
               itemCorrect
-                ? "bg-[#E8FAF0] border-[#17C964] hover:border-[#17C964]"
-                : "bg-white border-[#E4E4E7] hover:border-[#3674B5]"
+                ? 'bg-[#E8FAF0] border-[#17C964] hover:border-[#17C964]'
+                : 'bg-white border-[#E4E4E7] hover:border-[#3674B5]'
             }`}
           >
             {/* Menu Icon */}
-            <svg
-              width="40"
-              height="40"
-              viewBox="0 0 40 40"
-              fill="none"
-              className="flex-shrink-0"
-            >
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="flex-shrink-0">
               <path
                 d="M6.66675 13.3333H33.3334M6.66675 20H33.3334M6.66675 26.6667H33.3334"
-                stroke={itemCorrect ? "#12A150" : "#3F3F46"}
+                stroke={itemCorrect ? '#12A150' : '#3F3F46'}
                 strokeWidth="2.5"
                 strokeLinecap="round"
               />
             </svg>
             <p
               className={`text-xl font-medium leading-[1.6em] ${
-                itemCorrect ? "text-[#12A150]" : "text-[#3F3F46]"
+                itemCorrect ? 'text-[#12A150]' : 'text-[#3F3F46]'
               }`}
             >
               {children}
@@ -961,27 +916,19 @@ export default function ExerciseRenderer({
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 220, damping: 24 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
           layout
         >
           {/* Instruction Card */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
             <div
               className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || "" }}
+              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
             />
           </div>
 
           {/* Main Content */}
           <div className="flex flex-col gap-8">
-<<<<<<< Updated upstream
-            <div
-              className="text-xl font-medium text-[#27272A] leading-[1.2em] ql-editor"
-              dangerouslySetInnerHTML={{
-                __html: getQuestionHtml(exercise),
-              }}
-            />
-=======
             {/* Display Template Code if exists */}
             {exercise.template_code && (
               <div className="bg-white border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden">
@@ -1002,30 +949,28 @@ export default function ExerciseRenderer({
               </div>
             )}
 
-            <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
-              {exercise.pertanyaan || exercise.data.question || 'Urutkan item berikut:'}
-            </p>
->>>>>>> Stashed changes
+            <div
+              className="text-xl font-medium text-[#27272A] leading-[1.2em] ql-editor"
+              dangerouslySetInnerHTML={{
+                __html: getQuestionHtml(exercise),
+              }}
+            />
 
             {/* Sortable Items */}
             <DndContext
               collisionDetection={closestCenter}
-              onDragEnd={(event) => handleDragEnd(event, "sorting")}
+              onDragEnd={(event) => handleDragEnd(event, 'sorting')}
             >
               <SortableContext
-                items={(answers.items || exercise.data.code_lines).map(
-                  (item: string) => item,
-                )}
+                items={(answers.items || exercise.data.code_lines).map((item: string) => item)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="flex flex-col gap-3.5">
-                  {(answers.items || exercise.data.code_lines).map(
-                    (item: string) => (
-                      <SortableItem key={item} id={item} isCorrect={isCorrect}>
-                        {item}
-                      </SortableItem>
-                    ),
-                  )}
+                  {(answers.items || exercise.data.code_lines).map((item: string) => (
+                    <SortableItem key={item} id={item} isCorrect={isCorrect}>
+                      {item}
+                    </SortableItem>
+                  ))}
                 </div>
               </SortableContext>
             </DndContext>
@@ -1035,21 +980,21 @@ export default function ExerciseRenderer({
           </div>
         </motion.div>
       );
-    case "guessing":
+    case 'guessing':
       return (
         <motion.div
           className="flex flex-col gap-8"
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 220, damping: 24 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
           layout
         >
           {/* Instruction Card */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
             <div
               className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || "" }}
+              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
             />
           </div>
 
@@ -1065,8 +1010,8 @@ export default function ExerciseRenderer({
                   readOnly: true,
                   fontSize: 16,
                   minimap: { enabled: false },
-                  scrollbar: { vertical: "hidden", horizontal: "hidden" },
-                  lineNumbers: "off",
+                  scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+                  lineNumbers: 'off',
                   folding: false,
                   padding: { top: 16, bottom: 16 },
                 }}
@@ -1075,13 +1020,11 @@ export default function ExerciseRenderer({
 
             {/* Input Answer */}
             <div className="flex flex-col gap-4">
-              <p className="text-xl font-medium text-[#27272A]">
-                Masukkan output:
-              </p>
+              <p className="text-xl font-medium text-[#27272A]">Masukkan output:</p>
               <input
                 type="text"
                 placeholder="Ketik jawaban Anda di sini..."
-                value={answers.answer || ""}
+                value={answers.answer || ''}
                 onChange={(e) => setAnswers({ answer: e.target.value })}
                 className="px-6 py-4 border-2 border-[#E4E4E7] rounded-[14px] text-lg focus:outline-none focus:border-[#3674B5] transition-colors"
               />
@@ -1089,21 +1032,21 @@ export default function ExerciseRenderer({
           </div>
         </motion.div>
       );
-    case "checkbox":
+    case 'checkbox':
       return (
         <motion.div
           className="flex flex-col gap-8"
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 220, damping: 24 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
           layout
         >
           {/* Instruction Card */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
             <div
               className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || "" }}
+              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
             />
           </div>
 
@@ -1115,9 +1058,7 @@ export default function ExerciseRenderer({
                 __html: getQuestionHtml(exercise),
               }}
             />
-            <p className="text-sm text-gray-500 italic">
-              Pilih semua jawaban yang benar
-            </p>
+            <p className="text-sm text-gray-500 italic">Pilih semua jawaban yang benar</p>
 
             {/* Options - Card Style */}
             <div className="flex flex-col gap-3.5">
@@ -1138,39 +1079,34 @@ export default function ExerciseRenderer({
                     disabled={isCorrect}
                     className={`flex items-stretch gap-5 px-6 py-[18px] border-2 rounded-[14px] transition-all ${
                       showCorrect
-                        ? "bg-[#E8FAF0] border-[#17C964]"
+                        ? 'bg-[#E8FAF0] border-[#17C964]'
                         : selected
-                          ? "bg-[#3674B5] border-[#205994]"
-                          : "bg-white border-[#E4E4E7] hover:border-[#3674B5]"
+                          ? 'bg-[#3674B5] border-[#205994]'
+                          : 'bg-white border-[#E4E4E7] hover:border-[#3674B5]'
                     }`}
                     style={{
                       boxShadow: showCorrect
-                        ? "0px 4px 0px 0px rgba(23, 201, 100, 1)"
+                        ? '0px 4px 0px 0px rgba(23, 201, 100, 1)'
                         : selected
-                          ? "0px 4px 0px 0px rgba(32, 89, 148, 1)"
-                          : "0px 4px 0px 0px rgba(228, 228, 231, 1)",
+                          ? '0px 4px 0px 0px rgba(32, 89, 148, 1)'
+                          : '0px 4px 0px 0px rgba(228, 228, 231, 1)',
                     }}
                   >
                     {/* Checkbox Icon Mock */}
                     <div
                       className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
                         showCorrect
-                          ? "border-[#12A150] bg-[#12A150]"
+                          ? 'border-[#12A150] bg-[#12A150]'
                           : selected
-                            ? "border-white bg-white"
-                            : "border-[#A1A1AA]"
+                            ? 'border-white bg-white'
+                            : 'border-[#A1A1AA]'
                       }`}
                     >
                       {(showCorrect || selected) && (
-                        <svg
-                          width="14"
-                          height="10"
-                          viewBox="0 0 14 10"
-                          fill="none"
-                        >
+                        <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
                           <path
                             d="M1 5L4.5 8.5L13 1"
-                            stroke={showCorrect ? "white" : "#3674B5"}
+                            stroke={showCorrect ? 'white' : '#3674B5'}
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -1181,11 +1117,7 @@ export default function ExerciseRenderer({
 
                     <p
                       className={`text-xl font-medium leading-[1.6em] text-left flex-1 ${
-                        showCorrect
-                          ? "text-[#12A150]"
-                          : selected
-                            ? "text-white"
-                            : "text-[#3F3F46]"
+                        showCorrect ? 'text-[#12A150]' : selected ? 'text-white' : 'text-[#3F3F46]'
                       }`}
                       style={{ whiteSpace: 'pre-wrap' }}
                     >
@@ -1198,34 +1130,26 @@ export default function ExerciseRenderer({
           </div>
         </motion.div>
       );
-    case "multiple_choice":
+    case 'multiple_choice':
       return (
         <motion.div
           className="flex flex-col gap-8"
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 220, damping: 24 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
           layout
         >
           {/* Instruction Card */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
             <div
               className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || "" }}
+              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
             />
           </div>
 
           {/* Main Content */}
           <div className="flex flex-col gap-8">
-<<<<<<< Updated upstream
-            <div
-              className="text-xl font-medium text-[#27272A] leading-[1.2em] ql-editor"
-              dangerouslySetInnerHTML={{
-                __html: getQuestionHtml(exercise),
-              }}
-            />
-=======
             {/* Display Template Code if exists */}
             {exercise.template_code && (
               <div className="bg-white border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden">
@@ -1246,10 +1170,12 @@ export default function ExerciseRenderer({
               </div>
             )}
 
-            <p className="text-xl font-medium text-[#27272A] leading-[1.2em]">
-              {exercise.pertanyaan || exercise.data.question}
-            </p>
->>>>>>> Stashed changes
+            <div
+              className="text-xl font-medium text-[#27272A] leading-[1.2em] ql-editor"
+              dangerouslySetInnerHTML={{
+                __html: getQuestionHtml(exercise),
+              }}
+            />
 
             {/* Options - Card Style */}
             <div className="flex flex-col gap-3.5">
@@ -1263,26 +1189,26 @@ export default function ExerciseRenderer({
                     disabled={isCorrect}
                     className={`flex items-stretch gap-5 px-6 py-[18px] border-2 rounded-[14px] transition-all ${
                       showCorrect
-                        ? "bg-[#E8FAF0] border-[#17C964]"
+                        ? 'bg-[#E8FAF0] border-[#17C964]'
                         : isSelected
-                          ? "bg-[#3674B5] border-[#205994]"
-                          : "bg-white border-[#E4E4E7] hover:border-[#3674B5]"
+                          ? 'bg-[#3674B5] border-[#205994]'
+                          : 'bg-white border-[#E4E4E7] hover:border-[#3674B5]'
                     }`}
                     style={{
                       boxShadow: showCorrect
-                        ? "0px 4px 0px 0px rgba(23, 201, 100, 1)"
+                        ? '0px 4px 0px 0px rgba(23, 201, 100, 1)'
                         : isSelected
-                          ? "0px 4px 0px 0px rgba(32, 89, 148, 1)"
-                          : "0px 4px 0px 0px rgba(228, 228, 231, 1)",
+                          ? '0px 4px 0px 0px rgba(32, 89, 148, 1)'
+                          : '0px 4px 0px 0px rgba(228, 228, 231, 1)',
                     }}
                   >
                     <p
                       className={`text-xl font-medium leading-[1.6em] text-left flex-1 ${
                         showCorrect
-                          ? "text-[#12A150]"
+                          ? 'text-[#12A150]'
                           : isSelected
-                            ? "text-white"
-                            : "text-[#3F3F46]"
+                            ? 'text-white'
+                            : 'text-[#3F3F46]'
                       }`}
                       style={{ whiteSpace: 'pre-wrap' }}
                     >

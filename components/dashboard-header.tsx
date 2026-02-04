@@ -350,11 +350,10 @@ export const DashboardHeader = ({
     const supabase = createClient();
     setIsStreakLoading(true);
     try {
-      // Baca current_streak langsung dari data_penggunas
-      // (Function streak_harian_update sudah dipanggil di quizAction.ts ketika EXP ditambahkan)
+      // Baca current_streak dan last_streak_date dari data_penggunas
       const { data, error } = await supabase
         .from("data_penggunas")
-        .select("current_streak")
+        .select("current_streak, last_streak_date")
         .eq("id_pengguna", idFor)
         .single();
 
@@ -365,7 +364,29 @@ export const DashboardHeader = ({
 
       const streak =
         typeof data?.current_streak === "number" ? data.current_streak : 0;
-      setCurrentStreak(streak);
+      const lastDate = data?.last_streak_date;
+
+      // Jika belum pernah ada streak, set 0
+      if (!lastDate) {
+        setCurrentStreak(0);
+        return;
+      }
+
+      // Validasi streak berdasarkan tanggal terakhir aktivitas (last_streak_date)
+      // Aturan:
+      // 1. Jika last_streak_date == HARI INI -> Streak aktif
+      // 2. Jika last_streak_date == KEMARIN -> Streak masih aktif (belum putus)
+      // 3. Jika last_streak_date < KEMARIN (gap >= 1 hari kosong) -> Streak putus (tampilkan 0)
+
+      const today = getTodayJakartaDateString();
+      const yesterday = getPreviousJakartaDateString(today);
+
+      if (lastDate === today || lastDate === yesterday) {
+        setCurrentStreak(streak);
+      } else {
+        // Streak putus secara visual (di database mungkin masih lama sampai user main lagi)
+        setCurrentStreak(0);
+      }
     } catch {
       setCurrentStreak(0);
     } finally {

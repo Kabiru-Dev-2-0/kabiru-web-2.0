@@ -1,59 +1,88 @@
-'use client';
+"use client";
 
-import { CheckmarkFilled } from '@fluentui/react-icons';
-import { LockClosedFilled } from '@fluentui/react-icons';
+import { useRef, useCallback } from "react";
+import { CheckmarkFilled } from "@fluentui/react-icons";
+import { LockClosedFilled } from "@fluentui/react-icons";
 
 interface StageNodeProps {
-  stageNumber: number;
-  status: 'completed' | 'current' | 'locked';
+  nomorLatihan: number;
+  status: "completed" | "current" | "locked";
   onClick?: () => void;
-  size?: 'normal' | 'large';
+  onStartClick?: () => void;
+  onModalOpen?: (
+    nomorLatihan: number,
+    status?: "completed" | "current" | "locked",
+    element?: HTMLElement,
+    unitName?: string,
+  ) => void;
+  size?: "normal" | "large";
   marginTop?: number;
+  unitName?: string;
+  bagianName?: string;
 }
 
 export function StageNode({
-  stageNumber,
+  nomorLatihan,
   status,
   onClick,
-  size = 'normal',
+  onStartClick,
+  onModalOpen,
+  size = "normal",
   marginTop = 0,
+  unitName,
+  bagianName = "Bagian",
 }: StageNodeProps) {
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const displayUnitName = unitName || `Unit ${nomorLatihan}`;
+
+  const handleNodeClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (status !== "locked") {
+        if (onModalOpen) {
+          onModalOpen(nomorLatihan, status, nodeRef.current || undefined, displayUnitName);
+        }
+      }
+    },
+    [status, nomorLatihan, onModalOpen, displayUnitName],
+  );
   const getStageColors = () => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return {
-          fill: '#3674B5',
-          stroke: '#205994',
-          dropShadow: '#205994',
-          cursor: 'cursor-pointer hover:scale-105',
+          fill: "#3674B5",
+          stroke: "#205994",
+          dropShadow: "#205994",
+          cursor: "cursor-pointer hover:scale-105",
         };
-      case 'current':
+      case "current":
         return {
-          fill: '#F5A524',
-          stroke: '#C4841D',
-          dropShadow: '#C4841D',
-          cursor: 'cursor-pointer hover:scale-105',
+          fill: "#F5A524",
+          stroke: "#C4841D",
+          dropShadow: "#C4841D",
+          cursor: "cursor-pointer hover:scale-105",
         };
-      case 'locked':
+      case "locked":
         return {
-          fill: '#A1A1AA',
-          stroke: '#71717A',
-          dropShadow: '#71717A',
-          cursor: 'cursor-not-allowed opacity-70',
+          fill: "#A1A1AA",
+          stroke: "#71717A",
+          dropShadow: "#71717A",
+          cursor: "cursor-not-allowed opacity-70",
         };
     }
   };
 
   const colors = getStageColors();
-  const sizeValue = size === 'large' ? 90 : 80;
-  const iconSize = size === 'large' ? 'w-14 h-14' : 'w-12 h-12';
-  const textSize = size === 'large' ? 'text-[42px]' : 'text-[36px]';
+  const sizeValue = size === "large" ? 90 : 80;
+  const iconSize = size === "large" ? "w-14 h-14" : "w-12 h-12";
+  const textSize = size === "large" ? "text-[42px]" : "text-[36px]";
   const marginTopStyle = marginTop ? { marginTop: `${marginTop}px` } : {};
 
   return (
     <div
+      ref={nodeRef}
       className={`relative ${colors.cursor} transition-all duration-300 ease-out flex-shrink-0`}
-      onClick={status !== 'locked' ? onClick : undefined}
+      onClick={handleNodeClick}
       style={{
         width: `${sizeValue}px`,
         height: `${sizeValue}px`,
@@ -73,7 +102,7 @@ export function StageNode({
       >
         <defs>
           <filter
-            id={`filter_${status}_${stageNumber}`}
+            id={`filter_${status}_${nomorLatihan}`}
             x="0"
             y="0"
             width="69.282"
@@ -93,18 +122,27 @@ export function StageNode({
             <feColorMatrix
               type="matrix"
               values={
-                status === 'locked'
-                  ? '0 0 0 0 0.443137 0 0 0 0 0.443137 0 0 0 0 0.478431 0 0 0 1 0'
-                  : status === 'completed'
-                    ? '0 0 0 0 0.125491 0 0 0 0 0.349020 0 0 0 0 0.580393 0 0 0 1 0'
-                    : '0 0 0 0 0.768627 0 0 0 0 0.517647 0 0 0 0 0.113725 0 0 0 1 0'
+                status === "locked"
+                  ? "0 0 0 0 0.443137 0 0 0 0 0.443137 0 0 0 0 0.478431 0 0 0 1 0"
+                  : status === "completed"
+                    ? "0 0 0 0 0.125491 0 0 0 0 0.349020 0 0 0 0 0.580393 0 0 0 1 0"
+                    : "0 0 0 0 0.768627 0 0 0 0 0.517647 0 0 0 0 0.113725 0 0 0 1 0"
               }
             />
-            <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow" />
-            <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape" />
+            <feBlend
+              mode="normal"
+              in2="BackgroundImageFix"
+              result="effect1_dropShadow"
+            />
+            <feBlend
+              mode="normal"
+              in="SourceGraphic"
+              in2="effect1_dropShadow"
+              result="shape"
+            />
           </filter>
         </defs>
-        <g filter={`url(#filter_${status}_${stageNumber})`}>
+        <g filter={`url(#filter_${status}_${nomorLatihan})`}>
           <path
             d="M28.641 1.60766C32.3538 -0.535937 36.9282 -0.535938 40.641 1.60766L63.282 14.6795C66.9948 16.823 69.282 20.7846 69.282 25.0718V51.2154C69.282 55.5025 66.9948 59.4641 63.282 61.6077L40.641 74.6795C36.9282 76.823 32.3538 76.823 28.641 74.6795L5.99997 61.6077C2.28716 59.4641 -2.67029e-05 55.5025 -2.67029e-05 51.2154V25.0718C-2.67029e-05 20.7846 2.28716 16.823 5.99997 14.6795L28.641 1.60766Z"
             fill={colors.fill}
@@ -119,22 +157,29 @@ export function StageNode({
 
       {/* Content overlay */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
-        {status === 'completed' && (
+        {status === "completed" && (
           <img
             src="/imageAssets/fluent-color_checkmark-circle-48.svg"
             alt="checkmark"
             className="${iconSize} text-white drop-shadow-xl"
           />
         )}
-        {status === 'locked' && (
-          <LockClosedFilled className={`${iconSize} text-white drop-shadow-lg`} />
+        {status === "locked" && (
+          <LockClosedFilled
+            className={`${iconSize} text-white drop-shadow-lg`}
+          />
         )}
-        {status === 'current' && (
-          <span className={`${textSize} font-extrabold text-white drop-shadow-lg`}>
-            {stageNumber}
+        {status === "current" && (
+          <span
+            className={`${textSize} font-extrabold text-white drop-shadow-lg`}
+          >
+            {nomorLatihan}
           </span>
         )}
       </div>
+
+      {/* Modal Backdrop */}
+      {/* Modal dipindahkan ke parent component untuk menghindari re-render issues */}
     </div>
   );
 }

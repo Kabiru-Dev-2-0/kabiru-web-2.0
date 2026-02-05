@@ -63,7 +63,7 @@ export async function submitHasilLatihan(params: {
     .limit(1);
 
   if (!existingError && existingRows && existingRows.length > 0) {
-    return { data: existingRows[0], error: null };
+    return { data: existingRows[0], error: null, earnedExp: 0 };
   }
 
   const { data, error } = await supabase
@@ -94,9 +94,25 @@ export async function submitHasilLatihan(params: {
     // Jangan gagalkan submit hasil jika EXP gagal, cukup log error
   }
 
+  // Hitung total EXP dari points soal-soal latihan terkait
+  const { data: exercisesData, error: exercisesError } = await supabase
+    .from('latihans')
+    .select('points')
+    .eq('id_pelajaran', params.id_pelajaran)
+    .eq('nomor_latihan', params.nomor_latihan);
+
+  let expToAdd = 0;
+  if (!exercisesError && exercisesData) {
+    expToAdd = exercisesData.reduce((sum, item) => {
+      const p = Number(item.points);
+      return sum + (isNaN(p) ? 0 : p);
+    }, 0);
+  } else if (exercisesError) {
+    console.error('Error fetching exercises points:', exercisesError);
+  }
+
   const currentExp = expRows?.exp || 0;
-  const newExp = currentExp + 100;
-  const expToAdd = 100;
+  const newExp = currentExp + expToAdd;
 
   const { error: expError } = await supabase
     .from('data_penggunas')
@@ -120,5 +136,5 @@ export async function submitHasilLatihan(params: {
     }
   }
 
-  return { data: data?.[0] || null, error: null };
+  return { data: data?.[0] || null, error: null, earnedExp: expToAdd };
 }

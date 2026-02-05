@@ -39,6 +39,7 @@ export default function Quiz() {
   const [isCompletedView, setIsCompletedView] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [finalExp, setFinalExp] = useState<number | null>(null);
+  const [earnedExp, setEarnedExp] = useState<number>(0);
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [wrongPrompts, setWrongPrompts] = useState<string[]>([]);
   const [finalAdvice, setFinalAdvice] = useState('');
@@ -238,6 +239,7 @@ export default function Quiz() {
         alert('Gagal menyimpan hasil latihan. Silakan coba lagi.');
       } else {
         console.log('Hasil berhasil disimpan:', result.data);
+        setEarnedExp((result as any).earnedExp ?? 0);
 
         // Setelah hasil tersimpan, ambil EXP terbaru dan simpan ke localStorage
         try {
@@ -335,7 +337,7 @@ export default function Quiz() {
     return (
       <div className="min-h-screen bg-[#FCFDFD] flex flex-col items-center justify-center w-full gap-1">
         <img src="/imageAssets/winner.png" alt="Agent" className="w-[260px] h-auto mb-6" />
-        <p className="text-[40px] leading-[48px] font-bold text-[#3674B5]">+100 EXP</p>
+        <p className="text-[40px] leading-[48px] font-bold text-[#3674B5]">+{earnedExp} EXP</p>
         {wrongPrompts.length <= 0 ? (
           <p className="text-3xl leading-[48px] font-bold text-[#000000]">
             Hebat! Kamu berhasil menyelesaikannya!

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ExerciseRenderer, { FooterWithRobot } from '@/components/exercise-renderer';
 import { fetchExercises, submitHasilLatihan } from './quizAction';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
@@ -52,6 +52,13 @@ export default function Quiz() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isAsking, setIsAsking] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chatOpen) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, isAsking, chatOpen]);
 
   const sanitizeAllowedHtml = (html: string) => {
     return html
@@ -457,7 +464,7 @@ export default function Quiz() {
             <AnimatePresence>
               {chatOpen && (
                 <motion.div
-                  className="w-[30%] min-w-[340px] flex-shrink-0 h-[94%]"
+                  className="w-[35%] min-w-[340px] flex-shrink-0 h-[94%]"
                   initial={{ opacity: 0, x: -540, y: 200, scale: 0.98 }}
                   animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
                   exit={{ opacity: 0, x: -540, y: 200, scale: 0.98 }}
@@ -518,6 +525,26 @@ export default function Quiz() {
                             </div>
                           </div>
                         ))}
+                        {isAsking && (
+                          <div className="flex items-start gap-2">
+                            <img
+                              src="/imageAssets/bot-profile.png"
+                              alt="AI"
+                              className="w-12 h-12 mt-1 rounded-full"
+                            />
+                            <div className="relative mx-1">
+                              <div className="rounded-[18px] px-4 py-3 max-w-[280px] text-sm leading-[1.55em] bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]">
+                                <div className="flex space-x-1 h-5 items-center">
+                                  <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                  <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                  <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                                </div>
+                              </div>
+                              <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
+                            </div>
+                          </div>
+                        )}
+                        <div ref={chatEndRef} />
                       </div>
                       <div className="flex items-center gap-3 absolute bottom-0 left-0 w-full px-4 bg-white z-99 py-3">
                         <Input

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: { parts: [{ text: question }] } }),
-      }
+      },
     );
     if (!embedRes.ok) {
       return NextResponse.json({ error: 'Embedding request failed' }, { status: 500 });
@@ -45,13 +45,13 @@ export async function POST(req: Request) {
     const supabase = await createClient();
     const { data: documents, error: searchError } = await supabase.rpc(
       process.env.SUPABASE_QUERY_NAME || 'match_documents',
-      { query_embedding: questionEmbedding, match_count: top_k }
+      { query_embedding: questionEmbedding, match_count: top_k },
     );
 
     if (searchError) {
       return NextResponse.json(
         { error: `Database search failed: ${searchError.message}` },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -92,12 +92,15 @@ Panduan Respons:
 - Untuk pilihan ganda, bantu eliminasi opsi salah berdasarkan bukti.
 - Untuk kode, jelaskan baris kunci dan prediksi keluaran secara hati‑hati.
 - Akhiri dengan satu langkah tindakan yang bisa dicoba pengguna.
+- Respons nya jangan terlalu panjang! cukup maksimal 2 paragraf saja.
 
 Format Keluaran (WAJIB):
 - Keluarkan dalam HTML saja (tanpa Markdown, tanpa backticks).
+- Berikan penekanan seperti strong dan emphasized text untuk kata-kata yang penting
+- Pisahkan setiap paragraf dengan tag <p>, dan beri jarak setiap paragraf dengan <br>.
 - Gunakan hanya tag: <section>, <h3>, <p>, <ol>, <ul>, <li>, <strong>, <em>, <pre>, <code>.
 - Jangan gunakan <script>, <style>, <a>, <img>, atau tag selain yang diizinkan.
-- Strukturkan jawaban dengan satu <section> yang berisi heading (<h3>), paragraf (<p>), dan poin langkah (<ol>/<ul>). Untuk cuplikan kode gunakan <pre><code>.
+- Strukturkan jawaban dengan satu <section> yang berisi, paragraf (<p>), dan poin langkah (<ol>/<ul>). Untuk cuplikan kode gunakan <pre><code>.
 - Jangan sebut kalau anda mengambil informasi dari materi atau RAG secara langsung.
 
 Jawaban:`;
@@ -107,7 +110,7 @@ Jawaban:`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
-      }
+      },
     );
     if (!genRes.ok) {
       return NextResponse.json({ error: 'Generation request failed' }, { status: 500 });
@@ -130,7 +133,7 @@ Jawaban:`;
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || 'Failed to process question' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

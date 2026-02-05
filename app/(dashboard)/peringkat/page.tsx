@@ -17,6 +17,8 @@ type LeaderboardRow = {
   gold: number;
   score: number;
   rank: number;
+  streak: number;
+  last_activity: string;
 };
 
 export default function PeringkatPage() {
@@ -48,7 +50,6 @@ export default function PeringkatPage() {
         }
 
         const { data } = await supabase.rpc('get_leaderboard', {
-          p_days_active: 30,
           p_bronze_weight: 1,
           p_silver_weight: 3,
           p_gold_weight: 6,

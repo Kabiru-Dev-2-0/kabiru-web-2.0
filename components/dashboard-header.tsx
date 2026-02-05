@@ -12,6 +12,11 @@ import {
   Paw16Color,
   Person16Color,
   Flag16Color,
+  Paw24Color,
+  Molecule24Color,
+  DesignIdeas24Color,
+  GameChat20Color,
+  BuildingGovernment24Color,
 } from "@fluentui/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardBody } from "@heroui/card";
@@ -90,6 +95,26 @@ export const DashboardHeader = ({
     if (exp < 7000) return { label: "Proficient", current: exp, max: 7000 };
     return { label: "Proficient", current: exp, max: 7000 };
   }, [exp]);
+
+  const levelIcons: Record<string, any> = {
+    Newbie: Paw24Color,
+    Learner: Molecule24Color,
+    Explorer: DesignIdeas24Color,
+    Skilled: GameChat20Color,
+    Proficient: BuildingGovernment24Color,
+  };
+
+  const CurrentLevelIcon = levelIcons[journeyLabel] || Paw24Color;
+
+  const nextLevelLabel = useMemo(() => {
+    if (exp < 1000) return "Learner";
+    if (exp < 2200) return "Explorer";
+    if (exp < 3600) return "Skilled";
+    if (exp < 5200) return "Proficient";
+    return "Proficient";
+  }, [exp]);
+
+  const NextLevelIcon = levelIcons[nextLevelLabel] || BuildingGovernment24Color;
 
   // Prefill dari localStorage (client-only) agar cepat tampil tanpa menunggu fetch
   useEffect(() => {
@@ -325,11 +350,10 @@ export const DashboardHeader = ({
     const supabase = createClient();
     setIsStreakLoading(true);
     try {
-      // Baca current_streak langsung dari data_penggunas
-      // (Function streak_harian_update sudah dipanggil di quizAction.ts ketika EXP ditambahkan)
+      // Baca current_streak dan last_streak_date dari data_penggunas
       const { data, error } = await supabase
         .from("data_penggunas")
-        .select("current_streak")
+        .select("current_streak, last_streak_date")
         .eq("id_pengguna", idFor)
         .single();
 
@@ -340,7 +364,29 @@ export const DashboardHeader = ({
 
       const streak =
         typeof data?.current_streak === "number" ? data.current_streak : 0;
-      setCurrentStreak(streak);
+      const lastDate = data?.last_streak_date;
+
+      // Jika belum pernah ada streak, set 0
+      if (!lastDate) {
+        setCurrentStreak(0);
+        return;
+      }
+
+      // Validasi streak berdasarkan tanggal terakhir aktivitas (last_streak_date)
+      // Aturan:
+      // 1. Jika last_streak_date == HARI INI -> Streak aktif
+      // 2. Jika last_streak_date == KEMARIN -> Streak masih aktif (belum putus)
+      // 3. Jika last_streak_date < KEMARIN (gap >= 1 hari kosong) -> Streak putus (tampilkan 0)
+
+      const today = getTodayJakartaDateString();
+      const yesterday = getPreviousJakartaDateString(today);
+
+      if (lastDate === today || lastDate === yesterday) {
+        setCurrentStreak(streak);
+      } else {
+        // Streak putus secara visual (di database mungkin masih lama sampai user main lagi)
+        setCurrentStreak(0);
+      }
     } catch {
       setCurrentStreak(0);
     } finally {
@@ -519,7 +565,7 @@ export const DashboardHeader = ({
               </span>
             </Skeleton>
             <div className="flex items-center justify-center gap-1">
-              <Paw16Color className="w-5 h-5 text-[#F5A524]" />
+              <CurrentLevelIcon className="w-5 h-5 text-[#F5A524]" />
               <Skeleton isLoaded={!isLoading} className="rounded-md">
                 <span className="text-sm leading-5 text-[#F5A524]">
                   {journeyLabel}
@@ -628,7 +674,7 @@ export const DashboardHeader = ({
                       </Button>
                     </div>
                     <div className="flex items-center gap-1">
-                      <PawColor className="w-5 h-5 text-[#F5A524]" />
+                      <CurrentLevelIcon className="w-5 h-5 text-[#F5A524]" />
                       <span className="text-sm font-medium text-[#F5A524]">
                         {journeyLabel}
                       </span>
@@ -649,9 +695,9 @@ export const DashboardHeader = ({
                         />
                       </div>
                       <div className="w-[5rem] flex flex-col gap-0 items-center">
-                        <Flag16Color className="w-10 h-10 text-[#3674B5]" />
+                        <NextLevelIcon className="w-10 h-10 text-[#3674B5]" />
                         <p className="m-0 p-0 font-semibold text-[#cd00a7]">
-                          Learner
+                          {nextLevelLabel}
                         </p>
                       </div>
                     </div>
@@ -661,7 +707,7 @@ export const DashboardHeader = ({
                     <span className="text-base font-semibold text-black">
                       Statistik
                     </span>
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <Card
                         radius="lg"
                         className="border-transparent bg-gradient-to-br from-[#62c0ff] to-[#004c78] p-[2px] rounded-2xl"
@@ -673,24 +719,6 @@ export const DashboardHeader = ({
                           </span>
                           <span className="text-lg font-bold text-[#030d68]">
                             {rankStat ?? 0}
-                          </span>
-                        </CardBody>
-                      </Card>
-                      <Card
-                        radius="lg"
-                        className="border-transparent bg-gradient-to-br from-[#62c0ff] to-[#004c78] p-[2px] rounded-2xl"
-                      >
-                        <CardBody className="p-1 gap-0 items-center bg-white rounded-2xl">
-                          <img
-                            src="/imageAssets/badge-icon.png"
-                            className="w-8 h-8"
-                            alt="Badge"
-                          />
-                          <span className="text-sm font-regular text-black">
-                            Badge
-                          </span>
-                          <span className="text-lg font-bold text-[#00074a]">
-                            {trophies.bronze + trophies.silver + trophies.gold}
                           </span>
                         </CardBody>
                       </Card>
@@ -724,31 +752,7 @@ export const DashboardHeader = ({
                       </Card>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3">
-                    <span className="text-base font-semibold text-black">
-                      Koleksi Penghargaan
-                    </span>
-                    <div className="grid grid-cols-6 gap-2">
-                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
-                        <TrophyColor className="w-7 h-7 text-[#CD7F32]" />
-                      </div>
-                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
-                        <TrophyColor className="w-7 h-7 text-[#C0C0C0]" />
-                      </div>
-                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
-                        <TrophyColor className="w-7 h-7 text-[#FFD700]" />
-                      </div>
-                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
-                        <TrophyColor className="w-7 h-7 text-[#3674B5]" />
-                      </div>
-                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
-                        <TrophyColor className="w-7 h-7 text-[#17C964]" />
-                      </div>
-                      <div className="w-12 h-12 rounded-lg border-2 border-[#E4E4E7] flex items-center justify-center">
-                        <TrophyColor className="w-7 h-7 text-[#F31260]" />
-                      </div>
-                    </div>
-                  </div>
+{/* Removed Koleksi Penghargaan */}
                 </CardBody>
               </Card>
             </motion.div>

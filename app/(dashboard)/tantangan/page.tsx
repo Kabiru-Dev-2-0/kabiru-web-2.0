@@ -242,7 +242,7 @@ export default function TantanganPage() {
     st: "bronze" | "silver" | "gold"
   ) => {
     if (challengeType === "login") {
-      return st === "bronze" ? 20 : st === "silver" ? 40 : 70;
+      return st === "bronze" ? 10 : st === "silver" ? 30 : 50;
     }
     if (challengeType === "quiz") {
       return st === "bronze" ? 30 : st === "silver" ? 70 : 100;

@@ -13,6 +13,8 @@ import { CircularProgress } from '@heroui/progress';
 
 interface Stage {
   id: number;
+  nomor_latihan: number;
+  unit_name: string;
   judul: string;
   status: 'completed' | 'current' | 'locked';
   progres: number;
@@ -75,15 +77,22 @@ export default function BagianPage() {
     }
 
     const { data: latihansData, error: errLatihans } = await supabase
-      .from('latihans_view') // Gunakan nama view sebagai nama tabel
-      .select('nomor_latihan, id_pelajaran')
-      .eq('id_pelajaran', pelajaranData.id);
+      .from('latihans') // Gunakan tabel latihans langsung
+      .select('nomor_latihan, id_pelajaran, unit_name')
+      .eq('id_pelajaran', pelajaranData.id)
+      .order('nomor_latihan', { ascending: true });
 
     if (errLatihans) {
       console.error('Error fetching latihans:', errLatihans);
-    } else {
-      console.log('Latihans Data:', latihansData);
     }
+
+    // Deduplicate latihans based on nomor_latihan to get unique Units
+    const uniqueLatihans = latihansData
+      ? Array.from(new Map(latihansData.map((item) => [item.nomor_latihan, item])).values())
+      : [];
+
+    // Sort by nomor_latihan just in case
+    uniqueLatihans.sort((a, b) => a.nomor_latihan - b.nomor_latihan);
 
     // Fetch hasil latihan dari tabel hasil_latihans
     const { data: hasilLatihansData, error: errHasilLatihans } = await supabase
@@ -97,18 +106,8 @@ export default function BagianPage() {
       console.error('Error fetching hasil latihans:', errHasilLatihans);
     }
 
-    console.log('=== QUERY PARAMETERS ===');
-    console.log('Pengguna ID:', penggunaData.id);
-    console.log('Pelajaran ID:', pelajaranData.id);
-    console.log('Bagian:', bagian);
-
-    // Debug: Log data untuk analisis
-    console.log('=== DEBUG DATA ===');
-    console.log('Latihans Data:', latihansData);
-    console.log('Hasil Latihans Data:', hasilLatihansData);
-
-    // Map latihans to stages with status berdasarkan hasil_latihans
-    const stagesWithStatus: Stage[] = (latihansData || []).map((latihan, index) => {
+    // Map unique latihans to stages with status berdasarkan hasil_latihans
+    const stagesWithStatus: Stage[] = uniqueLatihans.map((latihan, index) => {
       // Cari hasil latihan berdasarkan nomor_latihan
       const hasilLatihan = hasilLatihansData?.find(
         (hl) => hl.nomor_latihan === latihan.nomor_latihan,
@@ -117,38 +116,32 @@ export default function BagianPage() {
       let status: 'completed' | 'current' | 'locked' = 'locked';
       let progres = 0;
 
-      console.log(`\nLatihan ${latihan.nomor_latihan} (index ${index}):`);
-      console.log('  - hasilLatihan:', hasilLatihan);
-
       if (hasilLatihan) {
         // Jika sudah ada hasil, berarti completed
         status = 'completed';
         progres = hasilLatihan.nilai;
-        console.log('  - Status: COMPLETED');
       } else if (index === 0) {
-        // Latihan pertama selalu available
+        // Latihan pertama selalu available jika belum ada progress sama sekali
+        // Tapi kita harus cek apakah latihan sebelumnya completed jika bukan yang pertama
+        // Namun karena ini loop, index 0 adalah latihan pertama (nomor terkecil)
         status = 'current';
-        console.log('  - Status: CURRENT (first)');
       } else {
         // Cek apakah latihan sebelumnya sudah selesai
-        const prevLatihan = latihansData?.[index - 1];
+        const prevLatihan = uniqueLatihans[index - 1];
         const prevHasil = hasilLatihansData?.find(
-          (hl) => hl.nomor_latihan === prevLatihan?.nomor_latihan,
+          (hl) => hl.nomor_latihan === prevLatihan.nomor_latihan,
         );
-
-        console.log(`  - Checking prev latihan ${prevLatihan?.nomor_latihan}:`, prevHasil);
 
         if (prevHasil) {
           // Jika latihan sebelumnya sudah selesai, latihan ini available
           status = 'current';
-          console.log('  - Status: CURRENT (prev completed)');
-        } else {
-          console.log('  - Status: LOCKED');
         }
       }
 
       return {
-        id: latihan.nomor_latihan, // Gunakan nomor_latihan sebagai ID
+        id: latihan.nomor_latihan, // Gunakan nomor_latihan sebagai ID stage
+        nomor_latihan: latihan.nomor_latihan,
+        unit_name: latihan.unit_name || `Unit ${latihan.nomor_latihan}`,
         judul: `Latihan ${latihan.nomor_latihan}`,
         status,
         progres,
@@ -170,15 +163,15 @@ export default function BagianPage() {
     try {
       if (typeof window !== 'undefined') {
         localStorage.setItem(
-          `aizone.bagian.pelajaran.${modulId}.${bagian}`,
+          `aizone.bagian.pelajaran.${modulId}.${bagian}.v2`,
           JSON.stringify(pelajaranData || null),
         );
         localStorage.setItem(
-          `aizone.bagian.stages.${modulId}.${bagian}`,
+          `aizone.bagian.stages.${modulId}.${bagian}.v2`,
           JSON.stringify(stagesWithStatus || []),
         );
         localStorage.setItem(
-          `aizone.bagian.overall.${modulId}.${bagian}`,
+          `aizone.bagian.overall.${modulId}.${bagian}.v2`,
           JSON.stringify(progress),
         );
       }
@@ -189,9 +182,9 @@ export default function BagianPage() {
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
-        const pelStr = localStorage.getItem(`aizone.bagian.pelajaran.${modulId}.${bagian}`);
-        const stgStr = localStorage.getItem(`aizone.bagian.stages.${modulId}.${bagian}`);
-        const ovStr = localStorage.getItem(`aizone.bagian.overall.${modulId}.${bagian}`);
+        const pelStr = localStorage.getItem(`aizone.bagian.pelajaran.${modulId}.${bagian}.v2`);
+        const stgStr = localStorage.getItem(`aizone.bagian.stages.${modulId}.${bagian}.v2`);
+        const ovStr = localStorage.getItem(`aizone.bagian.overall.${modulId}.${bagian}.v2`);
         let used = false;
         if (pelStr) {
           try {

@@ -379,6 +379,11 @@ export function PeringkatWidget({
     return () => clearInterval(id);
   }, [hasMissions, localMissions.length]);
 
+  const CurrentLevelIcon = useMemo(() => {
+    const level = journeyLevels.find((l) => l.label === localJourneyLabel);
+    return level ? level.icon : Paw24Color;
+  }, [journeyLevels, localJourneyLabel]);
+
   return (
     <div className="flex flex-col gap-6">
       {sectionsSet.has('peringkat') ? (
@@ -513,20 +518,30 @@ export function PeringkatWidget({
             </div>
 
             <div className="flex items-center gap-2.5">
-              <PawColor className="w-[42px] h-[42px]" />
-              <Skeleton isLoaded={!isLoadingWidget} className="rounded-md w-full">
+              <CurrentLevelIcon className="w-[42px] h-[42px]" />
+              <Skeleton
+                isLoaded={!isLoadingWidget}
+                className="rounded-md w-full"
+              >
                 <Progress
                   aria-label="Journey progress"
                   classNames={{
-                    base: 'w-full',
-                    label: 'text-base font-medium leading-6 text-black',
-                    track: 'bg-[#E4E4E7]',
-                    indicator: 'bg-[#F5A524]',
+                    base: "w-full",
+                    label: "text-base font-medium leading-6 text-black",
+                    track: "bg-[#E4E4E7]",
+                    indicator: "bg-[#F5A524]",
+                    value: "text-base font-medium leading-6 text-black",
                   }}
                   color="warning"
                   label={localJourneyLabel}
                   maxValue={localJourneyMax}
                   radius="full"
+                  showValueLabel={true}
+                  valueLabel={`${
+                    localJourneyMax > 0
+                      ? Math.round((localJourneyValue / localJourneyMax) * 100)
+                      : 0
+                  }%`}
                   size="md"
                   // label={localJourneyLabel}
                   value={localJourneyValue}

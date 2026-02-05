@@ -63,7 +63,30 @@ export async function submitHasilLatihan(params: {
     .limit(1);
 
   if (!existingError && existingRows && existingRows.length > 0) {
-    return { data: existingRows[0], error: null, earnedExp: 0 };
+    const existing = existingRows[0];
+    const createdAt = new Date(existing.created_at).getTime();
+    const now = new Date().getTime();
+
+    // Jika data sudah ada dan dibuat kurang dari 30 detik yang lalu (kemungkinan double submit)
+    // Kembalikan nilai EXP yang seharusnya didapat agar UI tidak "blip" ke 0
+    if (now - createdAt < 30000) {
+      const { data: exercisesData } = await supabase
+        .from('latihans')
+        .select('points')
+        .eq('id_pelajaran', params.id_pelajaran)
+        .eq('nomor_latihan', params.nomor_latihan);
+
+      let expToAdd = 0;
+      if (exercisesData) {
+        expToAdd = exercisesData.reduce((sum, item) => {
+          const p = Number(item.points);
+          return sum + (isNaN(p) ? 0 : p);
+        }, 0);
+      }
+      return { data: existing, error: null, earnedExp: expToAdd };
+    }
+
+    return { data: existing, error: null, earnedExp: 0 };
   }
 
   const { data, error } = await supabase

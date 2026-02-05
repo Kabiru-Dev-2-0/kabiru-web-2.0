@@ -77,6 +77,8 @@ export const DashboardHeader = ({
   const [lessonsSelesai, setLessonsSelesai] = useState<number>(0);
   const [currentStreak, setCurrentStreak] = useState<number | null>(null);
   const [isStreakLoading, setIsStreakLoading] = useState<boolean>(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const journeyLabel = useMemo(() => {
     if (exp < 1000) return "Newbie";
@@ -707,7 +709,7 @@ export const DashboardHeader = ({
                     <span className="text-base font-semibold text-black">
                       Statistik
                     </span>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-4 gap-3">
                       <Card
                         radius="lg"
                         className="border-transparent bg-gradient-to-br from-[#62c0ff] to-[#004c78] p-[2px] rounded-2xl"
@@ -719,6 +721,25 @@ export const DashboardHeader = ({
                           </span>
                           <span className="text-lg font-bold text-[#030d68]">
                             {rankStat ?? 0}
+                          </span>
+                        </CardBody>
+                      </Card>
+                      <Card
+                        radius="lg"
+                        className="border-transparent bg-gradient-to-br from-[#62c0ff] to-[#004c78] p-[2px] rounded-2xl"
+                      >
+                        <CardBody className="p-1 gap-0 items-center bg-white rounded-2xl">
+                          <span
+                            className="text-3xl leading-none inline-flex items-center"
+                            aria-label="Streak"
+                          >
+                            🔥
+                          </span>
+                          <span className="text-sm font-regular text-black">
+                            Streak
+                          </span>
+                          <span className="text-lg font-bold text-[#030d68]">
+                            {currentStreak ?? 0}
                           </span>
                         </CardBody>
                       </Card>
@@ -752,7 +773,25 @@ export const DashboardHeader = ({
                       </Card>
                     </div>
                   </div>
-{/* Removed Koleksi Penghargaan */}
+                  
+                  <Divider className="bg-[rgba(17,17,17,0.15)]" />
+                  <div className="flex w-full">
+                     <Button
+                        className="w-full bg-[#FF4D4D] text-white font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-none"
+                        style={{
+                          minHeight: "46px",
+                          backgroundColor: "#FF4D4D",
+                          color: "#fff",
+                          borderRadius: "12px",
+                          border: "none",
+                          boxShadow: "0 4px 0 0 #B30000",
+                        }}
+                        onPress={() => setIsDeleteModalOpen(true)}
+                      >
+                        Hapus Akun
+                      </Button>
+                  </div>
+
                 </CardBody>
               </Card>
             </motion.div>
@@ -1006,6 +1045,94 @@ export const DashboardHeader = ({
                       }}
                     >
                       Konfirmasi
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsDeleteModalOpen(false);
+            }}
+          >
+            <motion.div
+              className="w-[480px] max-w-[92vw]"
+              initial={{ y: -24, scale: 0.98, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 24, scale: 0.98, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            >
+              <Card radius="lg" className="bg-white shadow-2xl">
+                <CardBody className="p-6 gap-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-semibold text-black">
+                      Konfirmasi Hapus
+                    </span>
+                    <Button
+                      isIconOnly
+                      radius="full"
+                      variant="light"
+                      onPress={() => setIsDeleteModalOpen(false)}
+                    >
+                      <DismissRegular className="w-6 h-6 text-[#71717A]" />
+                    </Button>
+                  </div>
+                  
+                  <p className="text-[#11181C] text-lg text-center">
+                    akun yang di hapus tidak bisa di kembalikan. apakah kamu yakin ingin menghapusnya?
+                  </p>
+
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      className="w-full bg-[#4281c7] text-white font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-none"
+                      style={{
+                        minHeight: "46px",
+                        backgroundColor: "#4281c7",
+                        color: "#fff",
+                        borderRadius: "12px",
+                        border: "none",
+                        boxShadow: "0 4px 0 0 #205994",
+                      }}
+                      isLoading={isDeleting}
+                      onPress={async () => {
+                        setIsDeleting(true);
+                        try {
+                          const supabase = createClient();
+                          
+                          // Attempt to delete user via RPC
+                          await supabase.rpc('delete_current_user');
+                          
+                          // Sign out and clear data
+                          await supabase.auth.signOut();
+                          try {
+                            localStorage.clear();
+                          } catch {}
+                          
+                          window.location.href = "/login";
+                        } catch (e) {
+                          console.error(e);
+                          setIsDeleting(false);
+                        }
+                      }}
+                    >
+                      Ya
+                    </Button>
+                    
+                    <Button
+                      className="w-full bg-transparent text-[#71717A] font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-2 border-[#E4E4E7]"
+                      variant="bordered"
+                      onPress={() => setIsDeleteModalOpen(false)}
+                    >
+                      Tidak
                     </Button>
                   </div>
                 </CardBody>

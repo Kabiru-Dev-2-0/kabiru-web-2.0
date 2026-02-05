@@ -53,6 +53,7 @@ export default function Quiz() {
   const [chatInput, setChatInput] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     if (chatOpen) {
@@ -227,8 +228,14 @@ export default function Quiz() {
   };
 
   const submitHasilToDatabase = async (nilai: number) => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     try {
-      if (!exercises.length) return;
+      if (!exercises.length) {
+        isSubmittingRef.current = false;
+        return;
+      }
 
       const idPelajaran = exercises[0].id_pelajaran;
       const nomorLatihanInt = nomorLatihan ? parseInt(nomorLatihan) : 1;
@@ -244,6 +251,7 @@ export default function Quiz() {
       if (result.error) {
         console.error('Error submitting hasil:', result.error);
         alert('Gagal menyimpan hasil latihan. Silakan coba lagi.');
+        isSubmittingRef.current = false;
       } else {
         console.log('Hasil berhasil disimpan:', result.data);
         setEarnedExp((result as any).earnedExp ?? 0);
@@ -321,6 +329,7 @@ export default function Quiz() {
     } catch (error) {
       console.error('Error submitting hasil:', error);
       alert('Terjadi kesalahan saat menyimpan hasil.');
+      isSubmittingRef.current = false;
     }
   };
 

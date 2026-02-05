@@ -3,13 +3,11 @@
 import { Card, CardBody } from "@heroui/card";
 import { Avatar } from "@heroui/avatar";
 import { Badge } from "@heroui/badge";
-import { ArrowUpRegular, ArrowDownRegular } from "@fluentui/react-icons";
 
 interface RankingCardProps {
   rank: number;
   name: string;
   exp: number;
-  trend: "up" | "down";
   isCurrentUser?: boolean;
   label?: string;
   avatarSrc?: string;
@@ -19,7 +17,6 @@ export const RankingCard = ({
   rank,
   name,
   exp,
-  trend,
   isCurrentUser = false,
   label = 'EXP',
   avatarSrc,
@@ -123,11 +120,6 @@ export const RankingCard = ({
                 {label}
               </span>
             </div>
-            {trend === "up" ? (
-              <ArrowUpRegular className="w-[24px] h-[24px] text-[#17C964]" />
-            ) : (
-              <ArrowDownRegular className="w-[24px] h-[24px] text-[#F31260]" />
-            )}
           </div>
         </div>
       </CardBody>

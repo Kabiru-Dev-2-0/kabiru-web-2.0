@@ -47,7 +47,6 @@ Telah berhasil diimplementasikan 3 halaman baru yang mengikuti desain Figma deng
 - Ranking List untuk posisi 4-17:
   - Posisi 4-9 dengan opacity berbeda
   - Posisi 17 (user sendiri) dengan highlight biru dan text "(You)"
-- Arrow indicator untuk trend (naik/turun)
 - Badge untuk ranking number
 - 2 Widget di sidebar kanan:
   - Misi Harian (84% progress)
@@ -84,7 +83,6 @@ Telah berhasil diimplementasikan 3 halaman baru yang mengikuti desain Figma deng
 - `rank`: number - Ranking number
 - `name`: string - Nama user
 - `exp`: number - EXP points
-- `trend`: "up" | "down" - Trend indicator
 - `isCurrentUser`: boolean - Highlight untuk user sendiri
 
 **Fitur:**

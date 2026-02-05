@@ -3,9 +3,10 @@ import { Card, CardBody } from '@heroui/card';
 import { Podium } from '@/components/podium';
 import { RankingCard } from '@/components/ranking-card';
 import { Skeleton } from '@heroui/skeleton';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { PeringkatWidget } from '@/components/peringkat-widget';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type LeaderboardRow = {
   id_pengguna: number;
@@ -97,7 +98,18 @@ export default function PeringkatPage() {
   const top2 = rows.find((r) => r.rank === 2);
   const top3 = rows.find((r) => r.rank === 3);
 
-  const listRows = [...rows].sort((a, b) => a.rank - b.rank);
+  const displayedRows = useMemo(() => {
+    const sorted = [...rows].sort((a, b) => a.rank - b.rank);
+    const top10 = sorted.filter((r) => r.rank <= 10);
+    const currentUserRow = sorted.find((r) => r.id_pengguna === currentUserId);
+    
+    // Jika user tidak ada di top 10, tambahkan di bawah
+    if (currentUserRow && currentUserRow.rank > 10) {
+      return [...top10, currentUserRow];
+    }
+    
+    return top10;
+  }, [rows, currentUserId]);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -158,18 +170,27 @@ export default function PeringkatPage() {
 
               {/* Ranking List */}
               <div className="w-full flex flex-col gap-[14px]">
-                {listRows.map((r) => (
-                  <RankingCard
-                    key={r.id_pengguna}
-                    rank={r.rank}
-                    name={r.username || 'Pengguna'}
-                    exp={r.score}
-                    trend={'up'}
-                    label={'POIN'}
-                    isCurrentUser={currentUserId === r.id_pengguna}
-                    avatarSrc={r.avatar || undefined}
-                  />
-                ))}
+                <AnimatePresence mode='popLayout'>
+                  {displayedRows.map((r) => (
+                    <motion.div
+                      key={r.id_pengguna}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <RankingCard
+                        rank={r.rank}
+                        name={r.username || 'Pengguna'}
+                        exp={r.score}
+                        label={'EXP'}
+                        isCurrentUser={currentUserId === r.id_pengguna}
+                        avatarSrc={r.avatar || undefined}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </>
           )}

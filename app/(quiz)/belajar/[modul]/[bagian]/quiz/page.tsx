@@ -1,5 +1,10 @@
 'use client';
+<<<<<<< Updated upstream
 import { useState, useEffect, useRef } from 'react';
+=======
+import ReactMarkdown from 'react-markdown';
+import { useState, useEffect } from 'react';
+>>>>>>> Stashed changes
 import ExerciseRenderer, { FooterWithRobot } from '@/components/exercise-renderer';
 import { fetchExercises, submitHasilLatihan } from './quizAction';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
@@ -9,7 +14,15 @@ import {
   SendRegular,
   DismissRegular,
   BotSparkle16Color,
+
+  MaximizeRegular,
+  SquareMultipleRegular,
+  SubtractRegular,
 } from '@fluentui/react-icons';
+import WorkflowTracker, { WorkflowState } from '@/components/ai/WorkflowTracker';
+import InlineWorkflowTracker from '@/components/ai/InlineWorkflowTracker';
+import TypingText from '@/components/ai/TypingText';
+import MermaidRenderer from '@/components/ai/MermaidRenderer'; // Added
 import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { Card, CardBody } from '@heroui/card';
@@ -35,7 +48,7 @@ export default function Quiz() {
     onSubmit: () => void;
     feedback: string;
     isCorrect: boolean;
-  }>({ onSubmit: () => {}, feedback: '', isCorrect: false });
+  }>({ onSubmit: () => { }, feedback: '', isCorrect: false });
   const [isCompletedView, setIsCompletedView] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [finalExp, setFinalExp] = useState<number | null>(null);
@@ -46,12 +59,15 @@ export default function Quiz() {
   const [adviceLoading, setAdviceLoading] = useState(false);
 
   // Chat overlay state
+  // Chat overlay state
   const [chatOpen, setChatOpen] = useState(false);
+  const [isChatMaximized, setIsChatMaximized] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: 'ai' | 'user'; text: string }[]>([
     { role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' },
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isAsking, setIsAsking] = useState(false);
+<<<<<<< Updated upstream
   const chatEndRef = useRef<HTMLDivElement>(null);
   const isSubmittingRef = useRef(false);
 
@@ -60,6 +76,66 @@ export default function Quiz() {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, isAsking, chatOpen]);
+=======
+  const [typingMessageIndex, setTypingMessageIndex] = useState<number | null>(null);
+
+  // Mock Workflow State
+  const [workflowState, setWorkflowState] = useState<WorkflowState>({
+    currentStage: 'idle',
+    activeWriters: [],
+    canvas: null,
+    generatedImages: [],
+    draftDiagram: '',
+    metrics: { quality_score: 0, revision_count: 0 },
+    agentOutputs: {}
+  });
+
+  // agentOutputs: { } // This line seems to be a copy-paste error from the original document, removing it.
+  const [workflowMode, setWorkflowMode] = useState<'STORY' | 'QA'>('QA');
+  // const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Load Chat History - DISABLED for now
+  /*
+  useEffect(() => {
+    async function loadHistory() {
+        try {
+            const res = await fetch('/api/chat/history');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.sessionId) setSessionId(data.sessionId);
+                if (Array.isArray(data.messages) && data.messages.length > 0) {
+                    const mapped = data.messages.map((m: any) => ({
+                        role: m.role,
+                        text: m.content
+                    }));
+                    setChatMessages(mapped);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load chat history", e);
+        }
+    }
+    loadHistory();
+  }, []);
+ 
+  const saveMessage = async (role: 'user' | 'ai', text: string) => {
+      try {
+          await fetch('/api/chat/history', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  role,
+                  content: text,
+                  sessionId
+              })
+          });
+      } catch (e) {
+          console.error("Failed to save message", e);
+      }
+  };
+  */
+
+>>>>>>> Stashed changes
 
   const sanitizeAllowedHtml = (html: string) => {
     return html
@@ -69,48 +145,306 @@ export default function Quiz() {
       .replace(/javascript:/gi, '');
   };
 
-  const handleAgentClick = () => setChatOpen(true);
-  const handleWrong = (prompt: string) => {
-    setWrongAttempts((n) => n + 1);
-    setWrongPrompts((prev) => (prev.includes(prompt) ? prev : [...prev, prompt]));
+  const getQuizContext = (exercise: any) => {
+    if (!exercise) return '';
+    const t = exercise.type;
+    let ctx = '';
+    if (t === 'multiple_choice') {
+      const opts = Array.isArray(exercise?.data?.options) ? exercise.data.options.join(', ') : '';
+      ctx = `Jenis: Pilihan Ganda\nPrompt: ${exercise?.prompt || ''}\nPertanyaan: ${exercise?.pertanyaan || exercise?.data?.question || ''}\nPilihan: ${opts}`;
+    } else if (t === 'fill_in_the_blank') {
+      const opts = Array.isArray(exercise?.data?.options) ? exercise.data.options.join(', ') : '';
+      const tpl = typeof exercise?.template_code === 'string' ? exercise.template_code : '';
+      ctx = `Jenis: Isian\nPrompt: ${exercise?.prompt || ''}\nTemplate:\n${tpl}\nPilihan: ${opts}`;
+    } else if (t === 'guessing') {
+      const code = typeof exercise?.data?.code === 'string' ? exercise.data.code : '';
+      ctx = `Jenis: Menebak Output\nPrompt: ${exercise?.prompt || ''}\nKode:\n${code}`;
+    } else if (t === 'drag_and_drop') {
+      const items = Array.isArray(exercise?.data?.items) ? exercise.data.items.join(', ') : '';
+      const buckets = Array.isArray(exercise?.data?.buckets) ? exercise.data.buckets.join(', ') : '';
+      ctx = `Jenis: Kelompokkan\nPrompt: ${exercise?.prompt || ''}\nItems: ${items}\nKategori: ${buckets}`;
+    } else if (t === 'sorting') {
+      const q = exercise?.pertanyaan || exercise?.data?.question || '';
+      const lines = Array.isArray(exercise?.data?.code_lines) ? exercise.data.code_lines.join(' | ') : '';
+      ctx = `Jenis: Mengurutkan\nPrompt: ${exercise?.prompt || ''}\nPertanyaan: ${q}\nItems: ${lines}`;
+    } else if (t === 'checkbox') {
+      const opts = Array.isArray(exercise?.data?.options) ? exercise.data.options.join(', ') : '';
+      ctx = `Jenis: Pilihan Ganda (Checkbox)\nPrompt: ${exercise?.prompt || ''}\nPertanyaan: ${exercise?.pertanyaan || exercise?.data?.question || ''}\nPilihan: ${opts}`;
+    } else {
+      ctx = `Prompt: ${exercise?.prompt || ''}`;
+    }
+    return ctx;
   };
+
+  // Real Story Agent Runner - connects to Skripsi backend via SSE
+  const runStoryWorkflow = async (userMessage: string) => {
+    setWorkflowMode('STORY');
+    setIsChatMaximized(true); // Auto maximize for story
+
+    // Reset workflow state - starts empty, steps appear as they are encountered
+    setWorkflowState({
+      currentStage: 'planning',
+      activeWriters: [],
+      canvas: null,
+      generatedImages: [],
+      draftDiagram: '',
+      diagramTitle: '',
+      metrics: { quality_score: 0, revision_count: 0 },
+      agentOutputs: {
+        planning: { title: 'Perencanaan', content: 'Memulai perencanaan cerita...', status: 'running' }
+      }
+    });
+
+    // Add placeholder message for AI to trigger the unified UI
+    setChatMessages(prev => [...prev, { role: 'ai', text: '' }]);
+    setIsAsking(false); // Hide the generic "thinking" bubble immediately
+
+    try {
+      // Enrich prompt with learning context
+      const currentExercise = exercises[currentIndex];
+      const context = getQuizContext(currentExercise);
+
+      const enrichedPrompt = `
+[User Message]
+${userMessage}
+
+[Learning Context]
+ID Modul: ${modulParam || 'Umum'}
+ID Bagian: ${bagianParam || 'Umum'}
+Tujuan: Pembelajaran Koding KA (Kecerdasan Artifisial) untuk anak-anak Usia 15-18 Tahun 
+Default Prompt (jika diperlukan): Cerita Short sebanyak 3 paragraf dengan panjang 50-150 kata, dengan Analogi atau Studi Kasus yang relevan dengan materi
+[Exercise Details]
+${context}
+`.trim();
+
+      console.log('[Story Agent] Sending Prompt:', enrichedPrompt);
+
+      const response = await fetch('/api/ai/story/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: enrichedPrompt,
+          language: 'Indonesian',
+          story_length: 'medium'
+        })
+      });
+
+      if (!response.ok) {
+        // Try to get detailed error from response
+        let errorDetails = response.statusText;
+        try {
+          const errorJson = await response.json();
+          errorDetails = errorJson.details || errorJson.error || response.statusText;
+        } catch { /* ignore parse error */ }
+        throw new Error(errorDetails);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finalStory = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            const eventType = line.replace('event:', '').trim();
+            // Map SSE event to workflow stage
+            const eventToStage: Record<string, string> = {
+              'RISET::MULAI': 'research',
+              'RISET::MENEMUKAN_INFORMASI': 'research',
+              'PERENCANA::MULAI': 'planning',
+              'PERENCANA::MERINCIKAN': 'planning',
+              'PENULIS::MULAI': 'writing',
+              'PENULIS::SELESAI': 'writing',
+              'KRITIK::MULAI': 'critique',
+              'KRITIK::MENGEVALUASI': 'critique',
+              'WORKFLOW::SELESAI': 'finalize'
+            };
+            const stage = eventToStage[eventType] || null;
+            if (stage) {
+              setWorkflowState(prev => ({ ...prev, currentStage: stage }));
+            }
+          } else if (line.startsWith('data:')) {
+            try {
+              const data = JSON.parse(line.replace('data:', '').trim());
+
+              // Update agent outputs based on event data
+              if (data.agent === 'research') {
+                setWorkflowState(prev => ({
+                  ...prev,
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    research: {
+                      title: 'Riset',
+                      content: data.status === 'done' ? `Riset selesai (${data.chars || 0} karakter)` : 'Sedang meneliti...',
+                      status: data.status === 'done' ? 'completed' : 'running'
+                    }
+                  }
+                }));
+              } else if (data.agent === 'planning') {
+                setWorkflowState(prev => ({
+                  ...prev,
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    planning: {
+                      title: 'Perencanaan',
+                      content: data.status === 'done' ? `${data.characters || 0} karakter dibuat` : 'Menyusun rencana...',
+                      status: data.status === 'done' ? 'completed' : 'running'
+                    }
+                  }
+                }));
+              } else if (data.agent === 'writer_text') {
+                setWorkflowState(prev => ({
+                  ...prev,
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    writing: {
+                      title: 'Penulisan',
+                      content: data.status === 'done' ? `Draft selesai (${data.words || 0} kata)` : 'Menulis cerita...',
+                      status: data.status === 'done' ? 'completed' : 'running'
+                    }
+                  }
+                }));
+              } else if (data.agent === 'critique') {
+                setWorkflowState(prev => ({
+                  ...prev,
+                  metrics: { quality_score: data.quality_score || 0, revision_count: prev.metrics.revision_count },
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    critique: {
+                      title: 'Evaluasi',
+                      content: data.status === 'done' ? `Skor: ${data.quality_score || 0} - ${data.decision || 'OK'}` : 'Mengevaluasi...',
+                      status: data.status === 'done' ? 'completed' : 'running'
+                    }
+                  }
+                }));
+              }
+
+              // Handle final workflow completion
+              if (data.final_story) {
+                finalStory = data.final_story;
+
+                // Content-based title extraction (simple fallback)
+                let extractedTitle = 'Cerita Selesai Dibuat';
+                const firstLine = finalStory.trim().split('\n')[0];
+                if (firstLine && (firstLine.startsWith('#') || firstLine.length < 100)) {
+                  extractedTitle = firstLine.replace(/^#+\s*/, '').trim();
+                }
+
+                setWorkflowState(prev => ({
+                  ...prev,
+                  currentStage: 'finalize',
+                  metrics: { quality_score: data.quality_score || prev.metrics.quality_score, revision_count: data.revision_count || 0 },
+                  draftDiagram: data.draft_diagram || '',
+                  diagramTitle: data.diagram_title || '',
+                  generatedImages: data.generated_images || [],
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    finalize: { title: extractedTitle, content: `Selesai dalam ${data.elapsed_time || 0}s`, status: 'completed' }
+                  }
+                }));
+              }
+            } catch { /* ignore parse errors */ }
+          }
+        }
+      }
+
+      // Add final story to chat by UPDATING the last placeholder message
+      // Note: We pass raw markdown because ReactMarkdown handles it.
+
+      setChatMessages(msgs => {
+        const newMsgs = [...msgs];
+        if (newMsgs.length > 0) {
+          newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], text: finalStory };
+        }
+        return newMsgs;
+      });
+
+    } catch (error: any) {
+      console.error('Story Workflow Error:', error);
+      setWorkflowState(prev => ({
+        ...prev,
+        agentOutputs: {
+          ...prev.agentOutputs,
+          finalize: { title: 'Gagal', content: error?.message || 'Error', status: 'failed' }
+        }
+      }));
+      // Update the placeholder with error message
+      setChatMessages(msgs => {
+        const newMsgs = [...msgs];
+        if (newMsgs.length > 0) {
+          newMsgs[newMsgs.length - 1] = {
+            ...newMsgs[newMsgs.length - 1],
+            text: `Maaf, terjadi kesalahan: ${error?.message || 'Tidak dapat terhubung ke server'}`
+          };
+        }
+        return newMsgs;
+      });
+    }
+  };
+
   const handleSendMessage = async () => {
     const content = chatInput.trim();
     if (!content || isAsking) return;
     setChatMessages((msgs) => [...msgs, { role: 'user', text: content }]);
     setChatInput('');
     setIsAsking(true);
+
+    // saveMessage('user', content);
+
     try {
-      const ex = exercises[currentIndex];
-      let quizContext = '';
-      if (ex) {
-        const t = ex.type;
-        if (t === 'multiple_choice') {
-          const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
-          quizContext = `Jenis: Pilihan Ganda\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${ex?.pertanyaan || ex?.data?.question || ''}\nPilihan: ${opts}`;
-        } else if (t === 'fill_in_the_blank') {
-          const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
-          const tpl = typeof ex?.template_code === 'string' ? ex.template_code : '';
-          quizContext = `Jenis: Isian\nPrompt: ${ex?.prompt || ''}\nTemplate:\n${tpl}\nPilihan: ${opts}`;
-        } else if (t === 'guessing') {
-          const code = typeof ex?.data?.code === 'string' ? ex.data.code : '';
-          quizContext = `Jenis: Menebak Output\nPrompt: ${ex?.prompt || ''}\nKode:\n${code}`;
-        } else if (t === 'drag_and_drop') {
-          const items = Array.isArray(ex?.data?.items) ? ex.data.items.join(', ') : '';
-          const buckets = Array.isArray(ex?.data?.buckets) ? ex.data.buckets.join(', ') : '';
-          quizContext = `Jenis: Kelompokkan\nPrompt: ${ex?.prompt || ''}\nItems: ${items}\nKategori: ${buckets}`;
-        } else if (t === 'sorting') {
-          const q = ex?.pertanyaan || ex?.data?.question || '';
-          const lines = Array.isArray(ex?.data?.code_lines) ? ex.data.code_lines.join(' | ') : '';
-          quizContext = `Jenis: Mengurutkan\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${q}\nItems: ${lines}`;
-        } else if (t === 'checkbox') {
-          const opts = Array.isArray(ex?.data?.options) ? ex.data.options.join(', ') : '';
-          quizContext = `Jenis: Pilihan Ganda (Checkbox)\nPrompt: ${ex?.prompt || ''}\nPertanyaan: ${ex?.pertanyaan || ex?.data?.question || ''}\nPilihan: ${opts}`;
-        } else {
-          quizContext = `Prompt: ${ex?.prompt || ''}`;
+      // 1. Classify Intent
+      let intent = 'QA';
+      try {
+        const clsRes = await fetch('/api/ai/classify-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: content })
+        });
+        if (clsRes.ok) {
+          const clsData = await clsRes.json();
+          intent = clsData.intent || 'QA';
         }
+      } catch (e) { console.error(e); }
+
+      if (intent === 'STORY') {
+        await runStoryWorkflow(content);
+        setIsAsking(false);
+        return;
       }
+
+      // QA Workflow (RAG)
+      setWorkflowMode('QA');
+
+      // Step 1: Analyzing
+      setWorkflowState(prev => ({
+        ...prev, currentStage: 'analyzing',
+        agentOutputs: { analyzing: { title: 'Analisis', content: 'Memahami pertanyaan pengguna...', status: 'running' } }
+      }));
+      await new Promise(r => setTimeout(r, 600));
+      setWorkflowState(prev => ({
+        ...prev,
+        agentOutputs: {
+          ...prev.agentOutputs,
+          analyzing: { title: 'Analisis', content: 'Analisis selesai.', status: 'completed' },
+          searching: { title: 'Pencarian', content: 'Mencari dokumen terkait...', status: 'running' }
+        }
+      }));
+
+      const ex = exercises[currentIndex];
+      const quizContext = getQuizContext(ex);
+
       const historyToSend = [...chatMessages, { role: 'user', text: content }].slice(-8);
+
       const res = await fetch('/api/ask-to-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,22 +455,49 @@ export default function Quiz() {
           history: historyToSend,
         }),
       });
+
+      // Step 2: Search Completed
+      setWorkflowState(prev => ({
+        ...prev,
+        agentOutputs: {
+          ...prev.agentOutputs,
+          searching: { title: 'Pencarian', content: 'Dokumen ditemukan.', status: 'completed' },
+          generating: { title: 'Generasi', content: 'Menyusun jawaban...', status: 'running' }
+        }
+      }));
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setChatMessages((msgs) => [
-          ...msgs,
-          { role: 'ai', text: `Terjadi kesalahan: ${data.error || res.statusText}` },
-        ]);
+        const errMsg = `Terjadi kesalahan: ${data.error || res.statusText}`;
+        setChatMessages((msgs) => {
+          setTypingMessageIndex(msgs.length); // Index of the new message
+          return [...msgs, { role: 'ai', text: errMsg }];
+        });
+        // saveMessage('ai', errMsg);
+        setWorkflowState(prev => ({
+          ...prev,
+          agentOutputs: { ...prev.agentOutputs, generating: { title: 'Generasi', content: 'Gagal.', status: 'failed' } }
+        }));
       } else {
         const data = await res.json();
         const safe = typeof data.answer === 'string' ? sanitizeAllowedHtml(data.answer) : '';
-        setChatMessages((msgs) => [...msgs, { role: 'ai', text: safe }]);
+        setChatMessages((msgs) => {
+          setTypingMessageIndex(msgs.length); // Index of the new message
+          return [...msgs, { role: 'ai', text: safe }];
+        });
+        // saveMessage('ai', safe);
+        setWorkflowState(prev => ({
+          ...prev,
+          agentOutputs: { ...prev.agentOutputs, generating: { title: 'Generasi', content: 'Jawaban terkirim.', status: 'completed' } }
+        }));
       }
     } catch (e: any) {
-      setChatMessages((msgs) => [
-        ...msgs,
-        { role: 'ai', text: `Terjadi kesalahan jaringan: ${e?.message || 'Unknown error'}` },
-      ]);
+      const netErr = `Terjadi kesalahan jaringan: ${e?.message || 'Unknown error'}`;
+      setChatMessages((msgs) => {
+        setTypingMessageIndex(msgs.length); // Index of the new message
+        return [...msgs, { role: 'ai', text: netErr }];
+      });
+      // saveMessage('ai', netErr);
     } finally {
       setIsAsking(false);
     }
@@ -186,15 +547,26 @@ export default function Quiz() {
     }
   };
 
+  const handleAgentClick = () => {
+    setChatOpen(true);
+  };
+
+  const handleWrong = (prompt: string) => {
+    setWrongAttempts((prev) => prev + 1);
+    if (prompt) {
+      setWrongPrompts((prev) => [...prev, prompt]);
+    }
+  };
+
   const handleExit = async () => {
     const supabase = createClient();
     try {
       const { data: auth } = await supabase.auth.getUser();
       const user = auth?.user;
       if (user) {
-        await supabase.rpc('reset_quiz_streak', { p_uuid: user.id }).match(() => {});
+        await supabase.rpc('reset_quiz_streak', { p_uuid: user.id }).match(() => { });
       }
-    } catch {}
+    } catch { }
     if (modulParam && bagianParam) {
       router.replace(`/belajar/${modulParam}/${bagianParam}`);
     } else if (modulParam) {
@@ -282,7 +654,7 @@ export default function Quiz() {
                     localStorage.setItem('aizone.userName', expRow.nama_lengkap);
                   }
                   setFinalExp(expRow.exp ?? 0);
-                } catch {}
+                } catch { }
               }
             }
           }
@@ -322,9 +694,9 @@ export default function Quiz() {
           if (user?.id && wrongPrompts.length <= 0) {
             await supabase
               .rpc('update_quiz_sempurna_completion_challenge', { p_uuid: user.id })
-              .match(() => {});
+              .match(() => { });
           }
-        } catch {}
+        } catch { }
       }
     } catch (error) {
       console.error('Error submitting hasil:', error);
@@ -432,9 +804,8 @@ export default function Quiz() {
                 {exercises.map((_, idx) => (
                   <div
                     key={idx}
-                    className={`flex-1 rounded-full ${
-                      idx <= currentIndex ? 'bg-[#3674B5]' : 'bg-[#E4E4E7]'
-                    }`}
+                    className={`flex-1 rounded-full ${idx <= currentIndex ? 'bg-[#3674B5]' : 'bg-[#E4E4E7]'
+                      }`}
                   />
                 ))}
               </div>
@@ -465,42 +836,80 @@ export default function Quiz() {
       <div className="flex-1 overflow-y-auto py-20">
         <div className="flex justify-center px-0 py-6 min-h-[calc(100vh-180px)] pb-28">
           <motion.div
-            className="flex gap-6 items-start"
-            animate={{ width: chatOpen ? '80%' : '70%' }}
+            className="flex gap-6 items-start w-full max-w-6xl mx-auto"
             initial={false}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           >
+            {/* Backdrop for maximized view */}
+            <AnimatePresence>
+              {chatOpen && isChatMaximized && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998]"
+                  onClick={() => setIsChatMaximized(false)}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Chat Panel - Flex Item */}
             <AnimatePresence>
               {chatOpen && (
                 <motion.div
+<<<<<<< Updated upstream
                   className="w-[35%] min-w-[340px] flex-shrink-0 h-[94%]"
                   initial={{ opacity: 0, x: -540, y: 200, scale: 0.98 }}
                   animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
                   exit={{ opacity: 0, x: -540, y: 200, scale: 0.98 }}
+=======
+                  className={
+                    isChatMaximized
+                      ? 'fixed inset-0 m-auto z-[9999]'
+                      : 'flex-shrink-0'
+                  }
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={
+                    isChatMaximized
+                      ? { opacity: 1, width: '90vw', height: '85vh', borderRadius: '24px' }
+                      : { opacity: 1, width: '340px', height: '550px', borderRadius: '18px' }
+                  }
+                  exit={{ opacity: 0, width: 0 }}
+>>>>>>> Stashed changes
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   layout
                 >
                   <Card
-                    className="border-2 border-[#E4E4E7] bg-white rounded-[18px] shadow-[0px_2px_0px_0px_rgba(228,228,231,1)] h-[60vh]"
+                    className={`border-2 border-[#E4E4E7] bg-white shadow-[0px_2px_0px_0px_rgba(228,228,231,1)] h-full ${isChatMaximized ? 'rounded-[24px]' : 'rounded-[18px]'}`}
                     radius="lg"
                   >
-                    <CardBody className="px-4 py-10 flex flex-col gap-4">
-                      <div className="flex items-center justify-between px-4 py-4 absolute top-0 left-0 w-full z-99 bg-white border-b-1 border-[#E4E4E7]">
+                    <CardBody className="px-0 py-0 flex flex-col h-full overflow-hidden">
+                      {/* Header */}
+                      <div className="flex-shrink-0 flex items-center justify-between px-4 py-4 bg-white border-b border-[#E4E4E7] z-50">
                         <div className="flex items-center gap-2">
                           <BotSparkle16Color className="w-7 h-7 text-[#3674B5]" />
                           <span className="text-base font-semibold text-[#3674B5]">AI Chat</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <button
+                            onClick={() => setIsChatMaximized(!isChatMaximized)}
+                            className="text-sm font-semibold text-[#A1A1AA] hover:text-[#3674B5] cursor-pointer"
+                            type="button"
+                          >
+                            {isChatMaximized ? <SquareMultipleRegular className="w-5 h-5" /> : <MaximizeRegular className="w-5 h-5" />}
+                          </button>
+                          <button
                             onClick={() => setChatOpen(false)}
                             className="text-sm font-semibold text-[#A1A1AA] hover:text-[#3674B5] cursor-pointer"
                             type="button"
                           >
-                            <div className="w-5 h-1 rounded-full bg-[#a1a1a1]"></div>
+                            <SubtractRegular className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-4 h-[100%] pt-6 pb-8 overflow-y-auto pr-1 overflow-x-hidden">
+
+                      {/* Messages Area */}
+                      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 min-h-0">
                         {chatMessages.map((m, idx) => (
                           <div
                             key={idx}
@@ -510,30 +919,117 @@ export default function Quiz() {
                               <img
                                 src="/imageAssets/bot-profile.png"
                                 alt="AI"
-                                className="w-12 h-12 mt-1 rounded-full"
+                                className="w-8 h-8 mt-1 rounded-full"
                               />
                             )}
-                            <div className="relative mx-1">
-                              <div
-                                className={`rounded-[18px] px-4 py-3 max-w-[280px] text-sm leading-[1.55em] ${
-                                  m.role === 'ai'
+                            <div className="relative mx-1 max-w-[85%]">
+                              {/* Unified Bubble for Story Workflow */}
+                              {m.role === 'ai' && workflowMode === 'STORY' && idx === chatMessages.length - 1 && workflowState.currentStage !== 'idle' ? (
+                                <div className="bg-[#205994] text-white border-none rounded-[18px] overflow-hidden shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]">
+                                  {/* Top: Workflow Tracker (Collapsible) */}
+                                  <div className="border-b border-white/20">
+                                    {/* Passing 'theme="dark"' equivalent via context or just relying on global styles? 
+                                          We'll need to update InlineWorkflowTracker to handle text colors better. 
+                                          For now we assume it renders. */}
+                                    <InlineWorkflowTracker state={workflowState} />
+                                  </div>
+
+                                  {/* Bottom: Result/Content */}
+                                  <div className="px-4 py-3">
+                                    {/* Story Assets: Images and Diagram - Moved UP */}
+                                    {workflowState.currentStage !== 'idle' && (
+                                      <div className="mb-4 flex flex-col gap-4">
+                                        {/* Images Grid */}
+                                        {workflowState.generatedImages && workflowState.generatedImages.length > 0 && (
+                                          <div className="flex flex-col items-center gap-5 w-full">
+                                            {workflowState.generatedImages.map((img, i) => (
+                                              img.base64_data ? (
+                                                <img
+                                                  key={i}
+                                                  src={`data:image/png;base64,${img.base64_data}`}
+                                                  alt={`Illustrasi ${i + 1}`}
+                                                  className="rounded-lg border border-white/20 max-w-[400px] w-full h-auto object-cover hover:scale-105 transition-transform cursor-pointer shadow-md"
+                                                  onClick={() => window.open(`data:image/png;base64,${img.base64_data}`, '_blank')}
+                                                />
+                                              ) : img.file_path ? (
+                                                <img
+                                                  key={i}
+                                                  src={img.file_path}
+                                                  alt={`Illustrasi ${i + 1}`}
+                                                  className="rounded-lg border border-white/20 max-w-[400px] w-full h-auto object-cover shadow-md"
+                                                />
+                                              ) : null
+                                            ))}
+                                          </div>
+                                        )}
+
+                                        {/* Mermaid Diagram */}
+                                        {workflowState.draftDiagram && workflowState.draftDiagram.length > 10 && (
+                                          <div className="rounded-lg bg-white/95 p-3 overflow-hidden shadow-sm">
+                                            <p className="text-xs text-gray-500 font-semibold mb-2 uppercase tracking-wider">
+                                              {workflowState.diagramTitle || "Diagram Struktur Cerita"}
+                                            </p>
+                                            <MermaidRenderer chart={workflowState.draftDiagram} />
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {typingMessageIndex === idx ? (
+                                      <div className="prose prose-sm prose-invert max-w-none">
+                                        <TypingText
+                                          text={m.text}
+                                          speed={1}
+                                          onComplete={() => setTypingMessageIndex(null)}
+                                        />
+                                      </div>
+                                    ) : m.text ? (
+                                      <div className="prose prose-sm prose-invert max-w-none">
+                                        <ReactMarkdown>{m.text}</ReactMarkdown>
+                                      </div>
+                                    ) : (
+                                      <span className="italic text-white/70">Menunggu hasil...</span>
+                                    )}
+
+
+                                  </div>
+                                </div>
+                              ) : (
+                                /* Standard Bubble */
+                                <div
+                                  className={`rounded-[18px] px-4 py-3 text-sm leading-[1.55em] ${m.role === 'ai'
                                     ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)] overflow-x-auto'
                                     : 'bg-[#F5A524] text-white shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
-                                }`}
-                                dangerouslySetInnerHTML={
-                                  m.role === 'ai' ? { __html: m.text } : undefined
-                                }
-                              >
-                                {m.role !== 'ai' ? m.text : null}
-                              </div>
-                              {m.role === 'ai' ? (
-                                <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
-                              ) : (
-                                <div className="absolute -right-1 top-4 w-3 h-3 bg-[#F5A524] rotate-45 rounded-sm"></div>
+                                    }`}
+                                >
+                                  {m.role === 'ai' ? (
+                                    typingMessageIndex === idx ? (
+                                      <TypingText
+                                        text={m.text}
+                                        speed={1}
+                                        onComplete={() => setTypingMessageIndex(null)}
+                                      />
+                                    ) : (
+                                      <span dangerouslySetInnerHTML={{ __html: m.text }} />
+                                    )
+                                  ) : (
+                                    m.text
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Tail Decoration (only for standard bubbles or custom handling needed?) */}
+                              {!(m.role === 'ai' && workflowMode === 'STORY' && idx === chatMessages.length - 1) && (
+                                m.role === 'ai' ? (
+                                  <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
+                                ) : (
+                                  <div className="absolute -right-1 top-4 w-3 h-3 bg-[#F5A524] rotate-45 rounded-sm"></div>
+                                )
                               )}
                             </div>
                           </div>
                         ))}
+<<<<<<< Updated upstream
                         {isAsking && (
                           <div className="flex items-start gap-2">
                             <img
@@ -548,35 +1044,60 @@ export default function Quiz() {
                                   <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                                   <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
                                 </div>
+=======
+
+                        {/* Loading indicator - AI is thinking */}
+                        {isAsking && (
+                          <div className="flex items-start gap-2 animate-in fade-in slide-in-from-bottom-2">
+                            <img
+                              src="/imageAssets/bot-profile.png"
+                              alt="AI"
+                              className="w-8 h-8 mt-1 rounded-full"
+                            />
+                            <div className="relative mx-1">
+                              <div className="rounded-[18px] px-4 py-3 bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]">
+                                <span className="inline-flex gap-1">
+                                  <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                  <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                  <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                </span>
+>>>>>>> Stashed changes
                               </div>
                               <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
                             </div>
                           </div>
                         )}
+<<<<<<< Updated upstream
                         <div ref={chatEndRef} />
+=======
+>>>>>>> Stashed changes
                       </div>
-                      <div className="flex items-center gap-3 absolute bottom-0 left-0 w-full px-4 bg-white z-99 py-3">
-                        <Input
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          placeholder="Ketik pesanmu disini..."
-                          classNames={{
-                            inputWrapper:
-                              'border-2 border-[#E4E4E7] rounded-[16px] h-[46px] bg-[#FAFAFA]',
-                            input: 'text-base',
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendMessage();
-                            }
-                          }}
-                        />
+
+                      {/* Input Footer */}
+                      <div className="flex-shrink-0 flex items-center gap-3 w-full px-4 py-3 bg-white border-t border-gray-100">
+                        <div className="flex-1">
+                          <Input
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            placeholder="Ketik pesanmu disini..."
+                            classNames={{
+                              inputWrapper:
+                                'border-2 border-[#E4E4E7] rounded-[16px] h-[46px] bg-[#FAFAFA]',
+                              input: 'text-base',
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                              }
+                            }}
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={handleSendMessage}
                           disabled={isAsking || !chatInput.trim()}
-                          className="rounded-full w-[46px] h-[46px] flex items-center justify-center bg-white border-2 border-[#E4E4E7] hover:border-[#3674B5] disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-shrink-0 rounded-full w-[46px] h-[46px] flex items-center justify-center bg-white border-2 border-[#E4E4E7] hover:border-[#3674B5] disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Kirim"
                         >
                           <SendRegular className="w-4 h-4 text-[#3674B5]" />
@@ -588,8 +1109,9 @@ export default function Quiz() {
               )}
             </AnimatePresence>
 
+            {/* Content Panel - Takes remaining space */}
             <motion.div
-              className="flex-1 w-full"
+              className="flex-1 min-w-0"
               layout
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
@@ -605,7 +1127,7 @@ export default function Quiz() {
             </motion.div>
           </motion.div>
         </div>
-      </div>
+      </div >
       <FooterWithRobot
         onSubmit={footerProps.onSubmit}
         feedback={footerProps.feedback}
@@ -614,6 +1136,6 @@ export default function Quiz() {
         onNext={handleNext}
         onAgentClick={handleAgentClick}
       />
-    </div>
+    </div >
   );
 }

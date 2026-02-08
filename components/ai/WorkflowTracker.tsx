@@ -34,6 +34,8 @@ export interface WorkflowState {
   generatedImages: GeneratedImage[];
   draftDiagram: string;
   diagramTitle?: string;
+  storyTitle?: string;
+  finalStory?: string; // Markdown content of the story
   metrics: {
     quality_score: number;
     revision_count: number;

@@ -86,24 +86,24 @@ const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (chart && chart.length > 5) { // Lowered threshold slightly
+    if (chart && chart.length > 5) {
       const sanitized = sanitizeChart(chart);
-      const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
-      try {
-        mermaid.render(id, sanitized)
-          .then(({ svg }) => {
-            setSvgContent(svg);
-            setError(null);
-          })
-          .catch((err) => {
-            console.error('Mermaid render error:', err);
-            // Don't show ugly error to user, just hide or show generic
-            setError('Gagal memuat diagram visual.');
-          });
-      } catch (e: any) {
-        console.error('Mermaid sync error:', e);
-        setError('Diagram tidak valid.');
-      }
+
+      // Validate first to avoid ugly error SVG
+      mermaid.parse(sanitized)
+        .then(async (valid) => {
+          if (!valid) throw new Error("Invalid chart");
+
+          const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+          const { svg } = await mermaid.render(id, sanitized);
+          setSvgContent(svg);
+          setError(null);
+        })
+        .catch((err) => {
+          // Suppress error and hide component
+          console.error('Mermaid error:', err);
+          setError('Invalid diagram');
+        });
     }
   }, [chart]);
 

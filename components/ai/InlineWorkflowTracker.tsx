@@ -57,7 +57,7 @@ const STORY_STEPS = [
   { id: 'finalize', label: 'Finalisasi' },
 ];
 
-export default function InlineWorkflowTracker({ state }: { state: WorkflowState }) {
+export default function InlineWorkflowTracker({ state, externalAction }: { state: WorkflowState, externalAction?: React.ReactNode }) {
   // We only track STORY steps for this inline view as requested
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [isProcessExpanded, setIsProcessExpanded] = useState(true);
@@ -91,6 +91,13 @@ export default function InlineWorkflowTracker({ state }: { state: WorkflowState 
           )}
           {isProcessExpanded ? <ChevronDownRegular className="w-5 h-5 text-white/70" /> : <ChevronRightRegular className="w-5 h-5 text-white/70" />}
         </div>
+
+        {/* External Action (e.g., Canvas Toggle) - Rendered here to align with header */}
+        {externalAction && (
+          <div className="ml-auto flex items-center border-l border-white/20 pl-3" onClick={(e) => e.stopPropagation()}>
+            {externalAction}
+          </div>
+        )}
       </div>
 
       <AnimatePresence>

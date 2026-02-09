@@ -517,7 +517,7 @@ export default function Quiz() {
                               <div
                                 className={`rounded-[18px] px-4 py-3 max-w-[280px] text-sm leading-[1.55em] ${
                                   m.role === 'ai'
-                                    ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)] overflow-x-auto'
+                                    ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)] overflow-x-auto [&_ol]:list-decimal [&_ul]:list-disc [&_ol]:pl-4 [&_ul]:pl-4 [&_li]:mb-1'
                                     : 'bg-[#F5A524] text-white shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
                                 }`}
                                 dangerouslySetInnerHTML={

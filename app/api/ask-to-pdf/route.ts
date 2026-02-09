@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { GoogleGenAI } from '@google/genai';
 
 type SupabaseDocument = {
   id: number;
@@ -25,19 +26,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
     }
 
-    const embedRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: { parts: [{ text: question }] } }),
-      },
-    );
-    if (!embedRes.ok) {
-      return NextResponse.json({ error: 'Embedding request failed' }, { status: 500 });
-    }
-    const embedJson = await embedRes.json();
-    const questionEmbedding = embedJson?.embedding?.values;
+    const ai = new GoogleGenAI({ apiKey });
+    const embedRes = await ai.models.embedContent({
+      model: 'gemini-embedding-001',
+      contents: question,
+      config: { outputDimensionality: 768 },
+    });
+    const questionEmbedding = embedRes?.embeddings?.[0]?.values;
+
     if (!Array.isArray(questionEmbedding)) {
       return NextResponse.json({ error: 'Invalid embedding response' }, { status: 500 });
     }

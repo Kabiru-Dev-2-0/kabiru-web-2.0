@@ -42,6 +42,87 @@ export default function DashboardPage() {
     completedCount: number;
     totalCount: number;
   } | null>(null);
+  const [aiAdvice, setAiAdvice] = useState<string>('');
+
+  useEffect(() => {
+    async function fetchAiAdvice() {
+      if (loadingData) return;
+
+      const CACHE_KEY = 'dashboard_ai_advice';
+      const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+      // Check local storage
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { adviceList, timestamp } = JSON.parse(cached);
+
+          // Jika cache masih valid dan formatnya array
+          if (
+            Date.now() - timestamp < CACHE_DURATION &&
+            Array.isArray(adviceList) &&
+            adviceList.length > 0
+          ) {
+            // Pilih satu saran secara acak dari array
+            const randomAdvice = adviceList[Math.floor(Math.random() * adviceList.length)];
+            setAiAdvice(randomAdvice);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Error reading advice cache', e);
+      }
+
+      // If no cache or expired, fetch new advice
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        // Only fetch if we have user data loaded (which we should if loadingData is false)
+        // We pass the ongoing and completed courses we already have in state
+        const res = await fetch('/api/dashboard-advice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: user?.user_metadata?.full_name || 'Teman',
+            ongoingCourses: ongoingCourses.map((c) => ({ title: c.title, progress: c.progress })),
+            completedModules: completedModules.map((m) => ({ judul: m.judul })),
+          }),
+        });
+
+        if (res.ok) {
+          const { advice } = await res.json();
+          // Pastikan advice adalah array
+          const adviceList = Array.isArray(advice) ? advice : [advice];
+
+          if (adviceList.length > 0) {
+            // Simpan array saran ke cache
+            localStorage.setItem(
+              CACHE_KEY,
+              JSON.stringify({
+                adviceList: adviceList,
+                timestamp: Date.now(),
+              }),
+            );
+
+            // Tampilkan satu saran random
+            const randomAdvice = adviceList[Math.floor(Math.random() * adviceList.length)];
+            setAiAdvice(randomAdvice);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch AI advice', e);
+        // Fallback text if AI fails
+        setAiAdvice(
+          "Hebat, kamu sudah memahami dasar logika dengan baik! 🎉 Tapi aku lihat kamu masih agak bingung di bagian looping dan efisiensi algoritma. Yuk, coba ulang latihan di bagian 'Simulasi Perulangan'",
+        );
+      }
+    }
+
+    fetchAiAdvice();
+  }, [loadingData, ongoingCourses, completedModules]);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -132,7 +213,7 @@ export default function DashboardPage() {
                   ),
                 category: 'Progres Kamu',
               };
-            })
+            }),
           )
         ).filter((x) => typeof x.progress === 'number');
 
@@ -143,7 +224,7 @@ export default function DashboardPage() {
               const rows = await getCompletedBagiansForModul(supabase as any, m.id, penggunaId);
               if (rows.length > 0 && rows.every((r) => r.status === 'done')) return m;
               return null as any;
-            })
+            }),
           )
         ).filter((x) => x !== null) as Modul[];
 
@@ -180,12 +261,17 @@ export default function DashboardPage() {
                 {/* Panah kiri atas */}
                 <div className="absolute -left-2 top-4 w-5 h-5 bg-[#3674B5] rotate-45 rounded-sm"></div>
                 <div className="p-6 w-full flex flex-col gap-[18px] bg-[#3674B5] rounded-xl shadow-xl relative z-0">
-                  <p className="text-lg leading-7 text-white font-regular">
-                    Hebat, kamu sudah memahami dasar logika dengan baik! 🎉
-                    <br />
-                    Tapi aku lihat kamu masih agak bingung di bagian looping dan efisiensi
-                    algoritma. Yuk, coba ulang latihan di bagian 'Simulasi Perulangan'
-                  </p>
+                  {aiAdvice ? (
+                    <p className="text-lg leading-7 text-white font-regular whitespace-pre-line">
+                      {aiAdvice}
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <Skeleton className="h-4 w-3/4 rounded-lg bg-white/20" />
+                      <Skeleton className="h-4 w-full rounded-lg bg-white/20" />
+                      <Skeleton className="h-4 w-5/6 rounded-lg bg-white/20" />
+                    </div>
+                  )}
                   <Button
                     as={Link}
                     href="/belajar"

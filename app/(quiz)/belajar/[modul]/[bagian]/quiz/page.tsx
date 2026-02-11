@@ -10,7 +10,6 @@ import {
   SendRegular,
   DismissRegular,
   BotSparkle16Color,
-
   MaximizeRegular,
   SquareMultipleRegular,
   SubtractRegular,
@@ -46,7 +45,7 @@ export default function Quiz() {
     onSubmit: () => void;
     feedback: string;
     isCorrect: boolean;
-  }>({ onSubmit: () => { }, feedback: '', isCorrect: false });
+  }>({ onSubmit: () => {}, feedback: '', isCorrect: false });
   const [isCompletedView, setIsCompletedView] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [finalExp, setFinalExp] = useState<number | null>(null);
@@ -82,11 +81,20 @@ export default function Quiz() {
     async function fetchTitles() {
       const supabase = createClient();
       if (modulParam) {
-        const { data } = await supabase.from('moduls').select('judul').eq('id', modulParam).single();
+        const { data } = await supabase
+          .from('moduls')
+          .select('judul')
+          .eq('id', modulParam)
+          .single();
         if (data) setModulTitle(data.judul);
       }
       if (modulParam && bagianParam) {
-        const { data } = await supabase.from('pelajarans').select('judul').eq('id_modul', modulParam).eq('bagian', bagianParam).single();
+        const { data } = await supabase
+          .from('pelajarans')
+          .select('judul')
+          .eq('id_modul', modulParam)
+          .eq('bagian', bagianParam)
+          .single();
         if (data) setPelajaranTitle(data.judul);
       }
     }
@@ -101,7 +109,7 @@ export default function Quiz() {
     generatedImages: [],
     draftDiagram: '',
     metrics: { quality_score: 0, revision_count: 0 },
-    agentOutputs: {}
+    agentOutputs: {},
   });
 
   // agentOutputs: { } // This line seems to be a copy-paste error from the original document, removing it.
@@ -149,7 +157,6 @@ export default function Quiz() {
   };
   */
 
-
   const sanitizeAllowedHtml = (html: string) => {
     return html
       .replace(/<\/(?:script|style|iframe|object|embed|link|meta)[^>]*>/gi, '')
@@ -174,11 +181,15 @@ export default function Quiz() {
       ctx = `Jenis: Menebak Output\nPrompt: ${exercise?.prompt || ''}\nKode:\n${code}`;
     } else if (t === 'drag_and_drop') {
       const items = Array.isArray(exercise?.data?.items) ? exercise.data.items.join(', ') : '';
-      const buckets = Array.isArray(exercise?.data?.buckets) ? exercise.data.buckets.join(', ') : '';
+      const buckets = Array.isArray(exercise?.data?.buckets)
+        ? exercise.data.buckets.join(', ')
+        : '';
       ctx = `Jenis: Kelompokkan\nPrompt: ${exercise?.prompt || ''}\nItems: ${items}\nKategori: ${buckets}`;
     } else if (t === 'sorting') {
       const q = exercise?.pertanyaan || exercise?.data?.question || '';
-      const lines = Array.isArray(exercise?.data?.code_lines) ? exercise.data.code_lines.join(' | ') : '';
+      const lines = Array.isArray(exercise?.data?.code_lines)
+        ? exercise.data.code_lines.join(' | ')
+        : '';
       ctx = `Jenis: Mengurutkan\nPrompt: ${exercise?.prompt || ''}\nPertanyaan: ${q}\nItems: ${lines}`;
     } else if (t === 'checkbox') {
       const opts = Array.isArray(exercise?.data?.options) ? exercise.data.options.join(', ') : '';
@@ -205,12 +216,16 @@ export default function Quiz() {
       storyTitle: 'Sedang Membuat Cerita...',
       metrics: { quality_score: 0, revision_count: 0 },
       agentOutputs: {
-        planning: { title: 'Perencanaan', content: 'Memulai perencanaan cerita...', status: 'running' }
-      }
+        planning: {
+          title: 'Perencanaan',
+          content: 'Memulai perencanaan cerita...',
+          status: 'running',
+        },
+      },
     });
 
     // Add placeholder message for AI to trigger the unified UI
-    setChatMessages(prev => [...prev, { role: 'ai', text: '' }]);
+    setChatMessages((prev) => [...prev, { role: 'ai', text: '' }]);
     setIsAsking(false); // Hide the generic "thinking" bubble immediately
 
     try {
@@ -245,8 +260,8 @@ ${context}
           prompt: enrichedPrompt,
           target_age: '15-18',
           language: 'Indonesian',
-          story_length: 'medium'
-        })
+          story_length: 'medium',
+        }),
       });
 
       if (!response.ok) {
@@ -255,7 +270,9 @@ ${context}
         try {
           const errorJson = await response.json();
           errorDetails = errorJson.details || errorJson.error || response.statusText;
-        } catch { /* ignore parse error */ }
+        } catch {
+          /* ignore parse error */
+        }
         throw new Error(errorDetails);
       }
       if (!response.body) throw new Error('No response body');
@@ -286,11 +303,11 @@ ${context}
               'PENULIS::SELESAI': 'writing',
               'KRITIK::MULAI': 'critique',
               'KRITIK::MENGEVALUASI': 'critique',
-              'WORKFLOW::SELESAI': 'finalize'
+              'WORKFLOW::SELESAI': 'finalize',
             };
             const stage = eventToStage[eventType] || null;
             if (stage) {
-              setWorkflowState(prev => ({ ...prev, currentStage: stage }));
+              setWorkflowState((prev) => ({ ...prev, currentStage: stage }));
             }
           } else if (line.startsWith('data:')) {
             try {
@@ -298,62 +315,77 @@ ${context}
 
               // Update agent outputs based on event data
               if (data.agent === 'research') {
-                setWorkflowState(prev => ({
+                setWorkflowState((prev) => ({
                   ...prev,
                   agentOutputs: {
                     ...prev.agentOutputs,
                     research: {
                       title: 'Riset',
-                      content: data.status === 'done' ? `Riset selesai (${data.chars || 0} karakter)` : 'Sedang meneliti...',
-                      status: data.status === 'done' ? 'completed' : 'running'
-                    }
-                  }
+                      content:
+                        data.status === 'done'
+                          ? `Riset selesai (${data.chars || 0} karakter)`
+                          : 'Sedang meneliti...',
+                      status: data.status === 'done' ? 'completed' : 'running',
+                    },
+                  },
                 }));
               } else if (data.agent === 'planning') {
-                setWorkflowState(prev => ({
+                setWorkflowState((prev) => ({
                   ...prev,
                   agentOutputs: {
                     ...prev.agentOutputs,
                     planning: {
                       title: 'Perencanaan',
-                      content: data.status === 'done' ? `${data.characters || 0} karakter dibuat` : 'Menyusun rencana...',
-                      status: data.status === 'done' ? 'completed' : 'running'
-                    }
-                  }
+                      content:
+                        data.status === 'done'
+                          ? `${data.characters || 0} karakter dibuat`
+                          : 'Menyusun rencana...',
+                      status: data.status === 'done' ? 'completed' : 'running',
+                    },
+                  },
                 }));
               } else if (data.agent === 'writer_text') {
-                setWorkflowState(prev => ({
+                setWorkflowState((prev) => ({
                   ...prev,
                   agentOutputs: {
                     ...prev.agentOutputs,
                     writing: {
                       title: 'Penulisan',
-                      content: data.status === 'done' ? `Draft selesai (${data.words || 0} kata)` : 'Menulis cerita...',
-                      status: data.status === 'done' ? 'completed' : 'running'
-                    }
-                  }
+                      content:
+                        data.status === 'done'
+                          ? `Draft selesai (${data.words || 0} kata)`
+                          : 'Menulis cerita...',
+                      status: data.status === 'done' ? 'completed' : 'running',
+                    },
+                  },
                 }));
 
                 // Capture story title if available
                 const apiTitle = data.draft_title || data.title || data.story_title;
                 if (apiTitle) {
-                  setWorkflowState(prev => ({
+                  setWorkflowState((prev) => ({
                     ...prev,
-                    storyTitle: apiTitle
+                    storyTitle: apiTitle,
                   }));
                 }
               } else if (data.agent === 'critique') {
-                setWorkflowState(prev => ({
+                setWorkflowState((prev) => ({
                   ...prev,
-                  metrics: { quality_score: data.quality_score || 0, revision_count: prev.metrics.revision_count },
+                  metrics: {
+                    quality_score: data.quality_score || 0,
+                    revision_count: prev.metrics.revision_count,
+                  },
                   agentOutputs: {
                     ...prev.agentOutputs,
                     critique: {
                       title: 'Evaluasi',
-                      content: data.status === 'done' ? `Skor: ${data.quality_score || 0} - ${data.decision || 'OK'}` : 'Mengevaluasi...',
-                      status: data.status === 'done' ? 'completed' : 'running'
-                    }
-                  }
+                      content:
+                        data.status === 'done'
+                          ? `Skor: ${data.quality_score || 0} - ${data.decision || 'OK'}`
+                          : 'Mengevaluasi...',
+                      status: data.status === 'done' ? 'completed' : 'running',
+                    },
+                  },
                 }));
               }
 
@@ -371,19 +403,32 @@ ${context}
                 // Check title again in final data
                 const finalApiTitle = data.draft_title || data.title || data.story_title;
 
-                setWorkflowState(prev => ({
+                setWorkflowState((prev) => ({
                   ...prev,
                   currentStage: 'finalize',
-                  metrics: { quality_score: data.quality_score || prev.metrics.quality_score, revision_count: data.revision_count || 0 },
+                  metrics: {
+                    quality_score: data.quality_score || prev.metrics.quality_score,
+                    revision_count: data.revision_count || 0,
+                  },
                   draftDiagram: data.draft_diagram || '',
-                  diagramTitle: data.diagram_title || finalApiTitle || prev.storyTitle || extractedTitle || 'Cerita Selesai Dibuat',
-                  storyTitle: finalApiTitle || prev.storyTitle || extractedTitle || 'Cerita Selesai Dibuat',
+                  diagramTitle:
+                    data.diagram_title ||
+                    finalApiTitle ||
+                    prev.storyTitle ||
+                    extractedTitle ||
+                    'Cerita Selesai Dibuat',
+                  storyTitle:
+                    finalApiTitle || prev.storyTitle || extractedTitle || 'Cerita Selesai Dibuat',
                   generatedImages: data.generated_images || [],
                   finalStory: finalStory,
                   agentOutputs: {
                     ...prev.agentOutputs,
-                    finalize: { title: extractedTitle, content: `Selesai dalam ${data.elapsed_time || 0}s`, status: 'completed' }
-                  }
+                    finalize: {
+                      title: extractedTitle,
+                      content: `Selesai dalam ${data.elapsed_time || 0}s`,
+                      status: 'completed',
+                    },
+                  },
                 }));
                 setIsCanvasOpen(true);
               }
@@ -397,31 +442,33 @@ ${context}
       // Add final story to chat by UPDATING the last placeholder message
       // Note: We pass raw markdown because ReactMarkdown handles it.
 
-      setChatMessages(msgs => {
+      setChatMessages((msgs) => {
         const newMsgs = [...msgs];
         if (newMsgs.length > 0) {
           // Instead of full story, just show success message
-          newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], text: 'Cerita berhasil dibuat! Silakan cek di panel sebelah kanan.' };
+          newMsgs[newMsgs.length - 1] = {
+            ...newMsgs[newMsgs.length - 1],
+            text: 'Cerita berhasil dibuat! Silakan cek di panel sebelah kanan.',
+          };
         }
         return newMsgs;
       });
-
     } catch (error: any) {
       console.error('Story Workflow Error:', error);
-      setWorkflowState(prev => ({
+      setWorkflowState((prev) => ({
         ...prev,
         agentOutputs: {
           ...prev.agentOutputs,
-          finalize: { title: 'Gagal', content: error?.message || 'Error', status: 'failed' }
-        }
+          finalize: { title: 'Gagal', content: error?.message || 'Error', status: 'failed' },
+        },
       }));
       // Update the placeholder with error message
-      setChatMessages(msgs => {
+      setChatMessages((msgs) => {
         const newMsgs = [...msgs];
         if (newMsgs.length > 0) {
           newMsgs[newMsgs.length - 1] = {
             ...newMsgs[newMsgs.length - 1],
-            text: `Maaf, terjadi kesalahan: ${error?.message || 'Tidak dapat terhubung ke server'}`
+            text: `Maaf, terjadi kesalahan: ${error?.message || 'Tidak dapat terhubung ke server'}`,
           };
         }
         return newMsgs;
@@ -445,13 +492,15 @@ ${context}
         const clsRes = await fetch('/api/ai/classify-intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: content })
+          body: JSON.stringify({ message: content }),
         });
         if (clsRes.ok) {
           const clsData = await clsRes.json();
           intent = clsData.intent || 'QA';
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
 
       if (intent === 'STORY') {
         await runStoryWorkflow(content);
@@ -463,18 +512,29 @@ ${context}
       setWorkflowMode('QA');
 
       // Step 1: Analyzing
-      setWorkflowState(prev => ({
-        ...prev, currentStage: 'analyzing',
-        agentOutputs: { analyzing: { title: 'Analisis', content: 'Memahami pertanyaan pengguna...', status: 'running' } }
+      setWorkflowState((prev) => ({
+        ...prev,
+        currentStage: 'analyzing',
+        agentOutputs: {
+          analyzing: {
+            title: 'Analisis',
+            content: 'Memahami pertanyaan pengguna...',
+            status: 'running',
+          },
+        },
       }));
-      await new Promise(r => setTimeout(r, 600));
-      setWorkflowState(prev => ({
+      await new Promise((r) => setTimeout(r, 600));
+      setWorkflowState((prev) => ({
         ...prev,
         agentOutputs: {
           ...prev.agentOutputs,
           analyzing: { title: 'Analisis', content: 'Analisis selesai.', status: 'completed' },
-          searching: { title: 'Pencarian', content: 'Mencari dokumen terkait...', status: 'running' }
-        }
+          searching: {
+            title: 'Pencarian',
+            content: 'Mencari dokumen terkait...',
+            status: 'running',
+          },
+        },
       }));
 
       const ex = exercises[currentIndex];
@@ -494,13 +554,13 @@ ${context}
       });
 
       // Step 2: Search Completed
-      setWorkflowState(prev => ({
+      setWorkflowState((prev) => ({
         ...prev,
         agentOutputs: {
           ...prev.agentOutputs,
           searching: { title: 'Pencarian', content: 'Dokumen ditemukan.', status: 'completed' },
-          generating: { title: 'Generasi', content: 'Menyusun jawaban...', status: 'running' }
-        }
+          generating: { title: 'Generasi', content: 'Menyusun jawaban...', status: 'running' },
+        },
       }));
 
       if (!res.ok) {
@@ -511,9 +571,12 @@ ${context}
           return [...msgs, { role: 'ai', text: errMsg }];
         });
         // saveMessage('ai', errMsg);
-        setWorkflowState(prev => ({
+        setWorkflowState((prev) => ({
           ...prev,
-          agentOutputs: { ...prev.agentOutputs, generating: { title: 'Generasi', content: 'Gagal.', status: 'failed' } }
+          agentOutputs: {
+            ...prev.agentOutputs,
+            generating: { title: 'Generasi', content: 'Gagal.', status: 'failed' },
+          },
         }));
       } else {
         const data = await res.json();
@@ -523,9 +586,12 @@ ${context}
           return [...msgs, { role: 'ai', text: safe }];
         });
         // saveMessage('ai', safe);
-        setWorkflowState(prev => ({
+        setWorkflowState((prev) => ({
           ...prev,
-          agentOutputs: { ...prev.agentOutputs, generating: { title: 'Generasi', content: 'Jawaban terkirim.', status: 'completed' } }
+          agentOutputs: {
+            ...prev.agentOutputs,
+            generating: { title: 'Generasi', content: 'Jawaban terkirim.', status: 'completed' },
+          },
         }));
       }
     } catch (e: any) {
@@ -601,9 +667,9 @@ ${context}
       const { data: auth } = await supabase.auth.getUser();
       const user = auth?.user;
       if (user) {
-        await supabase.rpc('reset_quiz_streak', { p_uuid: user.id }).match(() => { });
+        await supabase.rpc('reset_quiz_streak', { p_uuid: user.id }).match(() => {});
       }
-    } catch { }
+    } catch {}
     if (modulParam && bagianParam) {
       router.replace(`/belajar/${modulParam}/${bagianParam}`);
     } else if (modulParam) {
@@ -691,7 +757,7 @@ ${context}
                     localStorage.setItem('aizone.userName', expRow.nama_lengkap);
                   }
                   setFinalExp(expRow.exp ?? 0);
-                } catch { }
+                } catch {}
               }
             }
           }
@@ -731,9 +797,9 @@ ${context}
           if (user?.id && wrongPrompts.length <= 0) {
             await supabase
               .rpc('update_quiz_sempurna_completion_challenge', { p_uuid: user.id })
-              .match(() => { });
+              .match(() => {});
           }
-        } catch { }
+        } catch {}
       }
     } catch (error) {
       console.error('Error submitting hasil:', error);
@@ -793,6 +859,11 @@ ${context}
           radius="md"
           isDisabled={adviceLoading}
           onPress={() => {
+            // Clear dashboard advice cache so it regenerates with new progress
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('dashboard_ai_advice');
+            }
+
             if (modulParam && bagianParam) {
               router.push(`/belajar/${modulParam}/${bagianParam}`);
             } else {
@@ -841,8 +912,9 @@ ${context}
                 {exercises.map((_, idx) => (
                   <div
                     key={idx}
-                    className={`flex-1 rounded-full ${idx <= currentIndex ? 'bg-[#3674B5]' : 'bg-[#E4E4E7]'
-                      }`}
+                    className={`flex-1 rounded-full ${
+                      idx <= currentIndex ? 'bg-[#3674B5]' : 'bg-[#E4E4E7]'
+                    }`}
                   />
                 ))}
               </div>
@@ -902,15 +974,29 @@ ${context}
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={
                     isChatMaximized
-                      ? { opacity: 1, width: '90vw', height: '85vh', borderRadius: '24px', scale: 1 }
-                      : { opacity: 1, width: '340px', height: '550px', borderRadius: '18px', scale: 1 }
+                      ? {
+                          opacity: 1,
+                          width: '90vw',
+                          height: '85vh',
+                          borderRadius: '24px',
+                          scale: 1,
+                        }
+                      : {
+                          opacity: 1,
+                          width: '340px',
+                          height: '550px',
+                          borderRadius: '18px',
+                          scale: 1,
+                        }
                   }
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   layout
                 >
                   <div className="flex h-full w-full gap-4">
-                    <div className={`${isChatMaximized && workflowMode === 'STORY' && isCanvasOpen ? 'w-[400px] flex-shrink-0' : 'w-full'} h-full transition-all duration-300`}>
+                    <div
+                      className={`${isChatMaximized && workflowMode === 'STORY' && isCanvasOpen ? 'w-[400px] flex-shrink-0' : 'w-full'} h-full transition-all duration-300`}
+                    >
                       <Card
                         className={`border-2 border-[#E4E4E7] bg-white shadow-[0px_2px_0px_0px_rgba(228,228,231,1)] h-full ${isChatMaximized ? 'rounded-[24px]' : 'rounded-[18px]'}`}
                         radius="lg"
@@ -920,7 +1006,9 @@ ${context}
                           <div className="flex-shrink-0 flex items-center justify-between px-4 py-4 bg-white border-b border-[#E4E4E7] z-50">
                             <div className="flex items-center gap-2">
                               <BotSparkle16Color className="w-7 h-7 text-[#3674B5]" />
-                              <span className="text-base font-semibold text-[#3674B5]">AI Chat</span>
+                              <span className="text-base font-semibold text-[#3674B5]">
+                                AI Chat
+                              </span>
                             </div>
                             <div className="flex items-center gap-3">
                               <button
@@ -928,7 +1016,11 @@ ${context}
                                 className="text-sm font-semibold text-[#A1A1AA] hover:text-[#3674B5] cursor-pointer"
                                 type="button"
                               >
-                                {isChatMaximized ? <SquareMultipleRegular className="w-5 h-5" /> : <MaximizeRegular className="w-5 h-5" />}
+                                {isChatMaximized ? (
+                                  <SquareMultipleRegular className="w-5 h-5" />
+                                ) : (
+                                  <MaximizeRegular className="w-5 h-5" />
+                                )}
                               </button>
                               {/* Canvas Toggle */}
                               {/* Canvas Toggle Removed */}
@@ -958,7 +1050,10 @@ ${context}
                                 )}
                                 <div className="relative mx-1 max-w-[85%]">
                                   {/* Unified Bubble for Story Workflow */}
-                                  {m.role === 'ai' && workflowMode === 'STORY' && idx === chatMessages.length - 1 && workflowState.currentStage !== 'idle' ? (
+                                  {m.role === 'ai' &&
+                                  workflowMode === 'STORY' &&
+                                  idx === chatMessages.length - 1 &&
+                                  workflowState.currentStage !== 'idle' ? (
                                     <div className="bg-[#205994] text-white border-none rounded-[18px] overflow-hidden shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]">
                                       {/* Top: Workflow Tracker (Collapsible) */}
                                       <div className="border-b border-white/20">
@@ -984,7 +1079,9 @@ ${context}
                                             <ReactMarkdown>{m.text}</ReactMarkdown>
                                           </div>
                                         ) : (
-                                          <span className="italic text-white/70">Menunggu hasil...</span>
+                                          <span className="italic text-white/70">
+                                            Menunggu hasil...
+                                          </span>
                                         )}
 
                                         {/* Story Result Card */}
@@ -1009,30 +1106,34 @@ ${context}
                                               </div>
                                               <div className="relative flex-1">
                                                 <h4 className="font-bold text-white text-md tracking-wide group-hover:text-blue-100 transition-colors">
-                                                  {workflowState.storyTitle || workflowState.diagramTitle || 'Cerita Selesai Dibuat'}
+                                                  {workflowState.storyTitle ||
+                                                    workflowState.diagramTitle ||
+                                                    'Cerita Selesai Dibuat'}
                                                 </h4>
                                                 <p className="text-white/60 text-xs mt-1 group-hover:text-white/80 transition-colors font-medium">
-                                                  {isCanvasOpen ? 'Klik untuk menutup cerita' : 'Klik untuk membaca cerita lengkap'}
+                                                  {isCanvasOpen
+                                                    ? 'Klik untuk menutup cerita'
+                                                    : 'Klik untuk membaca cerita lengkap'}
                                                 </p>
                                               </div>
-                                              <div className={`relative ml-auto w-8 h-8 rounded-full flex items-center justify-center bg-white/5 group-hover:bg-white/10 transition-colors ${isCanvasOpen ? 'rotate-90' : 'rotate-0'} transition-transform duration-300`}>
+                                              <div
+                                                className={`relative ml-auto w-8 h-8 rounded-full flex items-center justify-center bg-white/5 group-hover:bg-white/10 transition-colors ${isCanvasOpen ? 'rotate-90' : 'rotate-0'} transition-transform duration-300`}
+                                              >
                                                 <ChevronRightRegular className="w-5 h-5 text-white/50 group-hover:text-white" />
                                               </div>
                                             </button>
                                           </div>
                                         )}
-
-
-
                                       </div>
                                     </div>
                                   ) : (
                                     /* Standard Bubble */
                                     <div
-                                      className={`rounded-[18px] px-4 py-3 text-sm leading-[1.55em] ${m.role === 'ai'
-                                        ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)] overflow-x-auto'
-                                        : 'bg-[#F5A524] text-white shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
-                                        }`}
+                                      className={`rounded-[18px] px-4 py-3 text-sm leading-[1.55em] ${
+                                        m.role === 'ai'
+                                          ? 'bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)] overflow-x-auto'
+                                          : 'bg-[#F5A524] text-white shadow-[0px_2px_0px_0px_rgba(245,165,36,1)]'
+                                      }`}
                                     >
                                       {m.role === 'ai' ? (
                                         typingMessageIndex === idx ? (
@@ -1051,13 +1152,16 @@ ${context}
                                   )}
 
                                   {/* Tail Decoration (only for standard bubbles or custom handling needed?) */}
-                                  {!(m.role === 'ai' && workflowMode === 'STORY' && idx === chatMessages.length - 1) && (
-                                    m.role === 'ai' ? (
+                                  {!(
+                                    m.role === 'ai' &&
+                                    workflowMode === 'STORY' &&
+                                    idx === chatMessages.length - 1
+                                  ) &&
+                                    (m.role === 'ai' ? (
                                       <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
                                     ) : (
                                       <div className="absolute -right-1 top-4 w-3 h-3 bg-[#F5A524] rotate-45 rounded-sm"></div>
-                                    )
-                                  )}
+                                    ))}
                                 </div>
                               </div>
                             ))}
@@ -1072,9 +1176,18 @@ ${context}
                                 <div className="relative mx-1">
                                   <div className="rounded-[18px] px-4 py-3 bg-[#205994] text-white shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]">
                                     <span className="inline-flex gap-1">
-                                      <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                                      <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                                      <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                      <span
+                                        className="w-2 h-2 bg-white rounded-full animate-bounce"
+                                        style={{ animationDelay: '0ms' }}
+                                      ></span>
+                                      <span
+                                        className="w-2 h-2 bg-white rounded-full animate-bounce"
+                                        style={{ animationDelay: '150ms' }}
+                                      ></span>
+                                      <span
+                                        className="w-2 h-2 bg-white rounded-full animate-bounce"
+                                        style={{ animationDelay: '300ms' }}
+                                      ></span>
                                     </span>
                                   </div>
                                   <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
@@ -1127,11 +1240,17 @@ ${context}
                       >
                         <StoryCanvas
                           content={workflowState.finalStory || ''}
-                          title={workflowState.storyTitle || workflowState.diagramTitle || 'Generated Story'}
+                          title={
+                            workflowState.storyTitle ||
+                            workflowState.diagramTitle ||
+                            'Generated Story'
+                          }
                           onClose={() => setIsCanvasOpen(false)}
-                          images={workflowState.generatedImages.map(img => ({
-                            url: img.base64_data ? `data:image/png;base64,${img.base64_data}` : img.file_path || '',
-                            alt: img.prompt_used || 'Generated Image'
+                          images={workflowState.generatedImages.map((img) => ({
+                            url: img.base64_data
+                              ? `data:image/png;base64,${img.base64_data}`
+                              : img.file_path || '',
+                            alt: img.prompt_used || 'Generated Image',
                           }))}
                           diagram={workflowState.draftDiagram}
                         />
@@ -1160,7 +1279,7 @@ ${context}
             </motion.div>
           </motion.div>
         </div>
-      </div >
+      </div>
       <FooterWithRobot
         onSubmit={footerProps.onSubmit}
         feedback={footerProps.feedback}
@@ -1169,6 +1288,6 @@ ${context}
         onNext={handleNext}
         onAgentClick={handleAgentClick}
       />
-    </div >
+    </div>
   );
 }

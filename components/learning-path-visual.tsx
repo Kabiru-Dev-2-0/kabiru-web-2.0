@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { StageNode } from "./stage-node";
-import { StageModal } from "./stage-modal";
+import { StageModal, type RectData } from "./stage-modal";
 import { MotivationalTooltip } from "./motivational-tooltip";
 import Image from "next/image";
 
@@ -23,13 +23,15 @@ interface ModalState {
   nomorLatihan: number;
   unitName: string;
   status?: "completed" | "current" | "locked";
-  position?: { top: number; left: number };
+  triggerRect?: RectData | null;
+  containerRect?: RectData | null;
 }
 
 export function LearningPathVisual({
   stages,
   onStageClick,
 }: LearningPathVisualProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
     nomorLatihan: 0,
@@ -38,16 +40,7 @@ export function LearningPathVisual({
 
   const paddedStages = useMemo(() => {
     const stages_copy = [...stages];
-    while (stages_copy.length < stages.length) { // Note: This logic seems to be intended to fill up to a certain number, but "stages_copy.length < stages.length" is never true if it starts as copy.
-      // Assuming the intention is to fill at least 11 stages based on the layout usage (indices 0 to 9 used, so 10 items).
-      // Actually the layout checks paddedStages[0]...paddedStages[9]. So at least 10 items.
-      // The original code loop condition was likely buggy or I misread it.
-      // "stages_copy.length < stages.length" - if stages has 5 items, copy has 5. 5 < 5 is false. Loop never runs.
-      // If the user wants to keep original behavior (no padding if logic was broken), I should leave it.
-      // But if I want to support "nomor_latihan", I should ensure properties exist.
-      // I will keep the loop logic as is to avoid changing behavior I don't fully understand, but I must add properties to the push if it ever runs.
-      // Wait, if the loop never runs, then paddedStages = stages.
-      // So I just need to make sure 'stages' passed in has the props.
+    while (stages_copy.length < stages.length) {
       stages_copy.push({
         id: stages_copy.length + 1,
         nomor_latihan: stages_copy.length + 1,
@@ -65,15 +58,38 @@ export function LearningPathVisual({
       element?: HTMLElement,
       unitName?: string,
     ) => {
-      let position = undefined;
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        position = {
-          top: rect.bottom + 10, // 10px below the node
-          left: rect.left + rect.width / 2, // centered horizontally on node
-        };
+      let triggerRect: RectData | null = null;
+      let containerRect: RectData | null = null;
+
+      if (element && containerRef.current) {
+        const tRect = element.getBoundingClientRect();
+        const cRect = containerRef.current.getBoundingClientRect();
+
+        triggerRect = {
+          top: tRect.top,
+          bottom: tRect.bottom,
+          left: tRect.left,
+          right: tRect.right,
+          width: tRect.width,
+          height: tRect.height,
+        } as RectData;
+        containerRect = {
+          top: cRect.top,
+          bottom: cRect.bottom,
+          left: cRect.left,
+          right: cRect.right,
+          width: cRect.width,
+          height: cRect.height,
+        } as RectData;
       }
-      setModalState({ isOpen: true, nomorLatihan, status, position, unitName: unitName || "" });
+      setModalState({
+        isOpen: true,
+        nomorLatihan,
+        status,
+        unitName: unitName || "",
+        triggerRect,
+        containerRect,
+      });
     },
     [],
   );
@@ -84,7 +100,8 @@ export function LearningPathVisual({
       nomorLatihan: 0,
       unitName: "",
       status: undefined,
-      position: undefined,
+      triggerRect: undefined,
+      containerRect: undefined,
     });
   }, []);
 
@@ -95,10 +112,11 @@ export function LearningPathVisual({
         nomorLatihan: 0,
         unitName: "",
         status: undefined,
-        position: undefined,
+        triggerRect: undefined,
+        containerRect: undefined,
       });
       // Find stage by nomor_latihan
-      const stage = paddedStages.find(s => s.nomor_latihan === nomorLatihan);
+      const stage = paddedStages.find((s) => s.nomor_latihan === nomorLatihan);
       if (stage) {
         onStageClick(stage.id);
       }
@@ -107,7 +125,10 @@ export function LearningPathVisual({
   );
 
   return (
-    <div className="relative w-full flex justify-center items-start py-8 px-6 min-h-screen">
+    <div
+      ref={containerRef}
+      className="relative w-full flex justify-center items-start py-8 px-6 min-h-screen"
+    >
       {/* Background gradient overlay */}
       <div className="absolute bottom-0 left-0 right-0 h-[300px] bg-gradient-to-b from-transparent to-[#FCFDFD] pointer-events-none z-0" />
 
@@ -231,7 +252,8 @@ export function LearningPathVisual({
         status={modalState.status}
         unitNumber={`Unit ${modalState.nomorLatihan}`}
         bagianName={modalState.unitName}
-        position={modalState.position}
+        triggerRect={modalState.triggerRect}
+        containerRect={modalState.containerRect}
         onClose={handleModalClose}
         onStart={handleModalStart}
       />

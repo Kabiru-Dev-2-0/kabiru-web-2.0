@@ -7,7 +7,6 @@ import {
   Diversity28Color,
   PuzzlePieceColor,
   TrophyColor,
-  SettingsColor,
   ShareIosColor,
 } from '@fluentui/react-icons';
 import Image from 'next/image';
@@ -91,11 +90,7 @@ export const Sidebar = () => {
   ];
 
   const bottomNavItems = [
-    {
-      label: 'Pengaturan',
-      href: '/pengaturan',
-      icon: SettingsColor,
-    },
+    
     {
       label: 'Keluar Akun',
       href: '/logout',

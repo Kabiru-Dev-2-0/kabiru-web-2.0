@@ -346,8 +346,8 @@ export function PeringkatWidget({
                 const { progress, total } = getTierInfoForStage(r, stageForDisplay);
                 const titleMap: Record<string, string> = {
                   login_harian: 'Login harian',
-                  quiz_beruntun: 'Kerjakan latihan soal tanpa salah',
-                  quiz_sempurna: 'Selesaikan unit pembelajaran',
+                  quiz_beruntun: 'Selesaikan unit pembelajaran',
+                  quiz_sempurna: 'Kerjakan latihan soal tanpa salah',
                 };
                 const fallbackTitle = (r.judul as string) ?? 'Misi';
                 const title = titleMap[r.tipe as string] ?? fallbackTitle;

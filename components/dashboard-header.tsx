@@ -707,15 +707,16 @@ export const DashboardHeader = ({
 
                   <Divider className="bg-[rgba(17,17,17,0.15)]" />
                   <div className="flex w-full">
+
                     <Button
-                      className="w-full bg-[#FF4D4D] text-white font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-none"
+                      className="w-full bg-[#E3E3E3] text-[#ff0000] font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-none"
                       style={{
                         minHeight: '46px',
-                        backgroundColor: '#FF4D4D',
-                        color: '#fff',
+                        backgroundColor: '#fff8f8ff',
+                        color: '#ff0000',
                         borderRadius: '12px',
-                        border: 'none',
-                        boxShadow: '0 4px 0 0 #B30000',
+                        border: '1px solid #ff7878ff',
+                        boxShadow: '0 3px 0 0 #ff7878ff',
                       }}
                       onPress={() => setIsDeleteModalOpen(true)}
                     >
@@ -995,20 +996,33 @@ export const DashboardHeader = ({
                   </div>
 
                   <p className="text-[#11181C] text-lg text-center">
-                    akun yang di hapus tidak bisa di kembalikan. apakah kamu yakin ingin
-                    menghapusnya?
+                    Akun yang di hapus tidak bisa di kembalikan. <br />
+                    Apakah kamu yakin ingin menghapusnya?
                   </p>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-row gap-3">
                     <Button
                       className="w-full bg-[#4281c7] text-white font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-none"
                       style={{
                         minHeight: '46px',
-                        backgroundColor: '#4281c7',
+                        backgroundColor: '#e4e4e4ff',
+                        color: '#202020ff',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 0 0 rgba(190, 190, 190, 1)',
+                      }}
+                      onPress={() => setIsDeleteModalOpen(false)}
+                    >
+                      Tidak
+                    </Button>
+                    <Button
+                      className="w-full bg-[#4281c7] text-white font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-none"
+                      style={{
+                        minHeight: '46px',
+                        backgroundColor: '#e22424ff',
                         color: '#fff',
                         borderRadius: '12px',
                         border: 'none',
-                        boxShadow: '0 4px 0 0 #205994',
+                        boxShadow: '0 4px 0 0 rgba(179, 0, 0, 1)',
                       }}
                       isLoading={isDeleting}
                       onPress={async () => {
@@ -1035,13 +1049,7 @@ export const DashboardHeader = ({
                       Ya
                     </Button>
 
-                    <Button
-                      className="w-full bg-transparent text-[#71717A] font-medium text-[18px] leading-[46px] h-[46px] rounded-[12px] flex items-center justify-center border-2 border-[#E4E4E7]"
-                      variant="bordered"
-                      onPress={() => setIsDeleteModalOpen(false)}
-                    >
-                      Tidak
-                    </Button>
+                    
                   </div>
                 </CardBody>
               </Card>

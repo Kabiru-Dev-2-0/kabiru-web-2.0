@@ -35,7 +35,7 @@ Instruksi keluaran:
 - Tulis 2–3 kalimat dalam Bahasa Indonesia sebagai teks biasa (tanpa HTML/Markdown/backticks).
 - Gunakan pola kalimat: "Cobalah memahami ... serta ..." lalu lanjutkan dengan "Pelajari secara bertahap, nikmati prosesnya, dan jangan ragu untuk mengeksplorasi! yang penting kamu terus berkembang.".
 - Gabungkan topik ke level konsep umum, bukan detail teknis spesifik.
-- Hindari daftar, simbol khusus, atau kutipan.
+- Hindari daftar, simbol-simbol khusus, atau kutipan.
 
 Jawaban:`;
 

@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { ongoingCourses, completedModules, username } = body;
 
-    const apiKey = process.env.GOOGLE_API_KEY;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'DEEPSEEK_API_KEY not configured' }, { status: 500 });
     }
+
+    const openai = new OpenAI({
+      baseURL: 'https://api.deepseek.com',
+      apiKey: apiKey,
+    });
 
     // Format progress data for the prompt
     // Hanya ambil 1 modul terbaru yang sedang dikerjakan sesuai permintaan user
@@ -42,41 +48,14 @@ PENTING: Pastikan format JSON valid, jangan gunakan markdown block, dan escape k
 Contoh:
 ["Kalimat saran 1... 🚀", "Kalimat saran 2... 🎉"]`;
 
-    const genRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            maxOutputTokens: 2000,
-            temperature: 0.8,
-            responseMimeType: 'application/json',
-          },
-        }),
-      },
-    );
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'deepseek-chat',
+      max_tokens: 2000,
+      temperature: 0.8,
+    });
 
-    if (!genRes.ok) {
-      const errorData = await genRes.json();
-      console.error('Gemini API Error:', errorData);
-      return NextResponse.json({ error: 'Generation request failed' }, { status: 500 });
-    }
-
-    const genJson = await genRes.json();
-    const parts = genJson?.candidates?.[0]?.content?.parts || [];
-    const raw = Array.isArray(parts)
-      ? parts
-          .map((p: any) => p?.text)
-          .filter(Boolean)
-          .join('\n')
-      : '';
+    const raw = completion.choices[0].message.content || '';
 
     let adviceArray = [];
     try {

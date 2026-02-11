@@ -842,7 +842,7 @@ ${context}
 
         {!(wrongPrompts.length > 0 && finalAdvice) ? (
           <p className="mt-3 text-lg text-[#3F3F46] text-center w-[80%]">
-            Sedang memberikan saran singkat...
+            Hebat! Kamu berhasil menyelesaikannya!
           </p>
         ) : null}
         {wrongPrompts.length > 0 ? (

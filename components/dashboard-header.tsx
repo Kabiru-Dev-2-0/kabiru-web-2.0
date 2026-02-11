@@ -25,6 +25,7 @@ import { Progress } from '@heroui/progress';
 import { Skeleton } from '@heroui/skeleton';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
+import { calculateLevelProgress, JOURNEY_LEVELS } from '@/utils/level-system';
 import { Certificate16Color } from '@fluentui/react-icons';
 import { Notebook16Color } from '@fluentui/react-icons';
 import { Edit16Color } from '@fluentui/react-icons';
@@ -76,23 +77,17 @@ export const DashboardHeader = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const journeyLabel = useMemo(() => {
-    if (exp < 1000) return 'Newbie';
-    if (exp < 2200) return 'Learner';
-    if (exp < 3600) return 'Explorer';
-    if (exp < 5200) return 'Skilled';
-    if (exp < 7000) return 'Proficient';
-    return 'Proficient';
-  }, [exp]);
+  const levelData = useMemo(() => calculateLevelProgress(exp), [exp]);
+  const journeyLabel = levelData.label;
 
   const expTier = useMemo(() => {
-    if (exp < 1000) return { label: 'Newbie', current: exp, max: 1000 };
-    if (exp < 2200) return { label: 'Learner', current: exp, max: 2200 };
-    if (exp < 3600) return { label: 'Explorer', current: exp, max: 3600 };
-    if (exp < 5200) return { label: 'Skilled', current: exp, max: 5200 };
-    if (exp < 7000) return { label: 'Proficient', current: exp, max: 7000 };
-    return { label: 'Proficient', current: exp, max: 7000 };
-  }, [exp]);
+    return {
+      label: levelData.label,
+      current: levelData.currentExp,
+      max: levelData.maxExp ?? 7000,
+      progressPercent: levelData.progressPercent,
+    };
+  }, [levelData]);
 
   const levelIcons: Record<string, any> = {
     Newbie: Paw24Color,
@@ -105,12 +100,12 @@ export const DashboardHeader = ({
   const CurrentLevelIcon = levelIcons[journeyLabel] || Paw24Color;
 
   const nextLevelLabel = useMemo(() => {
-    if (exp < 1000) return 'Learner';
-    if (exp < 2200) return 'Explorer';
-    if (exp < 3600) return 'Skilled';
-    if (exp < 5200) return 'Proficient';
-    return 'Proficient';
-  }, [exp]);
+    const nextIdx = levelData.level; // level is 1-based index, so it points to next element in 0-based array
+    if (nextIdx < JOURNEY_LEVELS.length) {
+      return JOURNEY_LEVELS[nextIdx].label;
+    }
+    return journeyLabel;
+  }, [levelData, journeyLabel]);
 
   const NextLevelIcon = levelIcons[nextLevelLabel] || BuildingGovernment24Color;
 
@@ -636,8 +631,8 @@ export const DashboardHeader = ({
                         <span className="text-sm font-regular text-[#000000]">{`${expTier.current}/${expTier.max} EXP • ${expTier.label}`}</span>
                         <Progress
                           aria-label="EXP Progress"
-                          value={expTier.current}
-                          maxValue={expTier.max}
+                          value={expTier.progressPercent}
+                          maxValue={100}
                           color="warning"
                           size="md"
                           radius="full"

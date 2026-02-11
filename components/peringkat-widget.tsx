@@ -22,6 +22,7 @@ import {
 } from '@fluentui/react-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { calculateLevelProgress, JOURNEY_LEVELS } from '@/utils/level-system';
 import { Skeleton } from '@heroui/skeleton';
 import { Modal, ModalBody, ModalContent, ModalHeader } from '@heroui/modal';
 
@@ -67,48 +68,14 @@ export function PeringkatWidget({
   const [isLoadingWidget, setIsLoadingWidget] = useState<boolean>(true);
   const [isJourneyLevelsOpen, setIsJourneyLevelsOpen] = useState<boolean>(false);
   const journeyLevels = useMemo(
-    () => [
-      {
-        key: 'newbie',
-        label: 'Newbie',
-        min: 0,
-        max: 1000,
-        desc: 'Mulai perjalananmu dari dasar-dasar komunikasi.',
-        icon: Paw24Color,
-      },
-      {
-        key: 'learner',
-        label: 'Learner',
-        min: 1000,
-        max: 2200,
-        desc: 'Mulai nyaman belajar dan berlatih secara konsisten.',
-        icon: Molecule24Color,
-      },
-      {
-        key: 'explorer',
-        label: 'Explorer',
-        min: 2200,
-        max: 3600,
-        desc: 'Mengeksplorasi lebih banyak topik dan situasi.',
-        icon: DesignIdeas24Color,
-      },
-      {
-        key: 'skilled',
-        label: 'Skilled',
-        min: 3600,
-        max: 5200,
-        desc: 'Kemampuan makin terasah dan terasa natural.',
-        icon: GameChat20Color,
-      },
-      {
-        key: 'proficient',
-        label: 'Proficient',
-        min: 5200,
-        max: null,
-        desc: 'Sudah sangat mahir dan siap tantangan lanjutan.',
-        icon: BuildingGovernment24Color,
-      },
-    ],
+    () => JOURNEY_LEVELS.map(l => ({
+      ...l,
+      icon: l.key === 'newbie' ? Paw24Color :
+            l.key === 'learner' ? Molecule24Color :
+            l.key === 'explorer' ? DesignIdeas24Color :
+            l.key === 'skilled' ? GameChat20Color :
+            BuildingGovernment24Color
+    })),
     [],
   );
   const sectionsSet = useMemo(() => new Set(displayedData), [displayedData]);
@@ -177,12 +144,12 @@ export function PeringkatWidget({
   };
 
   const getExpTier = (expNum: number) => {
-    if (expNum < 1000) return { label: 'Newbie', current: expNum, max: 1000 };
-    if (expNum < 2200) return { label: 'Learner', current: expNum, max: 2200 };
-    if (expNum < 3600) return { label: 'Explorer', current: expNum, max: 3600 };
-    if (expNum < 5200) return { label: 'Skilled', current: expNum, max: 5200 };
-    if (expNum < 7000) return { label: 'Proficient', current: expNum, max: 7000 };
-    return { label: 'Proficient', current: expNum, max: 7000 };
+    const res = calculateLevelProgress(expNum);
+    return {
+      label: res.label,
+      current: res.currentExp,
+      max: res.maxExp ?? 7000, // Fallback for UI compatibility
+    };
   };
 
   useEffect(() => {
@@ -523,29 +490,31 @@ export function PeringkatWidget({
                 isLoaded={!isLoadingWidget}
                 className="rounded-md w-full"
               >
-                <Progress
-                  aria-label="Journey progress"
-                  classNames={{
-                    base: "w-full",
-                    label: "text-base font-medium leading-6 text-black",
-                    track: "bg-[#E4E4E7]",
-                    indicator: "bg-[#F5A524]",
-                    value: "text-base font-medium leading-6 text-black",
-                  }}
-                  color="warning"
-                  label={localJourneyLabel}
-                  maxValue={localJourneyMax}
-                  radius="full"
-                  showValueLabel={true}
-                  valueLabel={`${
-                    localJourneyMax > 0
-                      ? Math.round((localJourneyValue / localJourneyMax) * 100)
-                      : 0
-                  }%`}
-                  size="md"
-                  // label={localJourneyLabel}
-                  value={localJourneyValue}
-                />
+                {(() => {
+                   // Gunakan calculateLevelProgress untuk mendapatkan nilai yang konsisten
+                   const progressData = calculateLevelProgress(localJourneyValue);
+                   
+                   return (
+                    <Progress
+                      aria-label="Journey progress"
+                      classNames={{
+                        base: "w-full",
+                        label: "text-base font-medium leading-6 text-black",
+                        track: "bg-[#E4E4E7]",
+                        indicator: "bg-[#F5A524]",
+                        value: "text-base font-medium leading-6 text-black",
+                      }}
+                      color="warning"
+                      label={progressData.label}
+                      maxValue={100}
+                      radius="full"
+                      showValueLabel={true}
+                      valueLabel={`${progressData.progressPercent}%`}
+                      size="md"
+                      value={progressData.progressPercent}
+                    />
+                   );
+                })()}
               </Skeleton>
             </div>
           </CardBody>
@@ -570,13 +539,26 @@ export function PeringkatWidget({
                     const Icon = lvl.icon;
                     const exp = localJourneyValue;
                     const min = lvl.min;
-                    const max = lvl.max ?? Math.max(exp, min + 1);
-                    const raw = max === null || max <= min ? 1 : (exp - min) / (max - min);
-                    const clamped = Math.min(1, Math.max(0, raw));
-                    const percent = Math.round(clamped * 100);
-                    const rangeLabel =
-                      lvl.max == null ? `${lvl.min}+ XP` : `${lvl.min} - ${lvl.max - 1} XP`;
-                    const isActive = exp >= lvl.min && (lvl.max == null || exp < lvl.max);
+                    const max = lvl.max;
+                    
+                    let percent = 0;
+                    if (exp >= (max ?? Infinity)) {
+                      percent = 100;
+                    } else if (exp < min) {
+                      percent = 0;
+                    } else {
+                      if (max === null) {
+                         percent = 100;
+                      } else {
+                         const range = max - min;
+                         const rel = exp - min;
+                         percent = Math.min(100, Math.max(0, (rel / range) * 100));
+                      }
+                    }
+                    
+                    percent = Math.round(percent);
+                    const rangeLabel = lvl.max == null ? `${lvl.min}+ XP` : `${lvl.min} - ${lvl.max} XP`;
+                    const isActive = calculateLevelProgress(exp).label === lvl.label;
 
                     return (
                       <div

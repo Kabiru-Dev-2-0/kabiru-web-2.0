@@ -54,7 +54,7 @@ export const LearningPathCard = ({
                 Modul {nomor}
               </span>
               <span className="text-xs font-medium leading-4 text-[#11181C] opacity-50">
-                {modules} modul
+                {modules} lesson
               </span>
             </div>
             <h3 className="text-2xl font-bold leading-8 text-[#11181C] px-3">{title}</h3>

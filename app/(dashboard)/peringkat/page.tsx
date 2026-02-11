@@ -103,7 +103,7 @@ export default function PeringkatPage() {
     const top10 = sorted.filter((r) => r.rank <= 10);
     const currentUserRow = sorted.find((r) => r.id_pengguna === currentUserId);
     
-    // Jika user tidak ada di top 10, tambahkan di bawah
+    // Jika user tidak ada di top 20, tambahkan di bawah
     if (currentUserRow && currentUserRow.rank > 10) {
       return [...top10, currentUserRow];
     }
@@ -200,14 +200,14 @@ export default function PeringkatPage() {
         <div className="w-[300px] flex flex-col gap-6">
           {/* Motivational Image with Tooltip */}
           <div className="flex flex-row items-center relative w-full h-[225px]">
-            <div className="absolute right-26 top-22 -translate-x-1/4 px-4 py-2 w-[230px] flex gap-[18px] bg-[#006FEE] rounded-2xl shadow-xl z-10">
+            <div className="absolute right-26 top-22 -translate-x-1/4 px-4 py-2 w-[230px] flex gap-[18px] bg-[#3674B5] rounded-2xl shadow-xl z-10">
               {/* Tooltip Arrow - right top */}
               <div
                 className="absolute top-4 -right-3 w-0 h-0"
                 style={{
                   borderTop: '12px solid transparent',
                   borderBottom: '12px solid transparent',
-                  borderLeft: '16px solid #006FEE',
+                  borderLeft: '16px solid #3674B5',
                 }}
               />
               <p className="text-lg leading-7 text-white">

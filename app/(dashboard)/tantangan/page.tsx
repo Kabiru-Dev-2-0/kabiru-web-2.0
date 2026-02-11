@@ -170,9 +170,7 @@ export default function TantanganPage() {
 
         setIndividualClaimFlags(flags);
 
-        await supabase
-          .rpc("log_daily_login", { p_uuid: user.id })
-          .match(() => {});
+
       } catch {}
     };
     load();
@@ -555,7 +553,7 @@ export default function TantanganPage() {
                   progress={loginTier.progress}
                   total={loginTier.total || 7}
                   done={loginTier.tierLabel === "DONE"}
-                  isClaimed={isChallengeClaimed(
+                  isClaimed={isChallengeClaimed(  
                     "login",
                     viewStage === "completed" ? "gold" : viewStage
                   )}

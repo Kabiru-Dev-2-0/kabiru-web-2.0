@@ -129,6 +129,10 @@ export default function DashboardPage() {
         const { data: auth } = await supabase.auth.getUser();
         const user = auth?.user;
 
+        if (user) {
+          await supabase.rpc('log_daily_login', { p_uuid: user.id }).match(() => {});
+        }
+
         const { data: modulsData } = await supabase
           .from('moduls')
           .select('id, judul, deskripsi, nomor_modul')

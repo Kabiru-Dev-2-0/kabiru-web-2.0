@@ -32,6 +32,7 @@ export default function DashboardPage() {
     }>
   >([]);
   const [completedModules, setCompletedModules] = useState<Modul[]>([]);
+  const [username, setUsername] = useState<string>('Teman');
   const [loadingData, setLoadingData] = useState<boolean>(true);
   const [hasAnyProgress, setHasAnyProgress] = useState<boolean>(false);
   const [selectedOngoing, setSelectedOngoing] = useState<{
@@ -75,18 +76,13 @@ export default function DashboardPage() {
 
       // If no cache or expired, fetch new advice
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
         // Only fetch if we have user data loaded (which we should if loadingData is false)
         // We pass the ongoing and completed courses we already have in state
         const res = await fetch('/api/dashboard-advice', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: user?.user_metadata?.full_name || 'Teman',
+            username: username,
             ongoingCourses: ongoingCourses.map((c) => ({ title: c.title, progress: c.progress })),
             completedModules: completedModules.map((m) => ({ judul: m.judul })),
           }),
@@ -122,7 +118,7 @@ export default function DashboardPage() {
     }
 
     fetchAiAdvice();
-  }, [loadingData, ongoingCourses, completedModules]);
+  }, [loadingData, ongoingCourses, completedModules, username]);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -161,10 +157,11 @@ export default function DashboardPage() {
         if (penggunaId) {
           const { data: row } = await supabase
             .from('data_penggunas')
-            .select('modul_dipilih')
+            .select('modul_dipilih, username')
             .eq('id_pengguna', penggunaId)
             .single();
           if (typeof row?.modul_dipilih === 'number') chosenId = row!.modul_dipilih as number;
+          if (row?.username) setUsername(row.username);
         }
 
         const allPercents = await Promise.all(moduls.map((m) => computePercentForModul(m.id)));

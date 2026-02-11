@@ -18,7 +18,7 @@ import {
   GameChat20Color,
   BuildingGovernment24Color,
 } from '@fluentui/react-icons';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
@@ -26,6 +26,7 @@ import { Skeleton } from '@heroui/skeleton';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { calculateLevelProgress, JOURNEY_LEVELS } from '@/utils/level-system';
+import { StreakNotificationModal } from './streak-notification-modal';
 import { Certificate16Color } from '@fluentui/react-icons';
 import { Notebook16Color } from '@fluentui/react-icons';
 import { Edit16Color } from '@fluentui/react-icons';
@@ -76,6 +77,65 @@ export const DashboardHeader = ({
   const [isStreakLoading, setIsStreakLoading] = useState<boolean>(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const prevStreakRef = useRef<number | null>(null);
+
+  // Effect to detect streak increase
+  useEffect(() => {
+    // Debugging logs
+    console.log('[StreakDebug] Update:', { current: currentStreak, prev: prevStreakRef.current });
+
+    if (currentStreak === null) return;
+
+    // If initial load (prev is null), just set it but check local storage first
+    if (prevStreakRef.current === null) {
+      const storedStreak = typeof window !== 'undefined' ? localStorage.getItem('aizone.prevStreak') : null;
+      if (storedStreak !== null) {
+         const parsedStored = Number(storedStreak);
+         // If current > stored from LS, it means streak increased while away from this component
+         if (currentStreak > parsedStored) {
+            console.log('[StreakDebug] Streak increased (detected via LS)! Triggering modal.');
+            const timer = setTimeout(() => {
+              setShowStreakModal(true);
+            }, 500);
+            prevStreakRef.current = currentStreak;
+            localStorage.setItem('aizone.prevStreak', String(currentStreak));
+            return () => clearTimeout(timer);
+         }
+         prevStreakRef.current = currentStreak; // Sync ref
+      } else {
+         prevStreakRef.current = currentStreak;
+      }
+      
+      // Always update LS with current
+      localStorage.setItem('aizone.prevStreak', String(currentStreak));
+      
+      console.log('[StreakDebug] Initial set:', currentStreak);
+      return;
+    }
+
+    // Check if streak increased by 1 (or more)
+    if (currentStreak > prevStreakRef.current) {
+      console.log('[StreakDebug] Streak increased! Triggering modal.');
+      const timer = setTimeout(() => {
+        setShowStreakModal(true);
+      }, 500); 
+      prevStreakRef.current = currentStreak;
+      localStorage.setItem('aizone.prevStreak', String(currentStreak));
+      return () => clearTimeout(timer);
+    }
+
+    // Update ref for other changes (decrease or same)
+    prevStreakRef.current = currentStreak;
+    localStorage.setItem('aizone.prevStreak', String(currentStreak));
+  }, [currentStreak]);
+
+  // Expose debug function to window
+  useEffect(() => {
+    (window as any).debugTriggerStreak = () => setShowStreakModal(true);
+    (window as any).debugIncreaseStreak = () => setCurrentStreak(prev => (prev || 0) + 1);
+    console.log('[StreakDebug] Debug functions ready: window.debugTriggerStreak(), window.debugIncreaseStreak()');
+  }, []);
 
   const levelData = useMemo(() => calculateLevelProgress(exp), [exp]);
   const journeyLabel = levelData.label;
@@ -1025,7 +1085,11 @@ export const DashboardHeader = ({
                           const supabase = createClient();
 
                           // Attempt to delete user via RPC
-                          await supabase.rpc('delete_current_user');
+                          const { error } = await supabase.rpc('delete_current_user');
+
+                          if (error) {
+                            throw error;
+                          }
 
                           // Sign out and clear data
                           await supabase.auth.signOut();
@@ -1034,8 +1098,9 @@ export const DashboardHeader = ({
                           } catch {}
 
                           window.location.href = '/login';
-                        } catch (e) {
-                          console.error(e);
+                        } catch (e: any) {
+                          console.error("Delete account error:", e);
+                          alert(`Gagal menghapus akun: ${e.message || 'Terjadi kesalahan saat menghapus akun'}`);
                           setIsDeleting(false);
                         }
                       }}
@@ -1051,6 +1116,11 @@ export const DashboardHeader = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <StreakNotificationModal
+        isOpen={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+      />
     </div>
   );
 };

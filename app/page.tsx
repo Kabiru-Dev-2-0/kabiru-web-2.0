@@ -34,7 +34,7 @@ export default function Home() {
             <div className="flex justify-start items-start w-[250px]">
               <img
                 className="w-36 h-10 object-contain"
-                src="imageAssets/logo-header.png"
+                src="imageAssets/LogoApp.png"
                 alt="AIZONE logo dummy"
               />
             </div>
@@ -588,16 +588,9 @@ export default function Home() {
             {/* Brand Section */}
             <div className="flex flex-col gap-4 max-w-md">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                  <Bot24Color className="w-6 h-6 text-cyan-300" />
-                </div>
+                
                 <div className="flex flex-col">
-                  <span className="text-base font-bold text-white">
-                    Kabiru Learn
-                  </span>
-                  <span className="text-xs text-white/50">
-                    Belajar koding &amp; KA lebih seru
-                  </span>
+                  <img src="imageAssets/LogoApp-white.png" alt="" className="h-12"/>
                 </div>
               </div>
               <p className="text-sm text-white/60 leading-relaxed">

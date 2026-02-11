@@ -104,9 +104,8 @@ export const Sidebar = () => {
       {/* Logo */}
       <div className="flex items-center px-4 gap-5">
         <div className="">
-          <img src="/imageAssets/kabiru-logo.png" alt="Kabiru Logo" className="w-10 h-10" />
+          <img src="/imageAssets/LogoApp.png" alt="Kabiru Logo" className="h-9" />
         </div>
-        <h2 className="text-2xl font-black text-[#205994]">Kabiru</h2>
       </div>
 
       {/* Navigation */}

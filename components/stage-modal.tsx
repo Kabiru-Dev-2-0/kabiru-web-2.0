@@ -141,7 +141,7 @@ export function StageModal({
   return (
     <div
       ref={modalRef}
-      className="absolute z-50 rounded-2xl shadow-lg w-[300px] min-w-[200px] max-w-[350px]"
+      className="absolute z-11 rounded-2xl shadow-lg w-[300px] min-w-[200px] max-w-[350px]"
       style={{
         top: `${coords.top}px`,
         left: `${coords.left}px`,

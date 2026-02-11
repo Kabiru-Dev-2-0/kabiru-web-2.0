@@ -239,27 +239,27 @@ export default function DashboardPage() {
   }, []);
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="flex gap-8 p-6">
+      <div className="flex gap-8 p-6 ">
         {/* Left Column */}
         <div className="flex-1 flex flex-col gap-8">
           {/* Tooltip Section */}
           <div className="flex items-center gap-2.5 relative">
-            <div className="flex flex-row items-center gap-4 w-full">
-              <div className="w-fit h-full min-h[350px]  relative z-10">
+            <div className="flex flex-row items-start gap-4 w-full">
+              <div className="w-[200px] h-auto z-10">
                 <div className="w-full h-full flex items-center justify-center">
                   <img
                     src="/imageAssets/agent-dashboard.png"
                     alt="Agent Dashboard"
-                    className="object-contain h-fill w-auto"
+                    className="object-contain h-full w-auto"
                     style={{ aspectRatio: '155.25 / 200' }}
                   />
                 </div>
               </div>
 
               {/* Tooltip utama */}
-              <div className="relative">
+              <div className="relative flex-1 pt-4">
                 {/* Panah kiri atas */}
-                <div className="absolute -left-2 top-4 w-5 h-5 bg-[#3674B5] rotate-45 rounded-sm"></div>
+                <div className="absolute -left-2 top-14 w-5 h-5 bg-[#3674B5] rotate-45 rounded-sm"></div>
                 <div className="p-6 w-full flex flex-col gap-[18px] bg-[#3674B5] rounded-xl shadow-xl relative z-0">
                   {aiAdvice ? (
                     <p className="text-lg leading-7 text-white font-regular whitespace-pre-line">
@@ -267,9 +267,10 @@ export default function DashboardPage() {
                     </p>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <Skeleton className="h-4 w-3/4 rounded-lg bg-white/20" />
-                      <Skeleton className="h-4 w-full rounded-lg bg-white/20" />
-                      <Skeleton className="h-4 w-5/6 rounded-lg bg-white/20" />
+                      <Skeleton className="h-5 w-3/4 rounded-lg bg-white/20" />
+                      <Skeleton className="h-5 w-full rounded-lg bg-white/20" />
+                      <Skeleton className="h-5 w-full rounded-lg bg-white/20" />
+                      <Skeleton className="h-5 w-5/6 rounded-lg bg-white/20" />
                     </div>
                   )}
                   <Button

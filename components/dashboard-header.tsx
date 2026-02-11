@@ -245,12 +245,11 @@ export const DashboardHeader = ({
     (async () => {
       try {
         const { data: lb } = await supabase.rpc('get_leaderboard', {
-          p_days_active: 30,
           p_bronze_weight: 1,
           p_silver_weight: 3,
           p_gold_weight: 6,
         });
-        const me = (lb || []).find((r: any) => r.id_pengguna === idFor);
+        const me = (lb || []).find((r: any) => Number(r.id_pengguna) === Number(idFor));
         if (me?.rank) setRankStat(Number(me.rank));
 
         const { data: vprog } = await supabase

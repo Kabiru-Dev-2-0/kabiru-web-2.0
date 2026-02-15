@@ -32,13 +32,53 @@ export default function StoryCanvas({ content, title = 'Generated Story', onClos
   const handleExportPDF = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
+      const coverImages = images?.map(img => `<img src="${img.url}" alt="${img.alt}" class="cover-image" />`).join('') || '';
+      const contentHtml = document.querySelector('.markdown-content')?.innerHTML || content;
+
       printWindow.document.write(`
         <html>
           <head>
             <title>${title}</title>
             <style>
               @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-              body { font-family: 'Inter', sans-serif; padding: 40px; line-height: 1.6; max-width: 800px; margin: 0 auto; color: #1f2937; }
+              @page { size: A4; margin: 20mm; }
+              body { font-family: 'Inter', sans-serif; color: #1f2937; margin: 0; padding: 0; }
+              
+              /* Cover Page Styles */
+              .cover-page {
+                min-height: 80vh; /* Reduced from 100vh to prevent overflow blank page */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                page-break-after: always;
+                padding: 0; /* Remove padding to avoid box-model issues */
+              }
+              .cover-title {
+                font-size: 32px;
+                font-weight: 800;
+                margin-bottom: 20px;
+                line-height: 1.3;
+              }
+              .cover-image {
+                max-width: 90%;
+                max-height: 60vh;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                margin-bottom: 20px;
+                object-fit: contain;
+              }
+
+              /* Content Styles */
+              .content-page {
+                padding: 40px;
+                line-height: 1.8;
+                max-width: 800px;
+                margin: 0 auto;
+              }
+              .story-images-container { display: none !important; } /* Hide duplicate images in content */
+              
               h1 { border-bottom: 2px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; font-size: 24px; font-weight: 700; }
               h2 { margin-top: 24px; margin-bottom: 12px; font-size: 20px; font-weight: 600; }
               p { margin-bottom: 16px; text-align: justify; }
@@ -48,11 +88,20 @@ export default function StoryCanvas({ content, title = 'Generated Story', onClos
             </style>
           </head>
           <body>
-            <h1>${title}</h1>
-            ${images?.map(img => `<img src="${img.url}" alt="${img.alt}" />`).join('') || ''}
-            <div id="content">${document.querySelector('.markdown-content')?.innerHTML || content}</div>
+            
+            <!-- Page 1: Cover (Image + Title) -->
+            <div class="cover-page">
+              <h1 class="cover-title">${title}</h1>
+              ${coverImages}
+            </div>
+
+            <!-- Page 2+: Content -->
+            <div class="content-page">
+              <div id="content">${contentHtml}</div>
+            </div>
+
             <script>
-              window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }
+              window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 800); }
             </script>
           </body>
         </html>
@@ -66,7 +115,7 @@ export default function StoryCanvas({ content, title = 'Generated Story', onClos
       <CardHeader className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-6 bg-[#3674B5] rounded-full"></div>
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate max-w-[300px]" title={title}>{title}</h3>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight">{title}</h3>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -103,12 +152,12 @@ export default function StoryCanvas({ content, title = 'Generated Story', onClos
       <CardBody className="p-0 overflow-hidden bg-[#FAFAFA] dark:bg-black/20">
         <div className="h-full overflow-y-auto px-10 py-8">
           <article className="prose prose-slate md:prose-lg lg:prose-lg max-w-none dark:prose-invert markdown-content font-sans">
-            {/* Title */}
-            <h1 className="text-3xl font-bold text-gray-900 border-b pb-4 mb-8">{title}</h1>
+            {/* Title - Removed to avoid duplication as it is already in the markdown content */}
+            {/* <h1 className="text-3xl font-bold text-gray-900 border-b pb-4 mb-8">{title}</h1> */}
 
             {/* Generated Images */}
             {images && images.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-6 mb-8">
+              <div className="flex flex-wrap justify-center gap-6 mb-8 story-images-container">
                 {images.map((img, idx) => (
                   <div key={idx} className="relative rounded-xl overflow-hidden shadow-md max-w-lg w-full">
                     <img src={img.url} alt={img.alt || 'Generated Image'} className="w-full h-auto object-cover" />

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const STORY_AGENT_API_URL = process.env.STORY_AGENT_API_URL || 'http://localhost:8000';
+const STORY_AGENT_API_URL = process.env.STORY_AGENT_API_URL || 'http://127.0.0.1:8000';
 
 interface StoryRequest {
   prompt: string;

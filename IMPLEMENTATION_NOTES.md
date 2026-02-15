@@ -1,9 +1,11 @@
 # AIZONE Website - Implementation Notes
 
 ## Overview
+
 Website AIZONE telah berhasil diimplementasikan dengan 2 halaman utama: Dashboard dan Belajar, mengikuti desain dari Figma dengan sangat detail.
 
 ## Teknologi yang Digunakan
+
 - **Next.js 15.3.1** - Framework React untuk production
 - **HeroUI** - Design system untuk komponen UI
 - **FluentUI React Icons** - Library icon dari Microsoft
@@ -13,10 +15,12 @@ Website AIZONE telah berhasil diimplementasikan dengan 2 halaman utama: Dashboar
 ## Struktur File
 
 ### Halaman
+
 - `/app/dashboard/page.tsx` - Halaman dashboard utama
 - `/app/belajar/page.tsx` - Halaman belajar dengan learning paths
 
 ### Komponen
+
 - `/components/sidebar.tsx` - Sidebar navigasi
 - `/components/dashboard-header.tsx` - Header dengan search bar dan user info
 - `/components/progress-course-card.tsx` - Card untuk menampilkan progress course
@@ -25,6 +29,7 @@ Website AIZONE telah berhasil diimplementasikan dengan 2 halaman utama: Dashboar
 ## Fitur yang Diimplementasikan
 
 ### Halaman Dashboard (`/dashboard`)
+
 1. **Sidebar Navigasi**
    - Dashboard (aktif dengan shadow effect)
    - Belajar
@@ -52,6 +57,7 @@ Website AIZONE telah berhasil diimplementasikan dengan 2 halaman utama: Dashboar
      - Card Perjalananku (level Pemula)
 
 ### Halaman Belajar (`/belajar`)
+
 1. **Sidebar Navigasi** (sama dengan dashboard)
 
 2. **Header** (sama dengan dashboard)
@@ -70,6 +76,7 @@ Website AIZONE telah berhasil diimplementasikan dengan 2 halaman utama: Dashboar
 ## Design System Implementation
 
 ### Colors
+
 - Primary: `#006FEE` (biru)
 - Success: `#17C964` (hijau)
 - Warning: `#F5A524` (kuning/emas)
@@ -81,16 +88,19 @@ Website AIZONE telah berhasil diimplementasikan dengan 2 halaman utama: Dashboar
 - Text: `#000000`, `#11181C`, `#71717A`
 
 ### Typography
+
 - Font Family: Inter, Roboto
 - Text Sizes: text-xs, text-sm, text-base, text-lg, text-xl, text-2xl
 - Font Weights: font-normal (400), font-medium (500), font-semibold (600), font-bold (700), font-[800]
 
 ### Spacing
+
 - Gap: 2px, 4px, 8px, 10px, 14px, 20px, 24px, 32px
 - Padding: p-3, p-4, p-5, p-6, p-[14px_18px_20px]
 - Border Radius: rounded-lg (14px), rounded-xl (12px), rounded-full (9999px)
 
 ### Components (HeroUI)
+
 - Button: variants (solid, light, shadow), colors (primary, danger), sizes (sm, md, lg)
 - Card: border, shadow-sm, radius-lg
 - Progress: colors (primary, warning), sizes (sm, md)
@@ -99,6 +109,7 @@ Website AIZONE telah berhasil diimplementasikan dengan 2 halaman utama: Dashboar
 - Input: dengan icon search
 
 ## FluentUI Icons yang Digunakan
+
 - `AppsRegular` - Dashboard icon
 - `BookOpenLightbulbRegular` - Belajar icon
 - `DraftsRegular` - Latihan icon
@@ -111,18 +122,21 @@ Website AIZONE telah berhasil diimplementasikan dengan 2 halaman utama: Dashboar
 ## Cara Menjalankan
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
-2. Jalankan development server:
+1. Jalankan development server:
+
 ```bash
 npm run dev
 ```
 
-3. Buka browser dan akses:
-- Dashboard: http://localhost:3000/dashboard
-- Belajar: http://localhost:3000/belajar
+1. Buka browser dan akses:
+
+- Dashboard: <http://localhost:3000/dashboard>
+- Belajar: <http://localhost:3000/belajar>
 
 ## Catatan Penting
 
@@ -154,6 +168,7 @@ npm run dev
 ## Design Fidelity
 
 Implementasi ini sudah mengikuti desain Figma dengan sangat detail:
+
 - ✅ Layout dan spacing persis sama
 - ✅ Warna sesuai design system
 - ✅ Typography (font sizes, weights) akurat
@@ -165,4 +180,3 @@ Implementasi ini sudah mengikuti desain Figma dengan sangat detail:
 ---
 
 **Note:** Dokumentasi ini dibuat untuk memudahkan maintenance dan development selanjutnya.
-

@@ -241,9 +241,10 @@ Bagian: ${pelajaranTitle || bagianParam || 'Umum'}
 [User Prompt]
 ${userPrompt}
 
-[Instruksi Format (Default)]
+[Instruksi Format]
 Jika user tidak menentukan panjang atau gaya secara spesifik, gunakan panduan berikut:
 - Wajib buat cerita pendek sekitar 3 paragraf (100-500 kata).
+- User berusia 14 tahun keatas jenjang sma/smk-kuliah.
 - Gunakan Analogi atau Studi Kasus yang relevan dengan materi.
 - Utamakan topik yang diminta user.
 

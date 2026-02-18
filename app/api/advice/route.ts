@@ -12,15 +12,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ answer: '' });
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'DEEPSEEK_API_KEY not configured' }, { status: 500 });
-    }
-
-    const openai = new OpenAI({
-      baseURL: 'https://api.deepseek.com',
-      apiKey: apiKey,
-    });
+    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
     const topics = wrongPrompts.join('\n- ');
     const prompt = `Peran: AIZone Study Companion yang memberi dorongan singkat.
@@ -39,25 +32,40 @@ Instruksi keluaran:
 
 Jawaban:`;
 
-    const genRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
+    let raw = '';
+    if (deepseekKey) {
+      const openai = new OpenAI({
+        baseURL: 'https://api.deepseek.com',
+        apiKey: deepseekKey,
+      });
+      const completion = await openai.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'deepseek-chat',
+      });
+      raw = completion.choices[0].message.content || '';
+    } else if (geminiKey) {
+      const genRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
+        },
+      );
+      if (!genRes.ok) {
+        return NextResponse.json({ error: 'Generation request failed' }, { status: 500 });
       }
-    );
-    if (!genRes.ok) {
-      return NextResponse.json({ error: 'Generation request failed' }, { status: 500 });
+      const genJson = await genRes.json();
+      const parts = genJson?.candidates?.[0]?.content?.parts || [];
+      raw = Array.isArray(parts)
+        ? parts
+            .map((p: any) => p?.text)
+            .filter(Boolean)
+            .join('\n')
+        : '';
+    } else {
+      return NextResponse.json({ error: 'LLM API key not configured' }, { status: 500 });
     }
-    const genJson = await genRes.json();
-    const parts = genJson?.candidates?.[0]?.content?.parts || [];
-    const raw = Array.isArray(parts)
-      ? parts
-        .map((p: any) => p?.text)
-        .filter(Boolean)
-        .join('\n')
-      : '';
     const answer = (raw || '')
       .replace(/^```(?:html|HTML)?\s*/g, '')
       .replace(/\s*```$/g, '')

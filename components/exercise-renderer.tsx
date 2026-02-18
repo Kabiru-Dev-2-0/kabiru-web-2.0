@@ -323,6 +323,34 @@ export default function ExerciseRenderer({
   const [feedback, setFeedback] = useState('');
   const [isCorrect, setIsCorrect] = useState(false);
   const exercise = exercises[currentIndex];
+  const getImageUrl = (ex: any): string | undefined => {
+    try {
+      const raw = ex?.data?.image;
+      if (!raw || typeof raw !== 'string') return undefined;
+      let url = raw.trim();
+      url = url
+        .replace(/^`+|`+$/g, '')
+        .replace(/^"+|"+$/g, '')
+        .replace(/^'+|'+$/g, '')
+        .trim();
+      return url;
+    } catch {
+      return undefined;
+    }
+  };
+  const getImagePosition = (ex: any): 'top' | 'bottom' | 'left' | 'right' | undefined => {
+    try {
+      const raw = ex?.data?.imagePosition;
+      if (!raw) return undefined;
+      const val = String(raw).toLowerCase().trim();
+      if (val === 'top' || val === 'bottom' || val === 'left' || val === 'right') {
+        return val as any;
+      }
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  };
 
   // Helper function to extract question from various field formats
   const getQuestionHtml = (exercise: any): string => {
@@ -394,14 +422,12 @@ export default function ExerciseRenderer({
   }, [exercise]);
 
   useEffect(() => {
-    console.log('Exercise Data:', exercise);
-    console.log('Question Sources:', {
-      pertanyaan: exercise.pertanyaan,
-      dataPertanyaan: exercise.data?.pertanyaan,
-      question: exercise.question,
-      dataQuestion: exercise.data?.question,
-      getQuestionHtml: getQuestionHtml(exercise),
-    });
+    try {
+      const imageUrl = getImageUrl(exercise);
+      typeof exercise?.data?.imageWidth === 'string' ? exercise.data.imageWidth : undefined;
+    } catch (e) {
+      console.error('Exercise Image Check Error:', e);
+    }
   }, [exercise]);
 
   // Handler untuk klik jawaban - BARU untuk inline blanks
@@ -944,10 +970,65 @@ export default function ExerciseRenderer({
         >
           {/* Instruction Card */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            <div
-              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
-            />
+            {(() => {
+              const imageUrl = getImageUrl(exercise);
+              const pos = getImagePosition(exercise) || 'bottom';
+              const imageBox = imageUrl ? (
+                <div className="relative mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                  <img
+                    src={imageUrl}
+                    alt="Exercise Image"
+                    style={{
+                      width: (exercise.data as any).imageWidth || '100%',
+                      height: 'auto',
+                      display: 'block',
+                    }}
+                    onLoad={() => {
+                      try {
+                        console.log('Exercise Image Loaded:', {
+                          type: exercise?.type,
+                          url: imageUrl,
+                        });
+                      } catch {}
+                    }}
+                    onError={() => {
+                      try {
+                        console.error('Exercise Image Load Error:', {
+                          type: exercise?.type,
+                          url: imageUrl,
+                        });
+                      } catch {}
+                    }}
+                  />
+                </div>
+              ) : null;
+
+              const textBox = (
+                <div
+                  className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
+                />
+              );
+
+              if (!imageBox) return textBox;
+
+              if (pos === 'left' || pos === 'right') {
+                return (
+                  <div className="flex items-start gap-4">
+                    {pos === 'left' ? imageBox : null}
+                    {textBox}
+                    {pos === 'right' ? imageBox : null}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex flex-col gap-2">
+                  {pos === 'top' ? imageBox : textBox}
+                  {pos === 'top' ? textBox : imageBox}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Main Content */}
@@ -1015,10 +1096,49 @@ export default function ExerciseRenderer({
         >
           {/* Instruction Card */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            <div
-              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
-            />
+            {(() => {
+              const imageUrl = getImageUrl(exercise);
+              const pos = getImagePosition(exercise) || 'bottom';
+              const imageBox = imageUrl ? (
+                <div className="relative mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                  <img
+                    src={imageUrl}
+                    alt="Exercise Image"
+                    style={{
+                      width: (exercise.data as any).imageWidth || '100%',
+                      height: 'auto',
+                      display: 'block',
+                    }}
+                  />
+                </div>
+              ) : null;
+
+              const textBox = (
+                <div
+                  className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
+                />
+              );
+
+              if (!imageBox) return textBox;
+
+              if (pos === 'left' || pos === 'right') {
+                return (
+                  <div className="flex items-start gap-4">
+                    {pos === 'left' ? imageBox : null}
+                    {textBox}
+                    {pos === 'right' ? imageBox : null}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex flex-col gap-2">
+                  {pos === 'top' ? imageBox : textBox}
+                  {pos === 'top' ? textBox : imageBox}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Main Content */}
@@ -1071,6 +1191,27 @@ export default function ExerciseRenderer({
               className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
             />
+            {exercise?.data?.image && (
+              <div className="relative w-full mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                <img
+                  src={exercise.data.image}
+                  alt="Exercise Image"
+                  style={{
+                    width: (exercise.data as any).imageWidth || '100%',
+                    height: 'auto',
+                    display: 'block',
+                  }}
+                  onError={(e) => {
+                    try {
+                      console.error('Exercise Image Load Error:', {
+                        type: exercise?.type,
+                        url: exercise?.data?.image,
+                      });
+                    } catch {}
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Main Content */}
@@ -1165,10 +1306,49 @@ export default function ExerciseRenderer({
         >
           {/* Instruction Card */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            <div
-              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
-            />
+            {(() => {
+              const imageUrl = getImageUrl(exercise);
+              const pos = getImagePosition(exercise) || 'bottom';
+              const imageBox = imageUrl ? (
+                <div className="relative mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                  <img
+                    src={imageUrl}
+                    alt="Exercise Image"
+                    style={{
+                      width: (exercise.data as any).imageWidth || '100%',
+                      height: 'auto',
+                      display: 'block',
+                    }}
+                  />
+                </div>
+              ) : null;
+
+              const textBox = (
+                <div
+                  className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
+                />
+              );
+
+              if (!imageBox) return textBox;
+
+              if (pos === 'left' || pos === 'right') {
+                return (
+                  <div className="flex items-start gap-4">
+                    {pos === 'left' ? imageBox : null}
+                    {textBox}
+                    {pos === 'right' ? imageBox : null}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex flex-col gap-2">
+                  {pos === 'top' ? imageBox : textBox}
+                  {pos === 'top' ? textBox : imageBox}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Main Content */}

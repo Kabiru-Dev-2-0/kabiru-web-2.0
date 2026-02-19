@@ -12,6 +12,7 @@ interface ModulProgressCardProps {
   completedCount: number;
   totalCount: number;
   href: string;
+  overridePercent?: number;
 }
 
 export const ModulProgressCard = ({
@@ -21,8 +22,14 @@ export const ModulProgressCard = ({
   completedCount,
   totalCount,
   href,
+  overridePercent,
 }: ModulProgressCardProps) => {
-  const percent = totalCount > 0 ? Math.round((completedCount * 100) / totalCount) : 0;
+  const percent =
+    typeof overridePercent === 'number'
+      ? overridePercent
+      : totalCount > 0
+        ? Math.round((completedCount * 100) / totalCount)
+        : 0;
 
   return (
     <Card className="w-full border border-[#F4F4F5] shadow-sm" radius="lg">
@@ -49,7 +56,7 @@ export const ModulProgressCard = ({
                   value: 'text-lg text-[#52525B]',
                 }}
               />
-              <p className="text-yellow-500 font-semibold">{`${completedCount}/${totalCount}`}</p>
+              <p className="text-yellow-500 font-semibold">{`${percent}%`}</p>
             </div>
           </div>
 

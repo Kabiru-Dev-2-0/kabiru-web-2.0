@@ -326,6 +326,7 @@ export default function DashboardPage() {
     description: string;
     completedCount: number;
     totalCount: number;
+    overallPercent: number;
   } | null>(null);
   const [aiAdvice, setAiAdvice] = useState<string>('');
 
@@ -461,6 +462,11 @@ export default function DashboardPage() {
             const rows = await getCompletedBagiansForModul(supabase as any, modul.id, penggunaId);
             const totalCount = rows.length;
             const completedCount = rows.filter((r) => r.status === 'done').length;
+             const overallPercent = rows.length
+               ? Math.round(
+                   rows.reduce((acc, r) => acc + (r.progress || 0), 0) / rows.length
+                 )
+               : 0;
             setSelectedOngoing({
               id: modul.id,
               modulNumber: modul.nomor_modul,
@@ -468,6 +474,7 @@ export default function DashboardPage() {
               description: modul.deskripsi,
               completedCount,
               totalCount,
+              overallPercent,
             });
           } else {
             setSelectedOngoing(null);
@@ -621,6 +628,7 @@ export default function DashboardPage() {
                           description={selectedOngoing.description}
                           completedCount={selectedOngoing.completedCount}
                           totalCount={selectedOngoing.totalCount}
+                          overridePercent={selectedOngoing.overallPercent}
                           href={`/belajar/${selectedOngoing.id}`}
                         />
                       ) : (

@@ -784,40 +784,31 @@ CREATE OR REPLACE FUNCTION "public"."update_daily_login_challenge"("p_id_penggun
     AS $$
 DECLARE
   v_tantangan_id BIGINT;
-  v_streak INT := 0;
-  v_date DATE := CURRENT_DATE;
+  v_total_logins INT := 0;
 BEGIN
-  -- Dapatkan id tantangan
   SELECT id INTO v_tantangan_id FROM tantangans WHERE tipe = 'login_harian';
   IF v_tantangan_id IS NULL THEN RETURN; END IF;
 
-  -- Pastikan ada row untuk pengguna
   INSERT INTO tantangan_pengguna (id_tantangan, id_pengguna)
   VALUES (v_tantangan_id, p_id_pengguna)
   ON CONFLICT (id_tantangan, id_pengguna) DO NOTHING;
 
-  -- Hitung streak mundur dari hari ini
-  LOOP
-    IF EXISTS (
-      SELECT 1 FROM login_activities
-      WHERE id_pengguna = p_id_pengguna AND login_date = v_date
-    ) THEN
-      v_streak := v_streak + 1;
-      v_date := v_date - 1;
-    ELSE
-      EXIT;
-    END IF;
-  END LOOP;
+  SELECT COUNT(*) INTO v_total_logins
+  FROM login_activities
+  WHERE id_pengguna = p_id_pengguna;
 
-  -- Update progress
   UPDATE tantangan_pengguna
   SET
-    current_value = v_streak,
-    best_value = GREATEST(best_value, v_streak),
+    current_value = v_total_logins,
+    best_value = GREATEST(best_value, v_total_logins),
     last_updated_at = NOW()
   WHERE id_tantangan = v_tantangan_id AND id_pengguna = p_id_pengguna;
 
-  PERFORM set_badge_level(v_tantangan_id, p_id_pengguna, (SELECT best_value FROM tantangan_pengguna WHERE id_tantangan = v_tantangan_id AND id_pengguna = p_id_pengguna));
+  PERFORM set_badge_level(
+    v_tantangan_id,
+    p_id_pengguna,
+    (SELECT best_value FROM tantangan_pengguna WHERE id_tantangan = v_tantangan_id AND id_pengguna = p_id_pengguna)
+  );
 END $$;
 
 

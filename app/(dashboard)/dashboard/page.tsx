@@ -19,6 +19,290 @@ import Link from 'next/link';
 
 type Modul = { id: number; judul: string; deskripsi: string; nomor_modul: number };
 
+type TourStep = {
+  id: number;
+  title: string;
+  description: string;
+  selector: string;
+  placement?: 'bottom' | 'top' | 'right' | 'left';
+};
+
+const TOUR_TOTAL_STEPS = 8;
+const TOUR_STORAGE_KEY = 'kabiru.productTourSeen';
+
+const tourSteps: TourStep[] = [
+  {
+    id: 1,
+    title: 'Ringkasan belajar',
+    description:
+      'Lihat insight dan umpan balik terkait progres belajarmu, dan rekomendasi pembelajaran.',
+    selector: '[data-tour-target="summary"]',
+  },
+  {
+    id: 2,
+    title: 'Widget gamifikasi',
+    description:
+      'Pantau peringkat saat ini, tantangan yang sedang berjalan, dan level belajar kamu saat ini.',
+    selector: '[data-tour-target="gamification"]',
+  },
+  {
+    id: 3,
+    title: 'EXP',
+    description:
+      'Poin pengalaman yang kamu peroleh dari aktivitas belajar dan penyelesaian tantangan.',
+    selector: '[data-tour-target="exp"]',
+  },
+  {
+    id: 4,
+    title: 'Streak belajar',
+    description:
+      'Konsistensi kamu dalam belajar secara berturut-turut setiap hari.',
+    selector: '[data-tour-target="streak"]',
+  },
+  {
+    id: 5,
+    title: 'Menu Belajar',
+    description:
+      'Kamu dapat mengakses materi pembelajaran dari modul yang kamu pilih.',
+    selector: '[data-tour-target="nav-belajar"]',
+    placement: 'right',
+  },
+  {
+    id: 6,
+    title: 'Menu Eksplorasi',
+    description:
+      'Di menu ini, kamu bisa memilih modul belajar sesuai minat dan kebutuhan belajarmu.',
+    selector: '[data-tour-target="nav-eksplorasi"]',
+    placement: 'right',
+  },
+  {
+    id: 7,
+    title: 'Menu Tantangan',
+    description: 'Kamu bisa mengikuti berbagai tantangan yang ada dan dapatkan rewardnya.',
+    selector: '[data-tour-target="nav-tantangan"]',
+    placement: 'right',
+  },
+  {
+    id: 8,
+    title: 'Papan peringkat',
+    description:
+      'Lihat posisi kamu dibandingkan pengguna lain berdasarkan pencapaian dan aktivitas belajar.',
+    selector: '[data-tour-target="nav-peringkat"]',
+    placement: 'right',
+  },
+];
+
+function DashboardProductTour() {
+  const [currentStep, setCurrentStep] = useState<number | null>(null);
+  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+    try {
+      const seen = localStorage.getItem(TOUR_STORAGE_KEY);
+      if (!seen) {
+        setCurrentStep(1);
+      }
+    } catch {}
+  }, [isClient]);
+
+  useEffect(() => {
+    if (!isClient || currentStep === null) return;
+    const step = tourSteps.find((s) => s.id === currentStep);
+    if (!step) {
+      setTargetRect(null);
+      return;
+    }
+
+    const updateRect = () => {
+      const element = document.querySelector(step.selector) as HTMLElement | null;
+      if (!element) {
+        setTargetRect(null);
+        return;
+      }
+      const rect = element.getBoundingClientRect();
+      setTargetRect(rect);
+    };
+
+    updateRect();
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect, true);
+
+    return () => {
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect, true);
+    };
+  }, [currentStep, isClient]);
+
+  const handleClose = () => {
+    setCurrentStep(null);
+    try {
+      localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+    } catch {}
+  };
+
+  const handleNext = () => {
+    if (currentStep === null) return;
+    if (currentStep >= TOUR_TOTAL_STEPS) {
+      handleClose();
+      return;
+    }
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrev = () => {
+    if (currentStep === null) return;
+    if (currentStep <= 1) return;
+    setCurrentStep(currentStep - 1);
+  };
+
+  if (!isClient || currentStep === null) return null;
+
+  const step = tourSteps.find((s) => s.id === currentStep);
+  if (!step) return null;
+
+  const padding = 8;
+  const rect = targetRect;
+
+  const highlightStyle =
+    rect != null
+      ? {
+          top: rect.top - padding,
+          left: rect.left - padding,
+          width: rect.width + padding * 2,
+          height: rect.height + padding * 2,
+        }
+      : undefined;
+
+  const tooltipWidth = 400;
+  const estimatedTooltipHeight = 200;
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+  const margin = 16;
+
+  let tooltipTop = 80;
+  let tooltipLeft = 24;
+
+  if (rect && viewportWidth && viewportHeight) {
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const spaceRight = viewportWidth - rect.right;
+    const spaceLeft = rect.left;
+
+    let placement: 'bottom' | 'top' | 'right' | 'left' = 'bottom';
+
+    if (step.placement) {
+      placement = step.placement;
+    } else if (spaceBelow >= estimatedTooltipHeight + margin) {
+      placement = 'bottom';
+    } else if (spaceAbove >= estimatedTooltipHeight + margin) {
+      placement = 'top';
+    } else if (spaceRight >= tooltipWidth + margin) {
+      placement = 'right';
+    } else if (spaceLeft >= tooltipWidth + margin) {
+      placement = 'left';
+    } else {
+      placement = 'bottom';
+    }
+
+    if (placement === 'bottom') {
+      tooltipTop = rect.bottom + margin;
+      tooltipLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
+    } else if (placement === 'top') {
+      tooltipTop = rect.top - estimatedTooltipHeight - margin;
+      tooltipLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
+    } else if (placement === 'right') {
+      tooltipTop = rect.top + rect.height / 2 - estimatedTooltipHeight / 2;
+      tooltipLeft = rect.right + margin;
+    } else {
+      tooltipTop = rect.top + rect.height / 2 - estimatedTooltipHeight / 2;
+      tooltipLeft = rect.left - tooltipWidth - margin;
+    }
+
+    if (tooltipTop < 16) tooltipTop = 16;
+    if (tooltipTop + estimatedTooltipHeight + 16 > viewportHeight) {
+      tooltipTop = Math.max(16, viewportHeight - estimatedTooltipHeight - 16);
+    }
+
+    if (tooltipLeft < 16) tooltipLeft = 16;
+    if (tooltipLeft + tooltipWidth + 16 > viewportWidth) {
+      tooltipLeft = Math.max(16, viewportWidth - tooltipWidth - 16);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] pointer-events-auto">
+      <div className="absolute inset-0" />
+      {highlightStyle && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            ...highlightStyle,
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.25)',
+            backgroundColor: 'transparent',
+          }}
+        />
+      )}
+      <div
+        className="absolute pointer-events-auto"
+        style={{
+          top: tooltipTop,
+          left: tooltipLeft,
+          width: tooltipWidth,
+        }}
+      >
+        <div className="relative rounded-2xl bg-[#3674B5] text-white p-5 shadow-xl">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="absolute right-6 top-5 text-white/90 hover:text-white text-2xl leading-none cursor-pointer"
+          >
+            ×
+          </button>
+          <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
+          <p className="text-m leading-relaxed mb-4">{step.description}</p>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-1 text-s font-medium">
+              <button
+                type="button"
+                onClick={handlePrev}
+                disabled={currentStep === 1}
+                className="px-1 py-1 rounded-md text-white/90 disabled:opacity-40 disabled:cursor-default hover:bg-white/10"
+              >
+                {'<'}
+              </button>
+              <span className= "text-white/90 font-normal">
+                {currentStep}/{TOUR_TOTAL_STEPS}
+              </span>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="px-1 py-1 rounded-md text-white/90 hover:bg-white/10"
+              >
+                {'>'}
+              </button>
+            </div>
+            <Button
+              color="default"
+              radius="sm"
+              size="sm"
+              className="bg-white text-[#2d5d94] font-semibold px-4 py-1.5 rounded-lg hover:bg-white"
+              onPress={handleNext}
+            >
+              {currentStep === TOUR_TOTAL_STEPS ? 'Selesai' : 'Berikutnya'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [ongoingCourses, setOngoingCourses] = useState<
     Array<{
@@ -244,7 +528,7 @@ export default function DashboardPage() {
         {/* Left Column */}
         <div className="flex-1 flex flex-col gap-8">
           {/* Tooltip Section */}
-          <div className="flex items-center gap-2.5 relative">
+          <div className="flex items-center gap-2.5 relative" data-tour-target="summary">
             <div className="flex flex-row items-start gap-4 w-full">
               <div className="w-[200px] h-auto z-10">
                 <div className="w-full h-full flex items-center justify-center">
@@ -411,11 +695,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Column */}
-        <div className="w-[300px] flex flex-col gap-6 justify-between items-start">
+        <div
+          className="w-[300px] flex flex-col gap-6 justify-between items-start"
+          data-tour-target="gamification"
+        >
           {/* Peringkat Card */}
           <PeringkatWidget />
         </div>
       </div>
+      <DashboardProductTour />
     </div>
   );
 }

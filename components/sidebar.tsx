@@ -126,6 +126,16 @@ export const Sidebar = () => {
                 : item.label === 'Eksplorasi'
                   ? pathname.startsWith('/eksplorasi')
                   : pathname === href;
+            const tourTarget =
+              item.label === 'Belajar'
+                ? 'nav-belajar'
+                : item.label === 'Eksplorasi'
+                  ? 'nav-eksplorasi'
+                  : item.label === 'Tantangan'
+                    ? 'nav-tantangan'
+                    : item.label === 'Papan Peringkat'
+                      ? 'nav-peringkat'
+                      : undefined;
 
             return (
               <Link key={item.href} href={href} prefetch scroll={false}>
@@ -140,6 +150,7 @@ export const Sidebar = () => {
                   }
                   size="md"
                   startContent={<Icon className="w-7 h-7" />}
+                  data-tour-target={tourTarget}
                 >
                   <span className="text-lg">{item.label}</span>
                 </Button>

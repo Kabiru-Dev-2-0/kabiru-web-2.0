@@ -543,8 +543,7 @@ export const DashboardHeader = ({
         </div> */}
 
         <div className="flex items-center gap-4">
-          {/* EXP */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" data-tour-target="exp">
             <img
               src="/imageAssets/exp-icon.png"
               alt="EXP Icon"
@@ -556,8 +555,7 @@ export const DashboardHeader = ({
             </Skeleton>
           </div>
 
-          {/* STREAK */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" data-tour-target="streak">
             <span className="text-3xl leading-none inline-flex items-center" aria-label="Streak">
               🔥
             </span>

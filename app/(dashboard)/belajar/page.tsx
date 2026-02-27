@@ -47,6 +47,10 @@ export default function BelajarPage() {
             router.replace(`/belajar/${id}`);
             setLoading(false);
             return;
+          } else {
+            router.replace(`/eksplorasi?from=belajar&info=pilih_modul`);
+            setLoading(false);
+            return;
           }
         }
       }

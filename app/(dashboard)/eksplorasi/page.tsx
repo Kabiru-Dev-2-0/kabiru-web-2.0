@@ -81,22 +81,39 @@ export default function BelajarPage() {
             totalCount: number;
           }> = [];
 
-          // Ambil modul_dipilih
-          let chosenId: number | undefined = undefined;
-          if (penggunaId) {
-            const { data: row } = await supabase
-              .from('data_penggunas')
-              .select('modul_dipilih')
-              .eq('id_pengguna', penggunaId)
-              .single();
-            if (typeof row?.modul_dipilih === 'number') chosenId = row!.modul_dipilih;
+          // Ambil histori 3 modul terakhir yang diklik dari localStorage
+          let recentIds: number[] = [];
+          try {
+            const raw = typeof window !== 'undefined' ? localStorage.getItem('aizone.recentModules') : null;
+            if (raw) {
+              const arr = JSON.parse(raw) as Array<{ id: number; ts: number }>;
+              if (Array.isArray(arr)) {
+                // Filter hanya modul yang masih ada, ambil id unik, pilih 3 terakhir secara ascending waktu
+                const valid = arr
+                  .filter((x) => typeof x?.id === 'number' && (modulsData || []).some((m: any) => m.id === x.id))
+                  .sort((a, b) => a.ts - b.ts);
+                const last3 = valid.slice(-3);
+                recentIds = last3.map((x) => x.id);
+              }
+            }
+          } catch {}
+
+          // Jika belum ada histori, fallback: gunakan modul_dipilih jika ada
+          if (recentIds.length === 0) {
+            if (penggunaId) {
+              const { data: row } = await supabase
+                .from('data_penggunas')
+                .select('modul_dipilih')
+                .eq('id_pengguna', penggunaId)
+                .single();
+              if (typeof row?.modul_dipilih === 'number') {
+                recentIds = [row.modul_dipilih];
+              }
+            }
           }
 
-          const targetIds = [chosenId, ...(modulsData || []).map((m: any) => m.id)].filter(
-            (v, i, arr) => typeof v === 'number' && arr.indexOf(v) === i
-          ) as number[];
-
-          for (const id of targetIds.slice(0, 2)) {
+          // Loop berdasarkan urutan recentIds (ascending by time), maksimal 3
+          for (const id of recentIds) {
             const modul = (modulsData || []).find((m: any) => m.id === id);
             if (!modul) continue;
             let percent = 0;
@@ -129,7 +146,7 @@ export default function BelajarPage() {
               totalCount,
             });
           }
-          courseRows = courseRows.sort((a, b) => a.modulNumber - b.modulNumber);
+          // Jika belum ada histori sama sekali, biarkan kosong → akan tampil pesan "belum ada progres"
           setOngoingCourses(courseRows);
         }
       } catch {}
@@ -154,6 +171,25 @@ export default function BelajarPage() {
 
   async function handleSelect(e: React.MouseEvent, id: number) {
     e.preventDefault();
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('aizone.recentModules');
+        let arr: Array<{ id: number; ts: number }> = [];
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) arr = parsed.filter((x) => typeof x?.id === 'number');
+          } catch {}
+        }
+        arr = arr.filter((x) => x.id !== id);
+        arr.push({ id, ts: Date.now() });
+        // Batasi panjang history agar tidak membengkak
+        if (arr.length > 20) {
+          arr = arr.slice(-20);
+        }
+        localStorage.setItem('aizone.recentModules', JSON.stringify(arr));
+      }
+    } catch {}
     const supabase = createClient();
     const { data: authData } = await supabase.auth.getUser();
     const user = authData?.user;
@@ -206,32 +242,52 @@ export default function BelajarPage() {
                   <div className="w-full">
                     <Skeleton className="h-36 w-full rounded-[14px]" />
                   </div>
+                  <div className="w-full">
+                    <Skeleton className="h-36 w-full rounded-[14px]" />
+                  </div>
                 </>
               ) : (
-                ongoingCourses.map((course) => (
-                  <div key={course.id} className="w-full">
-                    <div className="w-full border border-[#E4E4E7] rounded-[14px] shadow-sm p-4 flex flex-col gap-3">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-[#71717A]">Modul {course.modulNumber}</span>
-                        <span className="text-lg font-semibold text-[#0B1215]">{course.title}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-[#71717A]">{course.progress}%</span>
-                        <span className="text-sm text-[#71717A]">
-                          {course.completedCount}/{course.totalCount}
-                        </span>
-                      </div>
-
-                      <div className="w-full h-1.5 bg-[#E4E4E7] rounded-full overflow-hidden">
-                        <div
-                          className="h-1.5 bg-[#3674B5]"
-                          style={{ width: `${Math.max(0, Math.min(100, course.progress))}%` }}
-                        />
-                      </div>
+                ongoingCourses.length === 0 ? (
+                  <div className="col-span-1 md:col-span-2 lg:col-span-3">
+                    <div className="w-full flex items-center justify-center py-10">
+                      <p className="text-m text-[#71717A] text-center">
+                        Belum ada progres belajar. <br />
+                        Yuk, pilih topik pertama dan mulai petualangan belajarmu! 🚀
+                      </p>
                     </div>
                   </div>
-                ))
+                ) : (
+                  ongoingCourses.slice(-3).map((course) => (
+                    <div key={course.id} className="w-full">
+                      <div className="w-full border border-[#E4E4E7] rounded-[14px] shadow-sm p-4 flex flex-col gap-3">
+                        <div className="flex flex-col">
+                          <span className="text-sm text-[#71717A]">Modul {course.modulNumber}</span>
+                          <button
+                            onClick={(e) => handleSelect(e, course.id)}
+                            className="text-left text-lg font-semibold text-[#0B1215] hover:underline focus:outline-none cursor-pointer"
+                            aria-label={`Buka modul ${course.title}`}
+                          >
+                            {course.title}
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[#71717A]">{course.progress}%</span>
+                          <span className="text-sm text-[#71717A]">
+                            {course.completedCount}/{course.totalCount}
+                          </span>
+                        </div>
+
+                        <div className="w-full h-1.5 bg-[#E4E4E7] rounded-full overflow-hidden">
+                          <div
+                            className="h-1.5 bg-[#3674B5]"
+                            style={{ width: `${Math.max(0, Math.min(100, course.progress))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )
               )}
             </div>
           </div>
@@ -241,7 +297,7 @@ export default function BelajarPage() {
         <div className="flex flex-col gap-[14px]">
           <div className="flex items-center gap-2.5">
             <BookOpenLightbulbColor className="w-10 h-10" />
-            <h2 className="text-2xl font-semibold leading-8 text-black">Learning Path</h2>
+            <h2 className="text-2xl font-semibold leading-8 text-black">Modul Belajar</h2>
           </div>
 
           <div className="flex flex-wrap gap-5 w-full">

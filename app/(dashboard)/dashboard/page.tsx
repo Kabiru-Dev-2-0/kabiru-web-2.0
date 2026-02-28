@@ -327,6 +327,8 @@ export default function DashboardPage() {
     completedCount: number;
     totalCount: number;
     overallPercent: number;
+    activeBagian?: number;
+    activeUnit?: number;
   } | null>(null);
   const [aiAdvice, setAiAdvice] = useState<string>('');
 
@@ -467,6 +469,45 @@ export default function DashboardPage() {
                    rows.reduce((acc, r) => acc + (r.progress || 0), 0) / rows.length
                  )
                : 0;
+
+            // Tentukan bagian & unit aktif (node oranye) untuk modul terpilih
+            let activeBagian: number | undefined = undefined;
+            let activeUnit: number | undefined = undefined;
+            const { data: pelajarans } = await supabase
+              .from('pelajarans')
+              .select('id, bagian')
+              .eq('id_modul', modul.id)
+              .order('bagian', { ascending: true });
+            if (pelajarans && pelajarans.length > 0) {
+              for (const p of pelajarans) {
+                const { data: latList } = await supabase
+                  .from('latihans')
+                  .select('nomor_latihan, id_pelajaran, unit_name')
+                  .eq('id_pelajaran', p.id)
+                  .order('nomor_latihan', { ascending: true });
+                const uniqLat = latList
+                  ? Array.from(new Map(latList.map((item) => [item.nomor_latihan, item])).values())
+                  : [];
+                uniqLat.sort((a, b) => a.nomor_latihan - b.nomor_latihan);
+                const { data: hasilList } = await supabase
+                  .from('hasil_latihans')
+                  .select('nomor_latihan, id_pelajaran')
+                  .eq('id_pengguna', penggunaId)
+                  .eq('id_pelajaran', p.id);
+                const selesai = new Set((hasilList || []).map((h) => h.nomor_latihan));
+                const next = uniqLat.find((l) => !selesai.has(l.nomor_latihan));
+                if (next) {
+                  activeBagian = p.bagian;
+                  activeUnit = next.nomor_latihan;
+                  break;
+                }
+              }
+              // fallback jika semua selesai: gunakan bagian/unit pertama
+              if (!activeBagian) {
+                activeBagian = pelajarans[0].bagian;
+                activeUnit = 1;
+              }
+            }
             setSelectedOngoing({
               id: modul.id,
               modulNumber: modul.nomor_modul,
@@ -475,6 +516,8 @@ export default function DashboardPage() {
               completedCount,
               totalCount,
               overallPercent,
+              activeBagian,
+              activeUnit,
             });
           } else {
             setSelectedOngoing(null);
@@ -629,7 +672,11 @@ export default function DashboardPage() {
                           completedCount={selectedOngoing.completedCount}
                           totalCount={selectedOngoing.totalCount}
                           overridePercent={selectedOngoing.overallPercent}
-                          href={`/belajar/${selectedOngoing.id}`}
+                          href={
+                            selectedOngoing.activeBagian
+                              ? `/belajar/${selectedOngoing.id}/${selectedOngoing.activeBagian}`
+                              : `/belajar/${selectedOngoing.id}`
+                          }
                         />
                       ) : (
                         <Card className="w-[333px] border border-[#F4F4F5] shadow-sm" radius="lg">

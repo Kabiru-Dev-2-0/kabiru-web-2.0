@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { StageNode } from "./stage-node";
 import { StageModal, type RectData } from "./stage-modal";
 import { MotivationalTooltip } from "./motivational-tooltip";
@@ -16,6 +16,7 @@ interface Stage {
 interface LearningPathVisualProps {
   stages: Stage[];
   onStageClick: (stageId: number) => void;
+  startIndex?: number;
 }
 
 interface ModalState {
@@ -30,26 +31,40 @@ interface ModalState {
 export function LearningPathVisual({
   stages,
   onStageClick,
+  startIndex = 0,
 }: LearningPathVisualProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const currentNodeRef = useRef<HTMLDivElement | null>(null);
+  const hasScrolledRef = useRef(false);
+  const MAX_NODES = 100;
+  const NODE_SIZE = 80; // mengikuti default StageNode "normal"
+  // Pola posisi untuk 8 node pertama (koordinat absolut relatif ke container)
+  // Nilai di bawah meniru pola zig-zag pada desain:
+  // baris1: 3 node naik, baris2: 1 node kanan, baris3: 3 node turun, baris4: 1 node kiri
+  const PATTERN: Array<{ x: number; y: number }> = [
+    { x: 0, y: 0 },     // 1
+    { x: 150, y: 30 },  // 2
+    { x: 300, y: 60 },  // 3
+    { x: 400, y: 170 },  // 4 (kanan)
+    { x: 300, y: 310 }, // 5
+    { x: 150, y: 350 }, // 6
+    { x: 0, y: 380 },   // 7
+    { x: -90, y: 520 } // 8 (kiri)
+  ];
+  // Hitung tinggi blok dinamis berdasarkan rentang pola + padding kecil agar tidak terlalu jauh
+  const PATTERN_TOP = Math.min(...PATTERN.map((p) => p.y));
+  const PATTERN_BOTTOM = Math.max(...PATTERN.map((p) => p.y));
+  const PATTERN_SPAN = (PATTERN_BOTTOM - PATTERN_TOP) + NODE_SIZE; // termasuk tinggi node terakhir
+  const BLOCK_GAP = 40; // jarak antar lesson
+  const BLOCK_HEIGHT = PATTERN_SPAN + BLOCK_GAP;
   const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
     nomorLatihan: 0,
     unitName: "",
   });
 
-  const paddedStages = useMemo(() => {
-    const stages_copy = [...stages];
-    while (stages_copy.length < stages.length) {
-      stages_copy.push({
-        id: stages_copy.length + 1,
-        nomor_latihan: stages_copy.length + 1,
-        unit_name: "Locked",
-        status: "locked",
-      });
-    }
-    return stages_copy;
-  }, [stages]);
+  // Batasi maksimum 100 node
+  const displayedStages = useMemo(() => stages.slice(0, MAX_NODES), [stages]);
 
   const handleModalOpen = useCallback(
     (
@@ -116,133 +131,82 @@ export function LearningPathVisual({
         containerRect: undefined,
       });
       // Find stage by nomor_latihan
-      const stage = paddedStages.find((s) => s.nomor_latihan === nomorLatihan);
+      const stage = displayedStages.find((s) => s.nomor_latihan === nomorLatihan);
       if (stage) {
         onStageClick(stage.id);
       }
     },
-    [paddedStages, onStageClick],
+    [displayedStages, onStageClick],
   );
+
+  const { minTop, maxTop } = useMemo(() => {
+    let minT = Number.POSITIVE_INFINITY;
+    let maxT = 0;
+    for (let i = 0; i < displayedStages.length; i++) {
+      const effectiveIndex = startIndex + i;
+      const patternIndex = effectiveIndex % PATTERN.length;
+      const blockIndex = Math.floor(effectiveIndex / PATTERN.length);
+      const top = PATTERN[patternIndex].y + blockIndex * BLOCK_HEIGHT;
+      if (top < minT) minT = top;
+      if (top > maxT) maxT = top;
+    }
+    if (!Number.isFinite(minT)) minT = 0;
+    return { minTop: minT, maxTop: maxT };
+  }, [displayedStages.length, startIndex, PATTERN, BLOCK_HEIGHT]);
+  const containerHeight = Math.max(maxTop - minTop + NODE_SIZE + 8, NODE_SIZE);
+  const containerWidth = 600; // lebar tetap agar posisi statis (tanpa center/space-between)
+
+  useEffect(() => {
+    if (!hasScrolledRef.current && currentNodeRef.current) {
+      hasScrolledRef.current = true;
+      try {
+        currentNodeRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+      } catch {}
+    }
+  }, [displayedStages]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full flex justify-center items-start py-8 px-6 min-h-screen"
+      className="relative w-full py-8 px-4 flex justify-center"
     >
-      {/* Background gradient overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-[300px] bg-gradient-to-b from-transparent to-[#FCFDFD] pointer-events-none z-0" />
-
-      {/* Main container with left character and center stages */}
-      <div className="relative flex gap-8 w-full max-w-[900px] z-10 justify-center">
-        {/* Center - Hexagonal learning path */}
-        <div className="flex flex-col gap-7 w-full items-center">
-          <div className="flex flex-col items-center gap-16 pt-8 h-fit w-full">
-            {/* Row 1: Stage 1, 2, 3 */}
-            <div className="flex items-start gap-x-15">
-              {paddedStages[0] && (
-                <StageNode
-                  nomorLatihan={paddedStages[0].nomor_latihan}
-                  status={paddedStages[0].status}
-                  unitName={paddedStages[0].unit_name}
-                  onModalOpen={handleModalOpen}
-                  marginTop={0}
-                />
-              )}
-              {paddedStages[1] && (
-                <StageNode
-                  nomorLatihan={paddedStages[1].nomor_latihan}
-                  status={paddedStages[1].status}
-                  unitName={paddedStages[1].unit_name}
-                  onModalOpen={handleModalOpen}
-                  marginTop={30}
-                />
-              )}
-              {paddedStages[2] && (
-                <StageNode
-                  nomorLatihan={paddedStages[2].nomor_latihan}
-                  status={paddedStages[2].status}
-                  unitName={paddedStages[2].unit_name}
-                  onModalOpen={handleModalOpen}
-                  marginTop={60}
-                />
-              )}
+      {/* Container posisi statis (tanpa center/space-between) */}
+      <div
+        className="relative"
+        style={{
+          width: `${containerWidth}px`,
+          height: `${containerHeight}px`,
+          marginLeft: "auto",
+          marginRight: "auto",
+        }}
+      >
+        {displayedStages.map((stage, index) => {
+          const effectiveIndex = startIndex + index;
+          const patternIndex = effectiveIndex % PATTERN.length;
+          const blockIndex = Math.floor(effectiveIndex / PATTERN.length);
+          const pos = PATTERN[patternIndex];
+          const left = pos.x + 80; // offset kiri dasar agar tidak mepet
+          const top = (pos.y + blockIndex * BLOCK_HEIGHT) - minTop; // normalize agar nge-hug
+          return (
+            <div
+              key={stage.id}
+              className="absolute"
+              ref={stage.status === "current" ? currentNodeRef : undefined}
+              style={{ left: `${left}px`, top: `${top}px`, width: `${NODE_SIZE}px`, height: `${NODE_SIZE}px` }}
+            >
+              <StageNode
+                nomorLatihan={stage.nomor_latihan}
+                status={stage.status}
+                unitName={stage.unit_name}
+                onModalOpen={handleModalOpen}
+              />
             </div>
-            {/* Row 2: Stage 4 */}
-            <div className="flex flex-col items-start gap-y-12 self-end sm:mr-0 lg:mr-50">
-              {paddedStages[3] && (
-                <StageNode
-                  nomorLatihan={paddedStages[3].nomor_latihan}
-                  status={paddedStages[3].status}
-                  unitName={paddedStages[3].unit_name}
-                  onModalOpen={handleModalOpen}
-                />
-              )}
-            </div>
-            {/* Row 3: Stage 5, 6, 7 */}
-            <div className="flex items-start gap-x-15">
-              {paddedStages[6] && (
-                <StageNode
-                  nomorLatihan={paddedStages[6].nomor_latihan}
-                  status={paddedStages[6].status}
-                  unitName={paddedStages[6].unit_name}
-                  onModalOpen={handleModalOpen}
-                  marginTop={60}
-                />
-              )}
-              {paddedStages[5] && (
-                <StageNode
-                  nomorLatihan={paddedStages[5].nomor_latihan}
-                  status={paddedStages[5].status}
-                  unitName={paddedStages[5].unit_name}
-                  onModalOpen={handleModalOpen}
-                  marginTop={30}
-                />
-              )}
-              {paddedStages[4] && (
-                <StageNode
-                  nomorLatihan={paddedStages[4].nomor_latihan}
-                  status={paddedStages[4].status}
-                  unitName={paddedStages[4].unit_name}
-                  onModalOpen={handleModalOpen}
-                  marginTop={0}
-                />
-              )}
-            </div>
-            {/* Row 4: Stage 8 */}
-            <div className="flex flex-col items-start gap-y-12 self-start sm:ml-0 lg:ml-50">
-              {paddedStages[7] && (
-                <StageNode
-                  nomorLatihan={paddedStages[7].nomor_latihan}
-                  status={paddedStages[7].status}
-                  unitName={paddedStages[7].unit_name}
-                  onModalOpen={handleModalOpen}
-                />
-              )}
-            </div>
-            {/* Row 5: Stage 9, 10, 11 */}
-            <div className="flex items-start gap-x-15">
-              {paddedStages[8] && (
-                <StageNode
-                  nomorLatihan={paddedStages[8].nomor_latihan}
-                  status={paddedStages[8].status}
-                  unitName={paddedStages[8].unit_name}
-                  onModalOpen={handleModalOpen}
-                  marginTop={0}
-                />
-              )}
-              {paddedStages[9] && (
-                <StageNode
-                  nomorLatihan={paddedStages[9].nomor_latihan}
-                  status={paddedStages[9].status}
-                  unitName={paddedStages[9].unit_name}
-                  onModalOpen={handleModalOpen}
-                  marginTop={30}
-                />
-              )}
-              <div className="mr-19"></div>
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       {/* Modal rendered at root level to avoid re-render issues */}

@@ -88,6 +88,7 @@ export function StageNode({
         height: `${sizeValue}px`,
         ...marginTopStyle,
       }}
+      title={displayUnitName}
     >
       <svg
         width={sizeValue}
@@ -97,7 +98,7 @@ export function StageNode({
         xmlns="http://www.w3.org/2000/svg"
         className="absolute inset-0"
         style={{
-          filter: `drop-shadow(0 4px 0 ${colors.dropShadow})`,
+          filter: `drop-shadow(0 3px 0 ${colors.dropShadow})`,
         }}
       >
         <defs>
@@ -157,22 +158,14 @@ export function StageNode({
 
       {/* Content overlay */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
-        {status === "completed" && (
-          <img
-            src="/imageAssets/fluent-color_checkmark-circle-48.svg"
-            alt="checkmark"
-            className="${iconSize} text-white drop-shadow-xl"
-          />
-        )}
+        {status === "completed" && <CheckmarkFilled className={`${iconSize} text-white drop-shadow-lg`} />}
         {status === "locked" && (
           <LockClosedFilled
             className={`${iconSize} text-white drop-shadow-lg`}
           />
         )}
         {status === "current" && (
-          <span
-            className={`${textSize} font-extrabold text-white drop-shadow-lg`}
-          >
+          <span className={`${textSize} font-extrabold text-white drop-shadow-lg leading-none`}>
             {nomorLatihan}
           </span>
         )}

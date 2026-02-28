@@ -86,6 +86,81 @@ export default function TantanganPage() {
   const [individualClaimFlags, setIndividualClaimFlags] =
     useState<IndividualClaimFlags | null>(null);
   const [claimLoading, setClaimLoading] = useState<Record<string, boolean>>({});
+  const [forceCycleReset, setForceCycleReset] = useState<boolean>(false);
+
+  const performResetIfEligible = async (supabase: ReturnType<typeof createClient>, penggunaId: number) => {
+    try {
+      const { data: goldClaims } = await supabase
+        .from("tantangan_claims")
+        .select("tipe_tantangan, tier")
+        .eq("id_pengguna", penggunaId)
+        .eq("tier", "gold");
+      const claimedTypes = new Set((goldClaims || []).map((c: any) => c.tipe_tantangan));
+      const allGoldClaimed =
+        claimedTypes.has("login_harian") &&
+        claimedTypes.has("quiz_beruntun") &&
+        claimedTypes.has("quiz_sempurna");
+      const { data: dp } = await supabase
+        .from("data_penggunas")
+        .select("tantangan3_isclaimed")
+        .eq("id_pengguna", penggunaId)
+        .single();
+      const stage3Claimed = !!dp?.tantangan3_isclaimed;
+      if (allGoldClaimed && stage3Claimed) {
+        // Hapus semua claim individual dan reset claim stage ke awal
+        await supabase.from("tantangan_claims").delete().eq("id_pengguna", penggunaId);
+        await supabase
+          .from("data_penggunas")
+          .update({
+            tantangan1_isclaimed: false,
+            tantangan2_isclaimed: false,
+            tantangan3_isclaimed: false,
+          })
+          .eq("id_pengguna", penggunaId);
+        // Coba reset metrik progres via RPC (jika tersedia di server)
+        try {
+          const { error: rpcErr } = await supabase.rpc("reset_tantangan_progress", {
+            p_id_pengguna: penggunaId,
+          });
+          if (rpcErr) {
+            console.warn("reset_tantangan_progress RPC not available or failed:", rpcErr);
+          }
+        } catch (e) {
+          console.warn("reset_tantangan_progress RPC call error:", e);
+        }
+        // Reset state lokal agar UI kembali ke tahap 1
+        setIndividualClaimFlags({
+          login_claimed_bronze: false,
+          login_claimed_silver: false,
+          login_claimed_gold: false,
+          quiz_claimed_bronze: false,
+          quiz_claimed_silver: false,
+          quiz_claimed_gold: false,
+          modul_claimed_bronze: false,
+          modul_claimed_silver: false,
+          modul_claimed_gold: false,
+        });
+        setClaimFlags({
+          tantangan1_isclaimed: false,
+          tantangan2_isclaimed: false,
+          tantangan3_isclaimed: false,
+        });
+        setViewStage("bronze");
+        // Tandai siklus reset; tampilkan metrik sebagai 0 sampai backend sinkron
+        setForceCycleReset(true);
+        try {
+          const { data: dataRows } = await supabase
+            .from("v_tantangan_progress")
+            .select(
+              "tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold"
+            )
+            .eq("id_pengguna", penggunaId);
+          const rows = Array.isArray(dataRows) ? (dataRows as ChallengeRow[]) : [];
+          setChallenges(rows);
+        } catch {}
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -215,6 +290,7 @@ export default function TantanganPage() {
     st: "bronze" | "silver" | "gold"
   ) => {
     if (!row) return false;
+    if (forceCycleReset) return false;
     const threshold =
       st === "bronze"
         ? row.threshold_bronze
@@ -253,6 +329,7 @@ export default function TantanganPage() {
 
   const stageForClaim = viewStage === "completed" ? "gold" : viewStage;
   const isAllDoneForStage = (st: "bronze" | "silver" | "gold") => {
+    if (forceCycleReset) return false;
     const rows = [loginRow, quizRow, modulRow].filter(
       Boolean
     ) as ChallengeRow[];
@@ -283,6 +360,7 @@ export default function TantanganPage() {
     st: "bronze" | "silver" | "gold"
   ) => {
     if (!penggunaId) return;
+    if (forceCycleReset) return;
     const claimKey = `${challengeType}_${st}`;
     setClaimLoading((prev) => ({ ...prev, [claimKey]: true }));
 
@@ -382,6 +460,12 @@ export default function TantanganPage() {
         setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
         return;
       }
+      // Setelah klaim individual gold, cek reset
+      try {
+        if (st === "gold") {
+          await performResetIfEligible(supabase, penggunaId);
+        }
+      } catch {}
     } finally {
       setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
     }
@@ -389,6 +473,7 @@ export default function TantanganPage() {
 
   const handleClaim = async () => {
     if (!penggunaId) return;
+    if (forceCycleReset) return;
     setClaimLoading((prev) => ({ ...prev, stage: true }));
     try {
       const supabase = createClient();
@@ -477,6 +562,10 @@ export default function TantanganPage() {
         } catch (expError) {
           // Ignore error, realtime subscription should handle it
           console.error("Error fetching updated EXP:", expError);
+        }
+        // Jika yang diklaim adalah tahap emas, cek reset
+        if (stageForClaim === "gold") {
+          await performResetIfEligible(supabase, penggunaId);
         }
       }
     } finally {

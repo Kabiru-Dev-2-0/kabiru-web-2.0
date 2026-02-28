@@ -610,7 +610,15 @@ export default function DashboardPage() {
                   )}
                   <Button
                     as={Link}
-                    href="/belajar"
+                    href={
+                      selectedOngoing?.activeBagian
+                        ? `/belajar/${selectedOngoing.id}/${selectedOngoing.activeBagian}`
+                        : selectedOngoing
+                          ? `/belajar/${selectedOngoing.id}`
+                          : "/belajar"
+                    }
+                    scroll={false}
+                    prefetch
                     color="default"
                     radius="sm"
                     size="md"

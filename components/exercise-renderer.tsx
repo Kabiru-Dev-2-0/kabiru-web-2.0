@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Card } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
@@ -26,6 +26,7 @@ import {
   DismissCircleRegular,
 } from '@fluentui/react-icons';
 import { motion } from 'framer-motion';
+import { LightbulbFilament28Color } from '@fluentui/react-icons';
 
 const richTextStyles = `
   .prose {
@@ -325,15 +326,23 @@ export default function ExerciseRenderer({
   const exercise = exercises[currentIndex];
   const getImageUrl = (ex: any): string | undefined => {
     try {
-      const raw = ex?.data?.image;
-      if (!raw || typeof raw !== 'string') return undefined;
-      let url = raw.trim();
-      url = url
-        .replace(/^`+|`+$/g, '')
-        .replace(/^"+|"+$/g, '')
-        .replace(/^'+|'+$/g, '')
-        .trim();
-      return url;
+      const candidates = [
+        ex?.data?.image,
+        ex?.data?.image_url,
+        ex?.data?.promptImage,
+        ex?.data?.prompt_image,
+        ex?.image,
+      ];
+      for (const c of candidates) {
+        if (!c || typeof c !== 'string') continue;
+        let url = c.trim()
+          .replace(/^`+|`+$/g, '')
+          .replace(/^"+|"+$/g, '')
+          .replace(/^'+|'+$/g, '')
+          .trim();
+        if (url) return url;
+      }
+      return undefined;
     } catch {
       return undefined;
     }
@@ -408,6 +417,26 @@ export default function ExerciseRenderer({
   // ⬆️ Taruh ini di bagian atas komponen ExerciseRenderer (sebelum switch)
   const [editorValue, setEditorValue] = useState('');
   const [totalBlanks, setTotalBlanks] = useState(0);
+  const instructionRef = useRef<HTMLDivElement>(null);
+  const [instructionWidth, setInstructionWidth] = useState(0);
+  const isPercentWidth = (val: any) =>
+    typeof val === 'string' && val.trim().endsWith('%');
+  const resolvePercentWidthPx = (val: any, basis: number) => {
+    if (!isPercentWidth(val)) return undefined;
+    const n = parseFloat(String(val));
+    if (!isFinite(n) || basis <= 0) return undefined;
+    return `${(basis * n) / 100}px`;
+  };
+  useEffect(() => {
+    const el = instructionRef.current as HTMLElement | null;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width || 0;
+      setInstructionWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [exercise?.type]);
 
   // Set initial editor value & blank count tiap kali exercise berubah
   useEffect(() => {
@@ -664,11 +693,69 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card - Sesuai Figma */}
-          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            <div
-              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
-            />
+          <div className="relative w-full max-w-full self-start">
+            <div className="absolute -top-4 left-6 z-10">
+              <div className="inline-flex items-center gap-2 bg-[#3674B5] text-white text-sm px-3 py-1 rounded-full shadow">
+                <LightbulbFilament28Color />
+                <span className="text-lg font-medium">Tahukah Kamu?</span>
+              </div>
+            </div>
+            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-full">
+              {(() => {
+                const imageUrl = getImageUrl(exercise);
+                const pos = getImagePosition(exercise) || 'bottom';
+                const imageBox = imageUrl ? (
+                  <div
+                    className="relative inline-flex items-start w-fit max-w-full mt-0"
+                    style={{
+                      width:
+                        resolvePercentWidthPx(
+                          (exercise.data as any).imageWidth,
+                          instructionWidth
+                        ) || undefined,
+                    }}
+                  >
+                    <img
+                      src={imageUrl}
+                      alt="Exercise Image"
+                      className="block max-w-full h-auto"
+                      style={{
+                        width: (typeof (exercise.data as any).imageWidth === 'string' &&
+                          (exercise.data as any).imageWidth.trim().endsWith('%'))
+                          ? '100%'
+                          : (exercise.data as any).imageWidth || 'auto',
+                      }}
+                    />
+                  </div>
+                ) : null;
+
+                const textBox = (
+                  <div
+                    className="text-lg font-medium text-[#27272A] leading-[1.2em] prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
+                  />
+                );
+
+                if (!imageBox) return textBox;
+
+                if (pos === 'left' || pos === 'right') {
+                  return (
+                    <div className="inline-flex w-full items-start gap-[8px] mt-4">
+                      {pos === 'left' ? imageBox : null}
+                      {textBox}
+                      {pos === 'right' ? imageBox : null}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="inline-flex w-full flex-col gap-[8px] mt-4">
+                    {pos === 'top' ? imageBox : textBox}
+                    {pos === 'top' ? textBox : imageBox}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
 
           {/* Main Content */}
@@ -831,19 +918,36 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card - Sesuai Figma */}
-          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            {(() => {
+          <div className="relative w-fit max-w-full self-start">
+            <div className="absolute -top-4 left-6 z-10">
+              <div className="inline-flex items-center gap-2 bg-[#3674B5] text-white text-sm px-3 py-1 rounded-full shadow">
+                <LightbulbFilament28Color />
+                <span className="text-lg font-medium">Tahukah Kamu?</span>
+              </div>
+            </div>
+            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-fit max-w-full">
+              {(() => {
               const imageUrl = getImageUrl(exercise);
               const pos = getImagePosition(exercise) || 'bottom';
               const imageBox = imageUrl ? (
-                <div className="relative mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                <div
+                  className="relative inline-flex items-start w-fit max-w-full mt-0"
+                  style={{
+                    width:
+                      resolvePercentWidthPx(
+                        (exercise.data as any).imageWidth,
+                        instructionWidth
+                      ) || undefined,
+                  }}
+                >
                   <img
                     src={imageUrl}
                     alt="Exercise Image"
+                    className="block max-w-full h-auto"
                     style={{
-                      width: (exercise.data as any).imageWidth || '100%',
-                      height: 'auto',
-                      display: 'block',
+                      width: isPercentWidth((exercise.data as any).imageWidth)
+                        ? '100%'
+                        : (exercise.data as any).imageWidth || 'auto',
                     }}
                   />
                 </div>
@@ -851,7 +955,7 @@ export default function ExerciseRenderer({
 
               const textBox = (
                 <div
-                  className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                  className="text-lg font-medium text-[#27272A] leading-[1.2em] prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
                 />
               );
@@ -860,7 +964,7 @@ export default function ExerciseRenderer({
 
               if (pos === 'left' || pos === 'right') {
                 return (
-                  <div className="flex items-start gap-4">
+                  <div className="inline-flex w-fit items-start gap-[8px] mt-4">
                     {pos === 'left' ? imageBox : null}
                     {textBox}
                     {pos === 'right' ? imageBox : null}
@@ -869,12 +973,13 @@ export default function ExerciseRenderer({
               }
 
               return (
-                <div className="flex flex-col gap-2">
+                <div className="inline-flex w-fit flex-col gap-[8px] mt-4">
                   {pos === 'top' ? imageBox : textBox}
                   {pos === 'top' ? textBox : imageBox}
                 </div>
               );
-            })()}
+              })()}
+            </div>
           </div>
 
           {/* Main Content */}
@@ -1008,19 +1113,34 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card */}
-          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            {(() => {
+          <div className="relative w-full max-w-full self-start">
+            <div className="absolute -top-4 left-6 z-10">
+              <div className="inline-flex items-center gap-2 bg-[#3674B5] text-white text-sm px-3 py-1 rounded-full shadow">
+                <LightbulbFilament28Color />
+                <span className="text-lg font-medium">Tahukah Kamu?</span>
+              </div>
+            </div>
+            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-full">
+              {(() => {
               const imageUrl = getImageUrl(exercise);
               const pos = getImagePosition(exercise) || 'bottom';
               const imageBox = imageUrl ? (
-                <div className="relative mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                <div
+                  className="relative inline-block w-fit max-w-full mt-0"
+                  style={{
+                    width:
+                      resolvePercentWidthPx(
+                        (exercise.data as any).imageWidth,
+                        instructionWidth
+                      ) || undefined,
+                  }}
+                >
                   <img
                     src={imageUrl}
                     alt="Exercise Image"
+                    className="block max-w-full h-auto"
                     style={{
-                      width: (exercise.data as any).imageWidth || '100%',
-                      height: 'auto',
-                      display: 'block',
+                      width: isPercentWidth((exercise.data as any).imageWidth) ? '100%' : (exercise.data as any).imageWidth || 'auto',
                     }}
                     onLoad={() => {
                       try {
@@ -1044,7 +1164,7 @@ export default function ExerciseRenderer({
 
               const textBox = (
                 <div
-                  className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                  className="text-lg font-medium text-[#27272A] leading-[1.2em] prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
                 />
               );
@@ -1053,7 +1173,7 @@ export default function ExerciseRenderer({
 
               if (pos === 'left' || pos === 'right') {
                 return (
-                  <div className="flex items-start gap-4">
+                  <div className="inline-flex w-full items-start gap-[8px] mt-4">
                     {pos === 'left' ? imageBox : null}
                     {textBox}
                     {pos === 'right' ? imageBox : null}
@@ -1062,12 +1182,13 @@ export default function ExerciseRenderer({
               }
 
               return (
-                <div className="flex flex-col gap-2">
+                <div className="inline-flex w-full flex-col gap-[8px] mt-4">
                   {pos === 'top' ? imageBox : textBox}
                   {pos === 'top' ? textBox : imageBox}
                 </div>
               );
-            })()}
+              })()}
+            </div>
           </div>
 
           {/* Main Content */}
@@ -1134,19 +1255,29 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card */}
-          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
+          <div ref={instructionRef} className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2 w-fit max-w-full self-start">
             {(() => {
               const imageUrl = getImageUrl(exercise);
               const pos = getImagePosition(exercise) || 'bottom';
               const imageBox = imageUrl ? (
-                <div className="relative mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                <div
+                  className="relative inline-block w-fit max-w-full mt-0"
+                  style={{
+                    width:
+                      resolvePercentWidthPx(
+                        (exercise.data as any).imageWidth,
+                        instructionWidth
+                      ) || undefined,
+                  }}
+                >
                   <img
                     src={imageUrl}
                     alt="Exercise Image"
+                    className="block max-w-full h-auto"
                     style={{
-                      width: (exercise.data as any).imageWidth || '100%',
-                      height: 'auto',
-                      display: 'block',
+                      width: isPercentWidth((exercise.data as any).imageWidth)
+                        ? '100%'
+                        : (exercise.data as any).imageWidth || 'auto',
                     }}
                   />
                 </div>
@@ -1163,7 +1294,7 @@ export default function ExerciseRenderer({
 
               if (pos === 'left' || pos === 'right') {
                 return (
-                  <div className="flex items-start gap-4">
+                  <div className="inline-flex w-fit items-start gap-[8px] mt-4">
                     {pos === 'left' ? imageBox : null}
                     {textBox}
                     {pos === 'right' ? imageBox : null}
@@ -1172,7 +1303,7 @@ export default function ExerciseRenderer({
               }
 
               return (
-                <div className="flex flex-col gap-2">
+                <div className="inline-flex w-fit flex-col gap-[8px] mt-4">
                   {pos === 'top' ? imageBox : textBox}
                   {pos === 'top' ? textBox : imageBox}
                 </div>
@@ -1225,32 +1356,68 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card */}
-          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            <div
-              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
-            />
-            {exercise?.data?.image && (
-              <div className="relative w-full mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
-                <img
-                  src={exercise.data.image}
-                  alt="Exercise Image"
-                  style={{
-                    width: (exercise.data as any).imageWidth || '100%',
-                    height: 'auto',
-                    display: 'block',
-                  }}
-                  onError={(e) => {
-                    try {
-                      console.error('Exercise Image Load Error:', {
-                        type: exercise?.type,
-                        url: exercise?.data?.image,
-                      });
-                    } catch {}
-                  }}
-                />
+          <div className="relative w-fit max-w-full self-start">
+            <div className="absolute -top-4 left-6 z-10">
+              <div className="inline-flex items-center gap-2 bg-[#3674B5] text-white text-sm px-3 py-1 rounded-full shadow">
+                <LightbulbFilament28Color />
+                <span className="text-lg font-medium">Tahukah Kamu?</span>
               </div>
-            )}
+            </div>
+            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-fit max-w-full">
+              {(() => {
+                const imageUrl = getImageUrl(exercise);
+                const pos = getImagePosition(exercise) || 'bottom';
+                const imageBox = imageUrl ? (
+                  <div
+                    className="relative inline-block w-fit max-w-full"
+                    style={{
+                      width:
+                        resolvePercentWidthPx(
+                          (exercise.data as any).imageWidth,
+                          instructionWidth
+                        ) || undefined,
+                    }}
+                  >
+                    <img
+                      src={imageUrl}
+                      alt="Exercise Image"
+                      className="block max-w-full h-auto"
+                      style={{
+                        width: isPercentWidth((exercise.data as any).imageWidth)
+                          ? '100%'
+                          : (exercise.data as any).imageWidth || 'auto',
+                      }}
+                    />
+                  </div>
+                ) : null;
+
+                const textBox = (
+                  <div
+                    className="text-lg font-medium text-[#27272A] leading-[1.2em] prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
+                  />
+                );
+
+                if (!imageBox) return textBox;
+
+                if (pos === 'left' || pos === 'right') {
+                  return (
+                    <div className="inline-flex w-fit items-start gap-[8px] mt-4">
+                      {pos === 'left' ? imageBox : null}
+                      {textBox}
+                      {pos === 'right' ? imageBox : null}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="inline-flex w-fit flex-col gap-[8px] mt-4">
+                    {pos === 'top' ? imageBox : textBox}
+                    {pos === 'top' ? textBox : imageBox}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
 
           {/* Main Content */}
@@ -1344,19 +1511,25 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card */}
-          <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            {(() => {
+          <div className="relative w-fit max-w-full self-start">
+            <div className="absolute -top-4 left-6 z-10">
+              <div className="inline-flex items-center gap-2 bg-[#3674B5] text-white text-sm px-3 py-1 rounded-full shadow">
+                <LightbulbFilament28Color />
+                <span className="text-lg font-medium">Tahukah Kamu?</span>
+              </div>
+            </div>
+            <div className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-fit max-w-full">
+              {(() => {
               const imageUrl = getImageUrl(exercise);
               const pos = getImagePosition(exercise) || 'bottom';
               const imageBox = imageUrl ? (
-                <div className="relative mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                <div className="relative inline-block w-fit max-w-full mt-0">
                   <img
                     src={imageUrl}
                     alt="Exercise Image"
+                    className="block max-w-full h-auto"
                     style={{
-                      width: (exercise.data as any).imageWidth || '100%',
-                      height: 'auto',
-                      display: 'block',
+                      width: (exercise.data as any).imageWidth || 'auto',
                     }}
                   />
                 </div>
@@ -1364,7 +1537,7 @@ export default function ExerciseRenderer({
 
               const textBox = (
                 <div
-                  className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                  className="text-lg font-medium text-[#27272A] leading-[1.2em] prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
                 />
               );
@@ -1373,7 +1546,7 @@ export default function ExerciseRenderer({
 
               if (pos === 'left' || pos === 'right') {
                 return (
-                  <div className="flex items-start gap-4">
+                  <div className="inline-flex w-fit items-start gap-[8px] mt-4">
                     {pos === 'left' ? imageBox : null}
                     {textBox}
                     {pos === 'right' ? imageBox : null}
@@ -1382,12 +1555,13 @@ export default function ExerciseRenderer({
               }
 
               return (
-                <div className="flex flex-col gap-2">
+                <div className="inline-flex w-fit flex-col gap-[8px] mt-4">
                   {pos === 'top' ? imageBox : textBox}
                   {pos === 'top' ? textBox : imageBox}
                 </div>
               );
-            })()}
+              })()}
+            </div>
           </div>
 
           {/* Main Content */}

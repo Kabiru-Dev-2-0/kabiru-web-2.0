@@ -832,10 +832,49 @@ export default function ExerciseRenderer({
         >
           {/* Instruction Card - Sesuai Figma */}
           <div className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2">
-            <div
-              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
-            />
+            {(() => {
+              const imageUrl = getImageUrl(exercise);
+              const pos = getImagePosition(exercise) || 'bottom';
+              const imageBox = imageUrl ? (
+                <div className="relative mt-2 border-2 border-[#E4E4E7] rounded-[14px] overflow-hidden flex justify-center items-center">
+                  <img
+                    src={imageUrl}
+                    alt="Exercise Image"
+                    style={{
+                      width: (exercise.data as any).imageWidth || '100%',
+                      height: 'auto',
+                      display: 'block',
+                    }}
+                  />
+                </div>
+              ) : null;
+
+              const textBox = (
+                <div
+                  className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: exercise.prompt || '' }}
+                />
+              );
+
+              if (!imageBox) return textBox;
+
+              if (pos === 'left' || pos === 'right') {
+                return (
+                  <div className="flex items-start gap-4">
+                    {pos === 'left' ? imageBox : null}
+                    {textBox}
+                    {pos === 'right' ? imageBox : null}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex flex-col gap-2">
+                  {pos === 'top' ? imageBox : textBox}
+                  {pos === 'top' ? textBox : imageBox}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Main Content */}

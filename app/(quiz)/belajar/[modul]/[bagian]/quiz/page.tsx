@@ -850,7 +850,7 @@ ${context}
           src="/imageAssets/winner.png"
           alt="Agent"
           className="w-[260px] h-auto mb-6"
-          animate={{ y: [0, -20, 0] }}
+          animate={{ y: [0, -30, 0] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
         />
         <p className="text-[40px] leading-[48px] font-bold text-[#3674B5]">+{earnedExp} EXP</p>
@@ -867,7 +867,7 @@ ${context}
 
         {!(wrongPrompts.length > 0 && finalAdvice) ? (
           <p className="mt-3 text-lg text-[#3F3F46] text-center w-[80%]">
-            Hebat! Kamu berhasil menyelesaikannya!
+            Kamu berhasil menyelesaikan soal tanpa ada yang salah. Ayo semangat dan lanjutkan lagi perjalanan belajarmu!
           </p>
         ) : null}
         {wrongPrompts.length > 0 ? (

@@ -19,6 +19,7 @@ interface StageNodeProps {
   marginTop?: number;
   unitName?: string;
   bagianName?: string;
+  showPlayIcon?: boolean;
 }
 
 export function StageNode({
@@ -31,17 +32,17 @@ export function StageNode({
   marginTop = 0,
   unitName,
   bagianName = "Bagian",
+  showPlayIcon = false,
 }: StageNodeProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const displayUnitName = unitName || `Unit ${nomorLatihan}`;
 
+
   const handleNodeClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (status !== "locked") {
-        if (onModalOpen) {
-          onModalOpen(nomorLatihan, status, nodeRef.current || undefined, displayUnitName);
-        }
+      if (onModalOpen) {
+        onModalOpen(nomorLatihan, status, nodeRef.current || undefined, displayUnitName);
       }
     },
     [status, nomorLatihan, onModalOpen, displayUnitName],
@@ -67,7 +68,7 @@ export function StageNode({
           fill: "#A1A1AA",
           stroke: "#71717A",
           dropShadow: "#71717A",
-          cursor: "cursor-not-allowed opacity-70",
+          cursor: "cursor-pointer opacity-70",
         };
     }
   };
@@ -164,11 +165,16 @@ export function StageNode({
             className={`${iconSize} text-white drop-shadow-lg`}
           />
         )}
-        {status === "current" && (
-          <span className={`${textSize} font-extrabold text-white drop-shadow-lg leading-none`}>
-            {nomorLatihan}
-          </span>
-        )}
+        {status === "current" &&
+          (showPlayIcon ? (
+            <span className={`${textSize} font-extrabold text-white drop-shadow-lg leading-none`}>
+              ▶
+            </span>
+          ) : (
+            <span className={`${textSize} font-extrabold text-white drop-shadow-lg leading-none`}>
+              {nomorLatihan}
+            </span>
+          ))}
       </div>
 
       {/* Modal Backdrop */}

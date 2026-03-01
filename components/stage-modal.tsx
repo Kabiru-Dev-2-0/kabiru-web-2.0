@@ -171,20 +171,29 @@ export function StageModal({
           <button
             onClick={handleStartClick}
             type="button"
-            className="w-full px-3 py-2 bg-white rounded-[10px] outline outline-1 outline-offset-[-1px] outline-cyan-600 inline-flex justify-center items-center gap-2 hover:bg-blue-50 active:scale-95 transition-colors duration-100 cursor-pointer"
+            disabled={status === "locked"}
+            className={`w-full px-3 py-2 rounded-[10px] outline outline-1 outline-offset-[-1px] inline-flex justify-center items-center gap-2 transition-colors duration-100 ${
+              status === "locked"
+                ? "bg-white/60 outline-gray-400 cursor-not-allowed"
+                : "bg-white outline-cyan-600 hover:bg-blue-50 active:scale-95 cursor-pointer"
+            }`}
             style={{
               boxShadow: `0px 4px 0px 0px ${colors.shadowColor}`,
             }}
           >
             <svg
-              className="w-6 h-6 text-cyan-600"
+              className={`w-6 h-6 ${status === "locked" ? "text-gray-500" : "text-cyan-600"}`}
               fill="currentColor"
               viewBox="0 0 24 24"
             >
               <path d="M8 5v14l11-7z" />
             </svg>
-            <span className="text-cyan-600 text-sm font-semibold font-['Encode_Sans'] leading-5">
-              Mulai
+            <span
+              className={`text-sm font-semibold font-['Encode_Sans'] leading-5 ${
+                status === "locked" ? "text-gray-600" : "text-cyan-600"
+              }`}
+            >
+              {status === "locked" ? "Terkunci" : "Mulai"}
             </span>
           </button>
         </div>

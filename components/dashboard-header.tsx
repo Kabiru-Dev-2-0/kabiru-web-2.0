@@ -37,7 +37,7 @@ interface DashboardHeaderProps {
   searchPlaceholder?: string;
   initialUserName?: string;
   initialExp?: number;
-  penggunaId?: number; // untuk Realtime subscription
+  penggunaId?: number; // untuk Realtime subscription.
 }
 
 export const DashboardHeader = ({

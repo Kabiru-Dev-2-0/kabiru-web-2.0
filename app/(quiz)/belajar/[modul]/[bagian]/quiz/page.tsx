@@ -846,7 +846,13 @@ ${context}
   if (isCompletedView) {
     return (
       <div className="min-h-screen bg-[#FCFDFD] flex flex-col items-center justify-center w-full gap-1">
-        <img src="/imageAssets/winner.png" alt="Agent" className="w-[260px] h-auto mb-6" />
+        <motion.img
+          src="/imageAssets/winner.png"
+          alt="Agent"
+          className="w-[260px] h-auto mb-6"
+          animate={{ y: [0, -20, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+        />
         <p className="text-[40px] leading-[48px] font-bold text-[#3674B5]">+{earnedExp} EXP</p>
         {wrongPrompts.length <= 0 ? (
           <p className="text-3xl leading-[48px] font-bold text-[#000000]">

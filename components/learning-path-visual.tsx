@@ -11,11 +11,12 @@ interface Stage {
   nomor_latihan: number;
   unit_name: string;
   status: "completed" | "current" | "locked";
+  isEntry?: boolean;
 }
 
 interface LearningPathVisualProps {
   stages: Stage[];
-  onStageClick: (stageId: number) => void;
+  onStageClick: (stageId: number, opts?: { isEntry?: boolean }) => void;
   startIndex?: number;
 }
 
@@ -73,6 +74,11 @@ export function LearningPathVisual({
       element?: HTMLElement,
       unitName?: string,
     ) => {
+      const st = displayedStages.find((s) => s.nomor_latihan === nomorLatihan);
+      if (st?.isEntry && status !== "locked") {
+        onStageClick(nomorLatihan, { isEntry: true });
+        return;
+      }
       let triggerRect: RectData | null = null;
       let containerRect: RectData | null = null;
 
@@ -106,7 +112,7 @@ export function LearningPathVisual({
         containerRect,
       });
     },
-    [],
+    [displayedStages, onStageClick],
   );
 
   const handleModalClose = useCallback(() => {
@@ -202,6 +208,7 @@ export function LearningPathVisual({
                 nomorLatihan={stage.nomor_latihan}
                 status={stage.status}
                 unitName={stage.unit_name}
+                showPlayIcon={!!stage.isEntry}
                 onModalOpen={handleModalOpen}
               />
             </div>

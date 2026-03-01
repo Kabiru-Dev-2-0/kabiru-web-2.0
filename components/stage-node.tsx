@@ -19,6 +19,7 @@ interface StageNodeProps {
   marginTop?: number;
   unitName?: string;
   bagianName?: string;
+  showPlayIcon?: boolean;
 }
 
 export function StageNode({
@@ -31,9 +32,11 @@ export function StageNode({
   marginTop = 0,
   unitName,
   bagianName = "Bagian",
+  showPlayIcon = false,
 }: StageNodeProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const displayUnitName = unitName || `Unit ${nomorLatihan}`;
+
 
   const handleNodeClick = useCallback(
     (e: React.MouseEvent) => {
@@ -164,11 +167,16 @@ export function StageNode({
             className={`${iconSize} text-white drop-shadow-lg`}
           />
         )}
-        {status === "current" && (
-          <span className={`${textSize} font-extrabold text-white drop-shadow-lg leading-none`}>
-            {nomorLatihan}
-          </span>
-        )}
+        {status === "current" &&
+          (showPlayIcon ? (
+            <span className={`${textSize} font-extrabold text-white drop-shadow-lg leading-none`}>
+              ▶
+            </span>
+          ) : (
+            <span className={`${textSize} font-extrabold text-white drop-shadow-lg leading-none`}>
+              {nomorLatihan}
+            </span>
+          ))}
       </div>
 
       {/* Modal Backdrop */}

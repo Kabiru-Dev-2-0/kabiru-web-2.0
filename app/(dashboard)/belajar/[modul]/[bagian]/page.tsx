@@ -18,6 +18,7 @@ interface Stage {
   judul: string;
   status: 'completed' | 'current' | 'locked';
   progres: number;
+  isEntry?: boolean;
 }
 
 export default function BagianPage() {
@@ -28,11 +29,12 @@ export default function BagianPage() {
 
   const [pelajaran, setPelajaran] = useState<any>(null);
   const [stages, setStages] = useState<Stage[]>([]);
-  const [sections, setSections] = useState<Array<{ bagian: number; judul: string; stages: Stage[] }>>([]);
+  const [sections, setSections] = useState<Array<{ bagian: number; judul: string; pelajaranId: number; stages: Stage[] }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [overallProgress, setOverallProgress] = useState(0);
   const [hasCache, setHasCache] = useState<boolean>(false);
+  const [activeBagian, setActiveBagian] = useState<number | null>(null);
   const fetchData = async () => {
     setLoading(!hasCache);
     const supabase = createClient();
@@ -205,8 +207,9 @@ export default function BagianPage() {
     if (!activeBagianByProgress && allPelajarans && allPelajarans.length > 0) {
       activeBagianByProgress = allPelajarans[0].bagian;
     }
+    setActiveBagian(activeBagianByProgress || null);
 
-    const builtSections: Array<{ bagian: number; judul: string; stages: Stage[] }> = [];
+    const builtSections: Array<{ bagian: number; judul: string; pelajaranId: number; stages: Stage[] }> = [];
     if (allPelajarans && allPelajarans.length > 0) {
       for (const p of allPelajarans) {
         const uniqLat = latihansMap[p.id] || [];
@@ -263,6 +266,7 @@ export default function BagianPage() {
             return s;
           });
         } else {
+          // Future sections: semuanya tetap locked, tanpa entry ▶
           stagesForThis = uniqLat.map((lat) => ({
             id: lat.nomor_latihan,
             nomor_latihan: lat.nomor_latihan,
@@ -276,6 +280,7 @@ export default function BagianPage() {
         builtSections.push({
           bagian: p.bagian,
           judul: p.judul,
+          pelajaranId: p.id,
           stages: stagesForThis,
         });
       }
@@ -499,9 +504,39 @@ export default function BagianPage() {
                     nomor_latihan,
                     unit_name,
                     status,
+                    // Tampilkan ▶ hanya untuk unit pertama dari bagian AKTIF (berbeda dengan halaman saat ini)
+                    // dan hanya jika unit tersebut memang 'current' (belum pernah dikerjakan).
+                    isEntry:
+                      Array.isArray(sec.stages) &&
+                      sec.stages.length > 0 &&
+                      id === sec.stages[0].id &&
+                      status === 'current' &&
+                      activeBagian != null &&
+                      sec.bagian === activeBagian &&
+                      Number(bagian) !== sec.bagian,
                   }))}
                   startIndex={startIdx}
-                  onStageClick={handleStageClick}
+                  onStageClick={(nomorLatihan, opts) => {
+                    if (opts?.isEntry) {
+                      // Pindah lesson (bagian) tanpa langsung buka quiz
+                      router.push(`/belajar/${modulId}/${sec.bagian}`);
+                      return;
+                    }
+                    // Klik normal: buka quiz untuk pelajaran section ini
+                    if (sec && typeof sec.pelajaranId === 'number') {
+                      router.push(
+                        `/belajar/${modulId}/${sec.bagian}/quiz?id=${nomorLatihan}&pelajaran=${sec.pelajaranId}`,
+                      );
+                    } else {
+                      // Fallback to current
+                      const pelajaranId = pelajaran?.id;
+                      router.push(
+                        `/belajar/${modulId}/${bagian}/quiz?id=${nomorLatihan}${
+                          pelajaranId ? `&pelajaran=${pelajaranId}` : ''
+                        }`,
+                      );
+                    }
+                  }}
                 />
               </div>
             ));

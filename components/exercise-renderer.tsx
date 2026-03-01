@@ -162,7 +162,7 @@ const DraggableItem = ({
       }`}
     >
       <p
-        className={`text-xl font-medium text-center leading-[1.6em] ${
+        className={`text-xl font-medium leading-[1.6em] whitespace-normal break-words text-left ${
           isCorrect ? 'text-[#12A150]' : 'text-[#3F3F46]'
         }`}
       >
@@ -700,7 +700,7 @@ export default function ExerciseRenderer({
                 <span className="text-lg font-medium">Tahukah Kamu?</span>
               </div>
             </div>
-            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-full">
+            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 pt-8 pb-6 w-full">
               {(() => {
                 const imageUrl = getImageUrl(exercise);
                 const pos = getImagePosition(exercise) || 'bottom';
@@ -760,20 +760,29 @@ export default function ExerciseRenderer({
 
           {/* Main Content */}
           <div className="flex flex-col gap-8">
-            <div
-              className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{
-                __html:
-                  getQuestionHtml(exercise) || exercise.pertanyaan || exercise.data?.question || '',
-              }}
-            />
+            {(() => {
+              const qHtml =
+                getQuestionHtml(exercise) ||
+                exercise.pertanyaan ||
+                exercise.data?.question ||
+                '';
+              const stripped = qHtml.replace(/<[^>]*>/g, '').trim();
+              const hasEmbed = /<(img|iframe|video|audio)\b/i.test(qHtml);
+              if (!stripped && !hasEmbed) return null;
+              return (
+                <div
+                  className="text-lg font-medium text-[#27272A] leading-[1em] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: qHtml }}
+                />
+              );
+            })()}
             {isMultiLine ? (
               /* Code Block Style untuk multi-line code */
-              <div className="bg-[#1e1e1e] rounded-[14px] p-6 font-mono text-base">
+              <div className="bg-[#F4F4F5] rounded-[14px] p-6 font-mono text-base">
                 {templateParts.map((part: string, idx: number) => (
                   <span key={idx}>
                     {/* Text part dengan preserved whitespace */}
-                    <span className="text-[#d4d4d4]" style={{ whiteSpace: 'pre' }}>
+                    <span className="text-[#000000] leading-loose"  style={{ whiteSpace: 'pre' }}>
                       {part}
                     </span>
 
@@ -783,7 +792,7 @@ export default function ExerciseRenderer({
                         className={`inline-block min-w-[80px] px-3 py-1.5 mx-1 rounded-lg cursor-pointer transition-all ${
                           answers[idx]
                             ? 'bg-[#3674B5] border-2 border-[#205994]'
-                            : 'bg-[#374151] border-b-2 border-[#6b7280]'
+                            : 'bg-[#FCFDFD] border-b-2 border-[#D7D7DA]'
                         }`}
                         style={{
                           color: answers[idx] ? '#ffffff' : '#9ca3af',
@@ -791,7 +800,7 @@ export default function ExerciseRenderer({
                         }}
                         onClick={() => answers[idx] && handleClearBlank(idx)}
                       >
-                        {answers[idx] || '____'}
+                        {answers[idx] || '______'}
                       </span>
                     )}
                   </span>
@@ -918,14 +927,14 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card - Sesuai Figma */}
-          <div className="relative w-fit max-w-full self-start">
+          <div className="relative w-full max-w-full self-start">
             <div className="absolute -top-4 left-6 z-10">
               <div className="inline-flex items-center gap-2 bg-[#3674B5] text-white text-sm px-3 py-1 rounded-full shadow">
                 <LightbulbFilament28Color />
                 <span className="text-lg font-medium">Tahukah Kamu?</span>
               </div>
             </div>
-            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-fit max-w-full">
+            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 pt-8 pb-6 w-full">
               {(() => {
               const imageUrl = getImageUrl(exercise);
               const pos = getImagePosition(exercise) || 'bottom';
@@ -964,7 +973,7 @@ export default function ExerciseRenderer({
 
               if (pos === 'left' || pos === 'right') {
                 return (
-                  <div className="inline-flex w-fit items-start gap-[8px] mt-4">
+                  <div className="inline-flex w-full items-start gap-[8px] mt-4">
                     {pos === 'left' ? imageBox : null}
                     {textBox}
                     {pos === 'right' ? imageBox : null}
@@ -973,7 +982,7 @@ export default function ExerciseRenderer({
               }
 
               return (
-                <div className="inline-flex w-fit flex-col gap-[8px] mt-4">
+                <div className="inline-flex w-full flex-col gap-[8px] mt-4">
                   {pos === 'top' ? imageBox : textBox}
                   {pos === 'top' ? textBox : imageBox}
                 </div>
@@ -989,12 +998,11 @@ export default function ExerciseRenderer({
               collisionDetection={closestCenter}
               onDragEnd={(event) => handleDragEnd(event, 'drag_and_drop')}
             >
-              {/* Buckets/Categories - Sesuai Figma */}
-              <div className="flex flex-col gap-6">
-                <div
-                  className="text-xl font-medium text-[#27272A]"
-                  dangerouslySetInnerHTML={{ __html: getQuestionHtml(exercise) }}
-                />
+              <div
+                className="text-xl font-medium text-[#27272A]"
+                dangerouslySetInnerHTML={{ __html: getQuestionHtml(exercise) }}
+              />
+              <div className="flex flex-row flex-wrap gap-6">
                 {buckets.map((bucket: string) => {
                   // Komponen Droppable Bucket
                   const DroppableBucket = () => {
@@ -1003,7 +1011,7 @@ export default function ExerciseRenderer({
                     return (
                       <div
                         ref={setNodeRef}
-                        className="bg-white border-2 border-[#E4E4E7] rounded-[14px] p-5 flex flex-col gap-5"
+                        className="bg-white border-2 border-[#E4E4E7] rounded-[14px] p-5 flex flex-col gap-5 flex-1 min-w-[260px]"
                         style={{
                           backgroundColor: isOver ? '#e0f2fe' : 'white',
                           transition: 'background-color 0.2s',
@@ -1038,8 +1046,8 @@ export default function ExerciseRenderer({
                 })}
               </div>
 
-              {/* Items to Drag - Sesuai Figma */}
-              <div className="flex flex-wrap gap-3.5">
+              {/* Items to Drag - Horizontal, wrapped */}
+              <div className="flex flex-row flex-wrap gap-3.5">
                 {containerItems['items'].map((item) => (
                   <DraggableItem key={item} id={item} content={item} />
                 ))}
@@ -1120,7 +1128,7 @@ export default function ExerciseRenderer({
                 <span className="text-lg font-medium">Tahukah Kamu?</span>
               </div>
             </div>
-            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-full">
+            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 pt-8 pb-6 w-full">
               {(() => {
               const imageUrl = getImageUrl(exercise);
               const pos = getImagePosition(exercise) || 'bottom';
@@ -1239,8 +1247,6 @@ export default function ExerciseRenderer({
               </SortableContext>
             </DndContext>
 
-            {/* Divider */}
-            <div className="h-[1.5px] bg-black/15"></div>
           </div>
         </motion.div>
       );
@@ -1255,7 +1261,7 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card */}
-          <div ref={instructionRef} className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2 w-fit max-w-full self-start">
+          <div ref={instructionRef} className="bg-white border-2 border-[#3674B5] rounded-[14px] px-8 py-2 flex flex-col gap-2 w-full max-w-full self-start">
             {(() => {
               const imageUrl = getImageUrl(exercise);
               const pos = getImagePosition(exercise) || 'bottom';
@@ -1294,7 +1300,7 @@ export default function ExerciseRenderer({
 
               if (pos === 'left' || pos === 'right') {
                 return (
-                  <div className="inline-flex w-fit items-start gap-[8px] mt-4">
+                  <div className="inline-flex w-full items-start gap-[8px] mt-4">
                     {pos === 'left' ? imageBox : null}
                     {textBox}
                     {pos === 'right' ? imageBox : null}
@@ -1303,7 +1309,7 @@ export default function ExerciseRenderer({
               }
 
               return (
-                <div className="inline-flex w-fit flex-col gap-[8px] mt-4">
+                <div className="inline-flex w-full flex-col gap-[8px] mt-4">
                   {pos === 'top' ? imageBox : textBox}
                   {pos === 'top' ? textBox : imageBox}
                 </div>
@@ -1356,14 +1362,14 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card */}
-          <div className="relative w-fit max-w-full self-start">
+          <div className="relative w-full max-w-full self-start">
             <div className="absolute -top-4 left-6 z-10">
               <div className="inline-flex items-center gap-2 bg-[#3674B5] text-white text-sm px-3 py-1 rounded-full shadow">
                 <LightbulbFilament28Color />
                 <span className="text-lg font-medium">Tahukah Kamu?</span>
               </div>
             </div>
-            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-fit max-w-full">
+            <div ref={instructionRef} className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 pt-8 pb-6 w-full">
               {(() => {
                 const imageUrl = getImageUrl(exercise);
                 const pos = getImagePosition(exercise) || 'bottom';
@@ -1402,7 +1408,7 @@ export default function ExerciseRenderer({
 
                 if (pos === 'left' || pos === 'right') {
                   return (
-                    <div className="inline-flex w-fit items-start gap-[8px] mt-4">
+                    <div className="inline-flex w-full items-start gap-[8px] mt-4">
                       {pos === 'left' ? imageBox : null}
                       {textBox}
                       {pos === 'right' ? imageBox : null}
@@ -1411,7 +1417,7 @@ export default function ExerciseRenderer({
                 }
 
                 return (
-                  <div className="inline-flex w-fit flex-col gap-[8px] mt-4">
+                  <div className="inline-flex w-full flex-col gap-[8px] mt-4">
                     {pos === 'top' ? imageBox : textBox}
                     {pos === 'top' ? textBox : imageBox}
                   </div>
@@ -1511,14 +1517,14 @@ export default function ExerciseRenderer({
           layout
         >
           {/* Instruction Card */}
-          <div className="relative w-fit max-w-full self-start">
+          <div className="relative w-full max-w-full self-start">
             <div className="absolute -top-4 left-6 z-10">
               <div className="inline-flex items-center gap-2 bg-[#3674B5] text-white text-sm px-3 py-1 rounded-full shadow">
                 <LightbulbFilament28Color />
                 <span className="text-lg font-medium">Tahukah Kamu?</span>
               </div>
             </div>
-            <div className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 py-5 w-fit max-w-full">
+            <div className="bg-[#F4F4F5] border border-[#E4E4E7] rounded-[14px] px-6 pt-8 pb-6 w-full">
               {(() => {
               const imageUrl = getImageUrl(exercise);
               const pos = getImagePosition(exercise) || 'bottom';
@@ -1546,7 +1552,7 @@ export default function ExerciseRenderer({
 
               if (pos === 'left' || pos === 'right') {
                 return (
-                  <div className="inline-flex w-fit items-start gap-[8px] mt-4">
+                  <div className="inline-flex w-full items-start gap-[8px] mt-4">
                     {pos === 'left' ? imageBox : null}
                     {textBox}
                     {pos === 'right' ? imageBox : null}
@@ -1555,7 +1561,7 @@ export default function ExerciseRenderer({
               }
 
               return (
-                <div className="inline-flex w-fit flex-col gap-[8px] mt-4">
+                <div className="inline-flex w/full flex-col gap-[8px] mt-4">
                   {pos === 'top' ? imageBox : textBox}
                   {pos === 'top' ? textBox : imageBox}
                 </div>
@@ -1595,8 +1601,10 @@ export default function ExerciseRenderer({
             />
 
             {/* Options - Card Style */}
-            <div className="flex flex-col gap-3.5">
-              {exercise.data.options.map((opt: string) => {
+            <div className="flex flex-wrap gap-3.5 w-full">
+              {exercise.data.options.map((opt: string, idx: number, arr: string[]) => {
+                const total = Math.max(1, arr.length);
+                const gapPx = 14; // gap-3.5 = 0.875rem ≈ 14px (default 16px base)
                 const isSelected = answers.answer === opt;
                 const showCorrect = isCorrect && isSelected;
                 return (
@@ -1604,7 +1612,7 @@ export default function ExerciseRenderer({
                     key={opt}
                     onClick={() => !isCorrect && setAnswers({ answer: opt })}
                     disabled={isCorrect}
-                    className={`flex items-stretch gap-5 px-6 py-[18px] border-2 rounded-[14px] transition-all ${
+                    className={`inline-flex items-center justify-center gap-5 px-6 py-[18px] border-2 rounded-[14px] transition-all ${
                       showCorrect
                         ? 'bg-[#E8FAF0] border-[#17C964]'
                         : isSelected
@@ -1617,10 +1625,12 @@ export default function ExerciseRenderer({
                         : isSelected
                           ? '0px 4px 0px 0px rgba(32, 89, 148, 1)'
                           : '0px 4px 0px 0px rgba(228, 228, 231, 1)',
+                      flex: `1 1 calc((100% - ${(total - 1) * gapPx}px) / ${total})`,
+                      minWidth: 0,
                     }}
                   >
                     <p
-                      className={`text-xl font-medium leading-[1.6em] text-left flex-1 ${
+                      className={`text-xl font-medium leading-[1.6em] text-center ${
                         showCorrect
                           ? 'text-[#12A150]'
                           : isSelected

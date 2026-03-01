@@ -166,73 +166,115 @@ export function PeringkatWidget({
   }, [journeyValue]);
 
   useEffect(() => {
-    try {
-      let hasAnyCache = false;
-      if (sectionsSet.has('peringkat')) {
-        const lsRank = typeof window !== 'undefined' ? localStorage.getItem('aizone.rank') : null;
-        if (lsRank) {
-          const n = Number(lsRank);
-          if (!Number.isNaN(n)) {
-            setLocalRank(n);
-            hasAnyCache = true;
+    (async () => {
+      try {
+        let hasAnyCache = false;
+        if (sectionsSet.has('peringkat')) {
+          const lsRank = typeof window !== 'undefined' ? localStorage.getItem('aizone.rank') : null;
+          if (lsRank) {
+            const n = Number(lsRank);
+            if (!Number.isNaN(n)) {
+              setLocalRank(n);
+              hasAnyCache = true;
+            }
           }
         }
-      }
-      if (sectionsSet.has('misiHarian')) {
-        const lsMissions =
-          typeof window !== 'undefined' ? localStorage.getItem('aizone.missions') : null;
-        if (lsMissions) {
+        // Jangan kunci ke cache lama; selalu refresh misi agar sinkron setelah reset
+        if (sectionsSet.has('misiHarian')) {
           try {
-            const parsed = JSON.parse(lsMissions);
-            if (Array.isArray(parsed)) {
-              const upgraded: MissionPreviewItem[] = parsed.map((m: any) => ({
-                title: String(m.title ?? 'Misi'),
-                current:
-                  typeof m.current === 'number'
-                    ? m.current
-                    : typeof m.value === 'number'
-                      ? m.value
-                      : 0,
-                total:
-                  typeof m.total === 'number' ? m.total : typeof m.max === 'number' ? m.max : 100,
-              }));
-              setLocalMissions(upgraded);
-              hasAnyCache = true;
+            const supabase = createClient();
+            const { data: authData } = await supabase.auth.getUser();
+            const user = authData?.user;
+            if (user) {
+              const { data: pengguna } = await supabase
+                .from('penggunas')
+                .select('id')
+                .eq('uuid', user.id)
+                .single();
+              const penggunaId = pengguna?.id as number | undefined;
+              if (penggunaId) {
+                // Ambil progress terbaru
+                const { data: vprog } = await supabase
+                  .from('v_tantangan_progress')
+                  .select(
+                    'tipe, judul, current_value, threshold_bronze, threshold_silver, threshold_gold, best_value',
+                  )
+                  .eq('id_pengguna', penggunaId);
+                const rows = Array.isArray(vprog) ? (vprog as any[]) : [];
+                if (rows.length > 0) {
+                  const globalStage = getGlobalStage(rows);
+                  const stageForDisplay =
+                    globalStage === 'completed' ? ('gold' as const) : globalStage;
+                  const typeOrder: Record<string, number> = {
+                    login_harian: 0,
+                    quiz_beruntun: 1,
+                    quiz_sempurna: 2,
+                  };
+                  const orderedRows = rows.slice().sort((a, b) => {
+                    const aOrder = typeOrder[a.tipe as string] ?? 99;
+                    const bOrder = typeOrder[b.tipe as string] ?? 99;
+                    return aOrder - bOrder;
+                  });
+                  const missionRows: MissionPreviewItem[] = orderedRows.map((r: any) => {
+                    const { progress, total } = getTierInfoForStage(r, stageForDisplay);
+                    const titleMap: Record<string, string> = {
+                      login_harian: 'Login harian',
+                      quiz_beruntun: 'Selesaikan unit pembelajaran',
+                      quiz_sempurna: 'Kerjakan latihan soal tanpa salah',
+                    };
+                    const fallbackTitle = (r.judul as string) ?? 'Misi';
+                    const title = titleMap[r.tipe as string] ?? fallbackTitle;
+                    return {
+                      title,
+                      current: progress,
+                      total,
+                    };
+                  });
+                  const sliced = missionRows.slice(0, 3);
+                  setLocalMissions(sliced);
+                  try {
+                    localStorage.setItem('aizone.missions', JSON.stringify(sliced));
+                  } catch {}
+                } else {
+                  setLocalMissions([]);
+                }
+              }
             }
           } catch {}
         }
-      }
-      if (sectionsSet.has('perjalanan')) {
-        const lsExpStr = typeof window !== 'undefined' ? localStorage.getItem('aizone.exp') : null;
-        if (lsExpStr) {
-          const expNum = Number(lsExpStr);
-          if (!Number.isNaN(expNum)) {
-            const tier = getExpTier(expNum);
-            setLocalJourneyLabel(tier.label);
-            setLocalJourneyValue(tier.current);
-            setLocalJourneyMax(tier.max);
-            hasAnyCache = true;
-          }
-        } else {
-          const lsJL =
-            typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyLabel') : null;
-          const lsJV =
-            typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyValue') : null;
-          if (lsJL) {
-            setLocalJourneyLabel(lsJL);
-            hasAnyCache = true;
-          }
-          if (lsJV) {
-            const v = Number(lsJV);
-            if (!Number.isNaN(v)) {
-              setLocalJourneyValue(v);
+        if (sectionsSet.has('perjalanan')) {
+          const lsExpStr =
+            typeof window !== 'undefined' ? localStorage.getItem('aizone.exp') : null;
+          if (lsExpStr) {
+            const expNum = Number(lsExpStr);
+            if (!Number.isNaN(expNum)) {
+              const tier = getExpTier(expNum);
+              setLocalJourneyLabel(tier.label);
+              setLocalJourneyValue(tier.current);
+              setLocalJourneyMax(tier.max);
               hasAnyCache = true;
+            }
+          } else {
+            const lsJL =
+              typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyLabel') : null;
+            const lsJV =
+              typeof window !== 'undefined' ? localStorage.getItem('aizone.journeyValue') : null;
+            if (lsJL) {
+              setLocalJourneyLabel(lsJL);
+              hasAnyCache = true;
+            }
+            if (lsJV) {
+              const v = Number(lsJV);
+              if (!Number.isNaN(v)) {
+                setLocalJourneyValue(v);
+                hasAnyCache = true;
+              }
             }
           }
         }
-      }
-      if (hasAnyCache) setIsLoadingWidget(false);
-    } catch {}
+        if (hasAnyCache) setIsLoadingWidget(false);
+      } catch {}
+    })();
   }, []);
 
   useEffect(() => {
@@ -284,55 +326,7 @@ export function PeringkatWidget({
           }
         }
 
-        if (sectionsSet.has('misiHarian')) {
-          if (localMissions.length === 0) {
-            const { data: vprog } = await supabase
-              .from('v_tantangan_progress')
-              .select(
-                'tipe, judul, current_value, threshold_bronze, threshold_silver, threshold_gold, best_value',
-              )
-              .eq('id_pengguna', penggunaId);
-            const rows = Array.isArray(vprog) ? (vprog as any[]) : [];
-            if (rows.length > 0) {
-              const globalStage = getGlobalStage(rows);
-              const stageForDisplay = globalStage === 'completed' ? ('gold' as const) : globalStage;
-
-              const typeOrder: Record<string, number> = {
-                login_harian: 0,
-                quiz_beruntun: 1,
-                quiz_sempurna: 2,
-              };
-
-              const orderedRows = rows.slice().sort((a, b) => {
-                const aOrder = typeOrder[a.tipe as string] ?? 99;
-                const bOrder = typeOrder[b.tipe as string] ?? 99;
-                return aOrder - bOrder;
-              });
-
-              const missionRows: MissionPreviewItem[] = orderedRows.map((r: any) => {
-                const { progress, total } = getTierInfoForStage(r, stageForDisplay);
-                const titleMap: Record<string, string> = {
-                  login_harian: 'Login harian',
-                  quiz_beruntun: 'Selesaikan unit pembelajaran',
-                  quiz_sempurna: 'Kerjakan latihan soal tanpa salah',
-                };
-                const fallbackTitle = (r.judul as string) ?? 'Misi';
-                const title = titleMap[r.tipe as string] ?? fallbackTitle;
-                return {
-                  title,
-                  current: progress,
-                  total,
-                };
-              });
-
-              const sliced = missionRows.slice(0, 3);
-              setLocalMissions(sliced);
-              try {
-                localStorage.setItem('aizone.missions', JSON.stringify(sliced));
-              } catch {}
-            }
-          }
-        }
+        // Tidak lagi menunda refresh berdasarkan localMissions.length
       } catch {}
       setIsLoadingWidget(false);
     })();

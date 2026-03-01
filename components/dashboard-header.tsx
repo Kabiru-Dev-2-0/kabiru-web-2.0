@@ -709,8 +709,8 @@ export const DashboardHeader = ({
                           role="button"
                           aria-label="Lihat semua level perjalanan"
                         >
-                          <p className="m-0 p-0 font-semibold text-[#3674B5]">{nextLevelLabel}</p>
-                          <span className="text-lg text-bold text-[#3674B5]">›</span>
+                          <p className="m-0 p-0 font-semibold text-[#F5A524]">{nextLevelLabel}</p>
+                          <span className="text-lg text-bold text-[#F5A524]">›</span>
                         </div>
                       </div>
                     </div>

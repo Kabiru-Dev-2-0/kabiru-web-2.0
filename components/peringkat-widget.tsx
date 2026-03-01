@@ -19,6 +19,7 @@ import {
   DesignIdeas24Color,
   GameChat20Color,
   BuildingGovernment24Color,
+  BotSparkle24Color,
 } from '@fluentui/react-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
@@ -74,7 +75,8 @@ export function PeringkatWidget({
             l.key === 'learner' ? Molecule24Color :
             l.key === 'explorer' ? DesignIdeas24Color :
             l.key === 'skilled' ? GameChat20Color :
-            BuildingGovernment24Color
+            l.key === 'proficient' ? BuildingGovernment24Color :
+            BotSparkle24Color
     })),
     [],
   );

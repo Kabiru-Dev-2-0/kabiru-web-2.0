@@ -18,30 +18,38 @@ export const JOURNEY_LEVELS: LevelConfig[] = [
     key: 'learner',
     label: 'Learner',
     min: 1000,
-    max: 2499,
+    max: 3999,
     desc: 'Mulai nyaman belajar dan berlatih secara konsisten.',
   },
   {
     key: 'explorer',
     label: 'Explorer',
-    min: 2500,
-    max: 4499,
+    min: 4000,
+    max: 8999,
     desc: 'Mengeksplorasi lebih banyak topik dan situasi.',
   },
   {
     key: 'skilled',
     label: 'Skilled',
-    min: 4500,
-    max: 6999,
+    min: 9000,
+    max: 15999,
     desc: 'Kemampuan makin terasah dan terasa natural.',
   },
   {
     key: 'proficient',
     label: 'Proficient',
-    min: 7000,
-    max: null,
+    min: 16000,
+    max: 24999,
     desc: 'Sudah sangat mahir dan siap tantangan lanjutan.',
   },
+  {
+    key: 'master',
+    label: 'Master',
+    min: 25000,
+    max: null,
+    desc: 'Level tertinggi: menguasai seluruh materi dan tantangan.',
+  },
+  
 ];
 
 export interface LevelProgress {

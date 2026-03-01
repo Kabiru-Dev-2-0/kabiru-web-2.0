@@ -4,7 +4,8 @@
 
 -- ENUM types
 DO $$ BEGIN
-  CREATE TYPE challenge_type AS ENUM ('login_harian', 'quiz_beruntun', 'modul_selesai');
+  -- Gunakan nilai yang konsisten dengan aplikasi: 'quiz_sempurna'
+  CREATE TYPE challenge_type AS ENUM ('login_harian', 'quiz_beruntun', 'quiz_sempurna');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
@@ -31,7 +32,7 @@ INSERT INTO tantangans (tipe, judul, deskripsi, threshold_bronze, threshold_silv
 VALUES
   ('login_harian', 'Login Harian', 'Bronze 3 hari beruntun, Silver 5, Gold 7', 3, 5, 7, TRUE),
   ('quiz_beruntun', 'Quiz Beruntun', 'Bronze 3 quiz beruntun, Silver 5, Gold 7', 3, 5, 7, TRUE),
-  ('modul_selesai', 'Quiz Sempurna', 'Bronze 1, Silver 2, Gold 3 quiz sempurna', 1, 2, 3, TRUE)
+  ('quiz_sempurna', 'Quiz Sempurna', 'Bronze 1, Silver 2, Gold 3 quiz sempurna', 1, 2, 3, TRUE)
 ON CONFLICT (tipe) DO UPDATE SET
   judul = EXCLUDED.judul,
   deskripsi = EXCLUDED.deskripsi,
@@ -57,6 +58,8 @@ CREATE TABLE IF NOT EXISTS tantangan_pengguna (
 
 ALTER TABLE tantangan_pengguna
   ADD COLUMN IF NOT EXISTS streak_reset_at TIMESTAMPTZ;
+ALTER TABLE tantangan_pengguna
+  ADD COLUMN IF NOT EXISTS module_reset_at TIMESTAMPTZ;
 
 -- Log aktivitas login harian untuk hitung streak
 CREATE TABLE IF NOT EXISTS login_activities (
@@ -274,13 +277,19 @@ CREATE OR REPLACE FUNCTION update_module_completion_challenge(
 DECLARE
   v_tantangan_id BIGINT;
   v_completed_modul_count INT := 0;
+  v_module_reset_at TIMESTAMPTZ;
 BEGIN
-  SELECT id INTO v_tantangan_id FROM tantangans WHERE tipe = 'modul_selesai';
+  SELECT id INTO v_tantangan_id FROM tantangans WHERE tipe = 'quiz_sempurna';
   IF v_tantangan_id IS NULL THEN RETURN; END IF;
 
   INSERT INTO tantangan_pengguna (id_tantangan, id_pengguna)
   VALUES (v_tantangan_id, p_id_pengguna)
   ON CONFLICT (id_tantangan, id_pengguna) DO NOTHING;
+
+  -- Penanda reset siklus modul selesai
+  SELECT module_reset_at INTO v_module_reset_at
+  FROM tantangan_pengguna
+  WHERE id_tantangan = v_tantangan_id AND id_pengguna = p_id_pengguna;
 
   -- Hitung modul yang selesai: semua latihans (id) ada di hasil_latihans.id_latihan
   WITH latihans_per_modul AS (
@@ -290,7 +299,10 @@ BEGIN
     JOIN latihans l ON l.id_pelajaran = p.id
   ), completed_per_modul AS (
     SELECT lm.id_modul, COUNT(DISTINCT lm.id_latihan) AS total_latihan,
-           COUNT(DISTINCT h.id_latihan) FILTER (WHERE h.id_pengguna = p_id_pengguna) AS done_latihan
+           COUNT(DISTINCT h.id_latihan) FILTER (
+             WHERE h.id_pengguna = p_id_pengguna
+               AND (v_module_reset_at IS NULL OR h.created_at >= v_module_reset_at)
+           ) AS done_latihan
     FROM latihans_per_modul lm
     LEFT JOIN hasil_latihans h ON h.id_latihan = lm.id_latihan
     GROUP BY lm.id_modul
@@ -460,3 +472,61 @@ BEGIN
   ON CONFLICT (id_pengguna) DO UPDATE
     SET exp = COALESCE(data_penggunas.exp, 0) + EXCLUDED.exp;
 END $$;
+
+-- Reset progress tantangan pengguna ke tahap awal (per-siklus)
+CREATE OR REPLACE FUNCTION reset_tantangan_progress(
+  p_id_pengguna BIGINT
+) RETURNS VOID LANGUAGE plpgsql AS $$
+DECLARE
+  v_login_id BIGINT;
+  v_quiz_id BIGINT;
+  v_modul_id BIGINT;
+BEGIN
+  -- Ambil id tantangan
+  SELECT id INTO v_login_id FROM tantangans WHERE tipe = 'login_harian';
+  SELECT id INTO v_quiz_id FROM tantangans WHERE tipe = 'quiz_beruntun';
+  SELECT id INTO v_modul_id FROM tantangans WHERE tipe = 'quiz_sempurna';
+
+  -- Hapus semua klaim individu
+  DELETE FROM tantangan_claims WHERE id_pengguna = p_id_pengguna;
+
+  -- Reset klaim stage
+  UPDATE data_penggunas
+  SET
+    tantangan1_isclaimed = FALSE,
+    tantangan2_isclaimed = FALSE,
+    tantangan3_isclaimed = FALSE
+  WHERE id_pengguna = p_id_pengguna;
+
+  -- Pastikan baris progress ada
+  INSERT INTO tantangan_pengguna (id_tantangan, id_pengguna)
+  SELECT t.id, p_id_pengguna FROM tantangans t
+  ON CONFLICT (id_tantangan, id_pengguna) DO NOTHING;
+
+  -- Reset nilai progress umum
+  UPDATE tantangan_pengguna
+  SET
+    current_value = 0,
+    best_value = 0,
+    badge_level = 'none',
+    bronze_achieved_at = NULL,
+    silver_achieved_at = NULL,
+    gold_achieved_at = NULL,
+    last_updated_at = NOW()
+  WHERE id_pengguna = p_id_pengguna;
+
+  -- Set penanda reset untuk quiz_beruntun → mulai hitung dari sekarang
+  IF v_quiz_id IS NOT NULL THEN
+    UPDATE tantangan_pengguna
+    SET streak_reset_at = NOW()
+    WHERE id_tantangan = v_quiz_id AND id_pengguna = p_id_pengguna;
+  END IF;
+
+  -- Set penanda reset untuk modul_selesai → hanya modul yang selesai setelah reset yang dihitung
+  IF v_modul_id IS NOT NULL THEN
+    UPDATE tantangan_pengguna
+    SET module_reset_at = NOW()
+    WHERE id_tantangan = v_modul_id AND id_pengguna = p_id_pengguna;
+  END IF;
+END;
+$$;

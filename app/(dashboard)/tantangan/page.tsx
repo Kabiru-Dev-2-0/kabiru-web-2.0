@@ -12,6 +12,7 @@ import { PeringkatWidget } from "@/components/peringkat-widget";
 import { Card, CardBody } from "@heroui/card";
 import { CheckmarkCircleColor } from "@fluentui/react-icons";
 import { Button } from "@heroui/button";
+import { Skeleton } from "@heroui/skeleton";
 
 type ChallengeRow = {
   tipe: "login_harian" | "quiz_beruntun" | "quiz_sempurna";
@@ -86,10 +87,94 @@ export default function TantanganPage() {
   const [individualClaimFlags, setIndividualClaimFlags] =
     useState<IndividualClaimFlags | null>(null);
   const [claimLoading, setClaimLoading] = useState<Record<string, boolean>>({});
+  const [forceCycleReset, setForceCycleReset] = useState<boolean>(false);
+  const [loginDaysCount, setLoginDaysCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const performResetIfEligible = async (supabase: ReturnType<typeof createClient>, penggunaId: number) => {
+    try {
+      const { data: goldClaims } = await supabase
+        .from("tantangan_claims")
+        .select("tipe_tantangan, tier")
+        .eq("id_pengguna", penggunaId)
+        .eq("tier", "gold");
+      const claimedTypes = new Set((goldClaims || []).map((c: any) => c.tipe_tantangan));
+      const allGoldClaimed =
+        claimedTypes.has("login_harian") &&
+        claimedTypes.has("quiz_beruntun") &&
+        claimedTypes.has("quiz_sempurna");
+      const { data: dp } = await supabase
+        .from("data_penggunas")
+        .select("tantangan3_isclaimed")
+        .eq("id_pengguna", penggunaId)
+        .single();
+      const stage3Claimed = !!dp?.tantangan3_isclaimed;
+      if (allGoldClaimed && stage3Claimed) {
+        // Hapus semua claim individual dan reset claim stage ke awal
+        await supabase.from("tantangan_claims").delete().eq("id_pengguna", penggunaId);
+        await supabase
+          .from("data_penggunas")
+          .update({
+            tantangan1_isclaimed: false,
+            tantangan2_isclaimed: false,
+            tantangan3_isclaimed: false,
+          })
+          .eq("id_pengguna", penggunaId);
+        // Coba reset metrik progres via RPC (jika tersedia di server)
+        try {
+          const { error: rpcErr } = await supabase.rpc("reset_tantangan_progress", {
+            p_id_pengguna: penggunaId,
+          });
+          if (rpcErr) {
+            console.warn("reset_tantangan_progress RPC not available or failed:", rpcErr);
+          }
+        } catch (e) {
+          console.warn("reset_tantangan_progress RPC call error:", e);
+        }
+        // Reset state lokal agar UI kembali ke tahap 1
+        setIndividualClaimFlags({
+          login_claimed_bronze: false,
+          login_claimed_silver: false,
+          login_claimed_gold: false,
+          quiz_claimed_bronze: false,
+          quiz_claimed_silver: false,
+          quiz_claimed_gold: false,
+          modul_claimed_bronze: false,
+          modul_claimed_silver: false,
+          modul_claimed_gold: false,
+        });
+        setClaimFlags({
+          tantangan1_isclaimed: false,
+          tantangan2_isclaimed: false,
+          tantangan3_isclaimed: false,
+        });
+        setViewStage("bronze");
+        // Tandai siklus reset; tampilkan metrik sebagai 0 sampai backend sinkron
+        setForceCycleReset(true);
+        try {
+          const { data: dataRows } = await supabase
+            .from("v_tantangan_progress")
+            .select(
+              "tipe, judul, current_value, best_value, badge_level, threshold_bronze, threshold_silver, threshold_gold"
+            )
+            .eq("id_pengguna", penggunaId);
+          let rows = Array.isArray(dataRows) ? (dataRows as ChallengeRow[]) : [];
+          // Override login_harian dengan loginDaysCount yang tersimpan
+          rows = rows.map((r) =>
+            r.tipe === "login_harian"
+              ? { ...r, current_value: loginDaysCount, best_value: loginDaysCount }
+              : r
+          );
+          setChallenges(rows);
+        } catch {}
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     const load = async () => {
       try {
+        setIsLoading(true);
         const supabase = createClient();
         const { data: authData } = await supabase.auth.getUser();
         const user = authData?.user;
@@ -103,6 +188,20 @@ export default function TantanganPage() {
         if (!penggunaId) return;
         setPenggunaId(penggunaId);
 
+        // Hitung jumlah hari login unik dari login_activities (1 hari = 1 login)
+        let loginDaysCountLocal = 0;
+        try {
+          const { count } = await supabase
+            .from("login_activities")
+            .select("login_date", { count: "exact", head: true })
+            .eq("id_pengguna", penggunaId);
+          loginDaysCountLocal = typeof count === "number" ? count : 0;
+          setLoginDaysCount(loginDaysCountLocal);
+        } catch {
+          loginDaysCountLocal = 0;
+          setLoginDaysCount(0);
+        }
+
         const { data } = await supabase
           .from("v_tantangan_progress")
           .select(
@@ -110,8 +209,23 @@ export default function TantanganPage() {
           )
           .eq("id_pengguna", penggunaId);
 
-        const rows = Array.isArray(data) ? (data as ChallengeRow[]) : [];
-        if (rows.length) setChallenges(rows);
+        let rows = Array.isArray(data) ? (data as ChallengeRow[]) : [];
+        // Override progress untuk login_harian berdasarkan jumlah hari login unik
+        if (rows.length) {
+          rows = rows.map((r) =>
+            r.tipe === "login_harian"
+              ? {
+                  ...r,
+                  current_value: loginDaysCountLocal,
+                  best_value: loginDaysCountLocal,
+                }
+              : r
+          );
+          setChallenges(rows);
+          // Set tab awal ke tahap yang sedang aktif
+          const inferred = getGlobalStage(rows);
+          setViewStage(inferred === "completed" ? "gold" : inferred);
+        }
 
         const { data: dp } = await supabase
           .from("data_penggunas")
@@ -171,7 +285,9 @@ export default function TantanganPage() {
         setIndividualClaimFlags(flags);
 
 
-      } catch {}
+      } catch {} finally {
+        setIsLoading(false);
+      }
     };
     load();
   }, []);
@@ -215,6 +331,7 @@ export default function TantanganPage() {
     st: "bronze" | "silver" | "gold"
   ) => {
     if (!row) return false;
+    if (forceCycleReset) return false;
     const threshold =
       st === "bronze"
         ? row.threshold_bronze
@@ -253,6 +370,7 @@ export default function TantanganPage() {
 
   const stageForClaim = viewStage === "completed" ? "gold" : viewStage;
   const isAllDoneForStage = (st: "bronze" | "silver" | "gold") => {
+    if (forceCycleReset) return false;
     const rows = [loginRow, quizRow, modulRow].filter(
       Boolean
     ) as ChallengeRow[];
@@ -283,6 +401,7 @@ export default function TantanganPage() {
     st: "bronze" | "silver" | "gold"
   ) => {
     if (!penggunaId) return;
+    if (forceCycleReset) return;
     const claimKey = `${challengeType}_${st}`;
     setClaimLoading((prev) => ({ ...prev, [claimKey]: true }));
 
@@ -382,6 +501,12 @@ export default function TantanganPage() {
         setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
         return;
       }
+      // Setelah klaim individual gold, cek reset
+      try {
+        if (st === "gold") {
+          await performResetIfEligible(supabase, penggunaId);
+        }
+      } catch {}
     } finally {
       setClaimLoading((prev) => ({ ...prev, [claimKey]: false }));
     }
@@ -389,6 +514,7 @@ export default function TantanganPage() {
 
   const handleClaim = async () => {
     if (!penggunaId) return;
+    if (forceCycleReset) return;
     setClaimLoading((prev) => ({ ...prev, stage: true }));
     try {
       const supabase = createClient();
@@ -478,6 +604,10 @@ export default function TantanganPage() {
           // Ignore error, realtime subscription should handle it
           console.error("Error fetching updated EXP:", expError);
         }
+        // Jika yang diklaim adalah tahap emas, cek reset
+        if (stageForClaim === "gold") {
+          await performResetIfEligible(supabase, penggunaId);
+        }
       }
     } finally {
       setClaimLoading((prev) => ({ ...prev, stage: false }));
@@ -493,6 +623,30 @@ export default function TantanganPage() {
             radius="lg"
           >
             <CardBody className="p-5 gap-4">
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-12 rounded-2xl" />
+                  <div className="flex flex-col gap-4 mt-4">
+                    <div className="flex items-center gap-2.5">
+                      <Skeleton className="w-[42px] h-[42px] rounded-full" />
+                      <Skeleton className="h-6 rounded-full w-full" />
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <Skeleton className="w-[42px] h-[42px] rounded-full" />
+                      <Skeleton className="h-6 rounded-full w-full" />
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <Skeleton className="w-[42px] h-[42px] rounded-full" />
+                      <Skeleton className="h-6 rounded-full w-full" />
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <Skeleton className="w-[42px] h-[42px] rounded-full" />
+                      <Skeleton className="h-6 rounded-full w-full" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+              <>
               <div className="relative bg-[#F4F4F5] rounded-2xl flex px-3 py-2 gap-2">
                 <button
                   type="button"
@@ -716,6 +870,8 @@ export default function TantanganPage() {
                   isDisabled={!currentStageUnlocked}
                 />
               </div>
+              </>
+              )}
             </CardBody>
           </Card>
 

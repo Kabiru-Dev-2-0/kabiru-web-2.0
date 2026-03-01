@@ -28,6 +28,7 @@ export default function BagianPage() {
 
   const [pelajaran, setPelajaran] = useState<any>(null);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [sections, setSections] = useState<Array<{ bagian: number; judul: string; stages: Stage[] }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [overallProgress, setOverallProgress] = useState(0);
@@ -153,6 +154,135 @@ export default function BagianPage() {
 
     setStages(stagesWithStatus);
 
+    // Ambil SEMUA pelajaran dalam modul (naik)
+    const { data: allPelajarans } = await supabase
+      .from('pelajarans')
+      .select('id, judul, bagian')
+      .eq('id_modul', modulId)
+      .order('bagian', { ascending: true });
+
+    let activeBagianByProgress: number | null = null;
+    const hasilMap: Record<number, Array<{ nomor_latihan: number; nilai: number }>> = {};
+    const latihansMap: Record<number, Array<{ nomor_latihan: number; unit_name: string }>> = {};
+
+    if (allPelajarans && allPelajarans.length > 0) {
+      for (const p of allPelajarans) {
+        const { data: latList } = await supabase
+          .from('latihans')
+          .select('nomor_latihan, id_pelajaran, unit_name')
+          .eq('id_pelajaran', p.id)
+          .order('nomor_latihan', { ascending: true });
+        const uniqLat = latList
+          ? Array.from(new Map(latList.map((item) => [item.nomor_latihan, item])).values())
+          : [];
+        uniqLat.sort((a, b) => a.nomor_latihan - b.nomor_latihan);
+        latihansMap[p.id] = uniqLat.map((l) => ({
+          nomor_latihan: l.nomor_latihan,
+          unit_name: l.unit_name || `Unit ${l.nomor_latihan}`,
+        }));
+
+        const { data: hasilList } = await supabase
+          .from('hasil_latihans')
+          .select('nomor_latihan, id_pelajaran, nilai')
+          .eq('id_pengguna', penggunaData.id)
+          .eq('id_pelajaran', p.id);
+        hasilMap[p.id] = (hasilList || []).map((h) => ({
+          nomor_latihan: h.nomor_latihan,
+          nilai: h.nilai,
+        }));
+      }
+      for (const p of allPelajarans) {
+        const uniqLat = latihansMap[p.id] || [];
+        const hasil = new Set((hasilMap[p.id] || []).map((h) => h.nomor_latihan));
+        const hasIncomplete = uniqLat.some((lat) => !hasil.has(lat.nomor_latihan));
+        if (hasIncomplete) {
+          activeBagianByProgress = p.bagian;
+          break;
+        }
+      }
+    }
+
+    if (!activeBagianByProgress && allPelajarans && allPelajarans.length > 0) {
+      activeBagianByProgress = allPelajarans[0].bagian;
+    }
+
+    const builtSections: Array<{ bagian: number; judul: string; stages: Stage[] }> = [];
+    if (allPelajarans && allPelajarans.length > 0) {
+      for (const p of allPelajarans) {
+        const uniqLat = latihansMap[p.id] || [];
+        const hasil = hasilMap[p.id] || [];
+        const bagianNum = p.bagian;
+
+        let stagesForThis: Stage[] = [];
+        if (activeBagianByProgress && bagianNum < activeBagianByProgress) {
+          stagesForThis = uniqLat.map((lat) => {
+            const ada = hasil.find((h) => h.nomor_latihan === lat.nomor_latihan);
+            return {
+              id: lat.nomor_latihan,
+              nomor_latihan: lat.nomor_latihan,
+              unit_name: lat.unit_name,
+              judul: `Latihan ${lat.nomor_latihan}`,
+              status: ada ? 'completed' : 'locked',
+              progres: ada ? ada.nilai : 0,
+            };
+          });
+        } else if (activeBagianByProgress && bagianNum === activeBagianByProgress) {
+          stagesForThis = uniqLat.map((lat, idx) => {
+            const ada = hasil.find((h) => h.nomor_latihan === lat.nomor_latihan);
+            if (ada) {
+              return {
+                id: lat.nomor_latihan,
+                nomor_latihan: lat.nomor_latihan,
+                unit_name: lat.unit_name,
+                judul: `Latihan ${lat.nomor_latihan}`,
+                status: 'completed',
+                progres: ada.nilai,
+              };
+            }
+            const prev = idx > 0 ? uniqLat[idx - 1] : null;
+            const prevDone = prev ? !!hasil.find((h) => h.nomor_latihan === prev.nomor_latihan) : true;
+            const isCurrent = prevDone && !hasil.find((h) => h.nomor_latihan === lat.nomor_latihan);
+            return {
+              id: lat.nomor_latihan,
+              nomor_latihan: lat.nomor_latihan,
+              unit_name: lat.unit_name,
+              judul: `Latihan ${lat.nomor_latihan}`,
+              status: isCurrent ? 'current' : 'locked',
+              progres: 0,
+            };
+          });
+          let foundCurrent = false;
+          stagesForThis = stagesForThis.map((s) => {
+            if (s.status === 'current') {
+              if (foundCurrent) {
+                return { ...s, status: 'locked' };
+              }
+              foundCurrent = true;
+              return s;
+            }
+            return s;
+          });
+        } else {
+          stagesForThis = uniqLat.map((lat) => ({
+            id: lat.nomor_latihan,
+            nomor_latihan: lat.nomor_latihan,
+            unit_name: lat.unit_name,
+            judul: `Latihan ${lat.nomor_latihan}`,
+            status: 'locked',
+            progres: 0,
+          }));
+        }
+
+        builtSections.push({
+          bagian: p.bagian,
+          judul: p.judul,
+          stages: stagesForThis,
+        });
+      }
+    }
+
+    setSections(builtSections);
+
     // Calculate overall progress
     const completedStages = stagesWithStatus.filter((s) => s.status === 'completed').length;
     const totalStages = stagesWithStatus.length;
@@ -234,6 +364,8 @@ export default function BagianPage() {
       );
     }
   };
+
+  
 
   if (loading) {
     return (
@@ -337,8 +469,43 @@ export default function BagianPage() {
       </div>
 
       <div className="flex gap-6 p-6">
-        <div className="flex-1">
-          <LearningPathVisual stages={stages} onStageClick={handleStageClick} />
+        <div className="flex-1 flex flex-col gap-10">
+          {(() => {
+            // Hitung startIndex agar pola node antar lesson nyambung
+            let running = 0;
+            const items = sections.map((sec, idx) => {
+              const startIdx = running % 8;
+              running += sec.stages.length;
+              return { sec, idx, startIdx };
+            });
+            return items.map(({ sec, idx, startIdx }) => (
+              <div
+                key={`${sec.bagian}-${idx}`}
+                className="flex flex-col gap-6"
+              >
+                {idx > 0 && (
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 border-t border-[#3674B5]/40" />
+                    <div className="text-center text-[#3F3F46]">
+                      <div className="text-sm text-[#A1A1AA]">Bagian {sec.bagian}</div>
+                      <div className="text-base font-medium">{sec.judul}</div>
+                    </div>
+                    <div className="flex-1 border-t border-[#3674B5]/40" />
+                  </div>
+                )}
+                <LearningPathVisual
+                  stages={sec.stages.map(({ id, nomor_latihan, unit_name, status }) => ({
+                    id,
+                    nomor_latihan,
+                    unit_name,
+                    status,
+                  }))}
+                  startIndex={startIdx}
+                  onStageClick={handleStageClick}
+                />
+              </div>
+            ));
+          })()}
         </div>
       </div>
     </div>

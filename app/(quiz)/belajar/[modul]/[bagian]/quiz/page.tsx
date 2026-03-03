@@ -841,6 +841,14 @@ ${context}
   const handlePrevious = () => {
     // Hanya bisa previous jika soal sebelumnya sudah dikerjakan
     if (currentIndex > 0 && completedExercises.has(currentIndex - 1)) {
+      try {
+        if (typeof window !== 'undefined') window.scrollTo(0, 0);
+      } catch {}
+      try {
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+      } catch {
+        if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+      }
       setCurrentIndex(currentIndex - 1);
       setChatMessages([{ role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' }]);
       setChatInput('');
@@ -851,6 +859,14 @@ ${context}
   const handleNext = () => {
     // Hanya bisa next jika soal saat ini sudah selesai
     if (currentIndex < exercises.length - 1 && completedExercises.has(currentIndex)) {
+      try {
+        if (typeof window !== 'undefined') window.scrollTo(0, 0);
+      } catch {}
+      try {
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+      } catch {
+        if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+      }
       setCurrentIndex(currentIndex + 1);
       setChatMessages([{ role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' }]);
       setChatInput('');
@@ -861,6 +877,8 @@ ${context}
   const handleAgentClick = () => {
     setChatOpen(true);
   };
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleWrong = (prompt: string) => {
     setWrongAttempts((prev) => prev + 1);
@@ -1032,7 +1050,13 @@ ${context}
   if (isCompletedView) {
     return (
       <div className="min-h-screen bg-[#FCFDFD] flex flex-col items-center justify-center w-full gap-1">
-        <img src="/imageAssets/winner.png" alt="Agent" className="w-[260px] h-auto mb-6" />
+        <motion.img
+          src="/imageAssets/winner.png"
+          alt="Agent"
+          className="w-[260px] h-auto mb-6"
+          animate={{ y: [0, -30, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+        />
         <p className="text-[40px] leading-[48px] font-bold text-[#3674B5]">+{earnedExp} EXP</p>
         {wrongPrompts.length <= 0 ? (
           <p className="text-3xl leading-[48px] font-bold text-[#000000]">
@@ -1047,7 +1071,7 @@ ${context}
 
         {!(wrongPrompts.length > 0 && finalAdvice) ? (
           <p className="mt-3 text-lg text-[#3F3F46] text-center w-[80%]">
-            Hebat! Kamu berhasil menyelesaikannya!
+            Kamu berhasil menyelesaikan soal tanpa ada yang salah. Ayo semangat dan lanjutkan lagi perjalanan belajarmu!
           </p>
         ) : null}
         {wrongPrompts.length > 0 ? (
@@ -1147,7 +1171,7 @@ ${context}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto py-20">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-20">
         <div className="flex justify-center px-0 py-6 min-h-[calc(100vh-180px)] pb-28">
           <motion.div
             className="flex gap-6 items-start w-full max-w-6xl mx-auto"

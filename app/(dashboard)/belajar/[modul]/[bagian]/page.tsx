@@ -18,6 +18,7 @@ interface Stage {
   judul: string;
   status: 'completed' | 'current' | 'locked';
   progres: number;
+  isEntry?: boolean;
 }
 
 export default function BagianPage() {

@@ -17,6 +17,7 @@ import {
   DesignIdeas24Color,
   GameChat20Color,
   BuildingGovernment24Color,
+  BotSparkle24Color,
 } from '@fluentui/react-icons';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Card, CardBody } from '@heroui/card';
@@ -30,6 +31,7 @@ import { StreakNotificationModal } from './streak-notification-modal';
 import { Certificate16Color } from '@fluentui/react-icons';
 import { Notebook16Color } from '@fluentui/react-icons';
 import { Edit16Color } from '@fluentui/react-icons';
+import { Modal, ModalBody, ModalContent, ModalHeader } from '@heroui/modal';
 
 interface DashboardHeaderProps {
   searchPlaceholder?: string;
@@ -78,7 +80,9 @@ export const DashboardHeader = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const prevStreakRef = useRef<number | null>(null);
+  const [isJourneyLevelsOpen, setIsJourneyLevelsOpen] = useState(false);
 
   // Effect to detect streak increase
   useEffect(() => {
@@ -155,6 +159,7 @@ export const DashboardHeader = ({
     Explorer: DesignIdeas24Color,
     Skilled: GameChat20Color,
     Proficient: BuildingGovernment24Color,
+    Master: BotSparkle24Color,
   };
 
   const CurrentLevelIcon = levelIcons[journeyLabel] || Paw24Color;
@@ -167,7 +172,24 @@ export const DashboardHeader = ({
     return journeyLabel;
   }, [levelData, journeyLabel]);
 
-  const NextLevelIcon = levelIcons[nextLevelLabel] || BuildingGovernment24Color;
+  const NextLevelIcon = levelIcons[nextLevelLabel] || BotSparkle24Color;
+
+  // Show level-up modal once per level when reaching min EXP for that level
+  useEffect(() => {
+    const lvl = JOURNEY_LEVELS.find((l) => l.label === journeyLabel);
+    if (!lvl) return;
+    const storageKey = `aizone.levelUpSeen:${lvl.key}`;
+    try {
+      const seen = localStorage.getItem(storageKey);
+      if (!seen && exp >= lvl.min) {
+        // Mark as seen immediately to avoid repeated shows when navigating
+        localStorage.setItem(storageKey, '1');
+        setShowLevelUpModal(true);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [exp, journeyLabel]);
 
   // Prefill dari localStorage (client-only) agar cepat tampil tanpa menunggu fetch
   useEffect(() => {
@@ -699,7 +721,15 @@ export const DashboardHeader = ({
                       </div>
                       <div className="w-[5rem] flex flex-col gap-0 items-center">
                         <NextLevelIcon className="w-10 h-10 text-[#3674B5]" />
-                        <p className="m-0 p-0 font-semibold text-[#cd00a7]">{nextLevelLabel}</p>
+                        <div
+                          className="flex items-center gap-1 cursor-pointer select-none"
+                          onClick={() => setIsJourneyLevelsOpen(true)}
+                          role="button"
+                          aria-label="Lihat semua level perjalanan"
+                        >
+                          <p className="m-0 p-0 font-semibold text-[#F5A524]">{nextLevelLabel}</p>
+                          <span className="text-lg text-bold text-[#F5A524]">›</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1114,11 +1144,177 @@ export const DashboardHeader = ({
           </motion.div>
         )}
       </AnimatePresence>
+      <Modal
+        isOpen={isJourneyLevelsOpen}
+        onOpenChange={setIsJourneyLevelsOpen}
+        placement="center"
+        backdrop="blur"
+        size="lg"
+      >
+        <ModalContent className="max-w-[720px] w-full">
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Level Perjalanan</ModalHeader>
+              <ModalBody className="max-h-[70vh] overflow-y-auto">
+                <div className="flex flex-col gap-3">
+                  {JOURNEY_LEVELS.map((lvl) => {
+                    const Icon =
+                      lvl.key === 'newbie'
+                        ? Paw24Color
+                        : lvl.key === 'learner'
+                        ? Molecule24Color
+                        : lvl.key === 'explorer'
+                        ? DesignIdeas24Color
+                        : lvl.key === 'skilled'
+                        ? GameChat20Color
+                        : lvl.key === 'proficient'
+                        ? BuildingGovernment24Color
+                        : BotSparkle24Color;
+                    const currentExp = exp;
+                    const min = lvl.min;
+                    const max = lvl.max;
+                    let percent = 0;
+                    if (currentExp >= (max ?? Infinity)) {
+                      percent = 100;
+                    } else if (currentExp < min) {
+                      percent = 0;
+                    } else {
+                      if (max === null) {
+                        percent = 100;
+                      } else {
+                        const range = max - min;
+                        const rel = currentExp - min;
+                        percent = Math.min(100, Math.max(0, (rel / range) * 100));
+                      }
+                    }
+                    percent = Math.round(percent);
+                    const rangeLabel = lvl.max == null ? `${lvl.min}+ XP` : `${lvl.min} - ${lvl.max} XP`;
+                    const isActive = calculateLevelProgress(currentExp).label === lvl.label;
+
+                    return (
+                      <div
+                        key={lvl.key}
+                        className={`flex flex-col gap-1 rounded-2xl border px-4 py-3 ${
+                          isActive ? 'border-[#F5A524] bg-white' : 'border-[#E5E7EB] bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-[32px] h-[32px]" />
+                          <div className="flex-1 flex items-start justify-between gap-3">
+                            <span className="text-xl font-bold text-[#F5A524] leading-tight">
+                              {lvl.label}
+                            </span>
+                            <span className="text-lg font-semibold text-[#6B7280] leading-tight">
+                              {rangeLabel}
+                            </span>
+                          </div>
+                        </div>
+                        {lvl.desc ? (
+                          <p className="text-md text-[#111827] leading-snug">{lvl.desc}</p>
+                        ) : null}
+                        <div className="flex items-center gap-3">
+                          <Progress
+                            aria-label={`${lvl.label} progress`}
+                            classNames={{
+                              base: 'w-full',
+                              track: 'bg-[#E5E7EB]',
+                              indicator: 'bg-[#F5A524]',
+                            }}
+                            maxValue={100}
+                            radius="full"
+                            size="md"
+                            value={percent}
+                            showValueLabel={false}
+                          />
+                          <span className="text-lg font-semibold text-[#111827]">{percent}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
 
       <StreakNotificationModal
         isOpen={showStreakModal}
         onClose={() => setShowStreakModal(false)}
       />
+
+      {/* Level Up Modal (visual style inspired by StreakNotificationModal) */}
+      <AnimatePresence>
+        {showLevelUpModal && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setShowLevelUpModal(false);
+              }}
+            />
+            <motion.div
+              className="relative z-10 w-full max-w-[520px] bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col items-center p-8 text-center"
+              initial={{ scale: 0.85, opacity: 0, y: 40 }}
+              animate={{ scale: 1, opacity: 1, y: 0, transition: { type: 'spring', damping: 22, stiffness: 280 } }}
+              exit={{ scale: 0.9, opacity: 0, transition: { duration: 0.2 } }}
+            >
+              <div className="relative w-40 h-40 mb-2 flex items-center justify-center">
+                <motion.img
+                  src="/imageAssets/level-up.png"
+                  alt="Level Up"
+                  className="w-45 h-45 object-contain relative z-8"
+                  animate={{
+                    y: [0, -10, 0],
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="flex flex-col gap-2 mb-4"
+              >
+                <h2 className="text-[28px] font-extrabold text-[#F5A524] leading-tight">
+                  LEVEL UP!
+                </h2>
+                <p className="text-[#323232] text-base leading-relaxed max-w-[320px] mx-auto">
+                  Selamat! Kamu telah naik ke level
+                  <div className="text-lg text-bold flex items-center border-[1px] border-[#FFCD0F]/24  w-fit px-3 py-1 bg-[#FFCD0F]/20 justify-center gap-2 mt-1 rounded-[8px] mx-auto">
+                    <CurrentLevelIcon className="w-5 h-5 text-[#F5A524]" />
+                    <span>{journeyLabel}</span>
+                  </div>
+                </p>  
+              </motion.div>
+              <motion.div
+                className="w-full"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Button
+                  className="w-full bg-[#3674B5] text-white font-bold text-lg h-12 rounded-xl shadow-[0_4px_0_0_#205994] active:shadow-none active:translate-y-[4px] transition-all"
+                  onPress={() => {
+                    setShowLevelUpModal(false);
+                  }}
+                >
+                  Oke!
+                </Button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

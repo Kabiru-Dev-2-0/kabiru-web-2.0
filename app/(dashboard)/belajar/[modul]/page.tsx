@@ -79,7 +79,7 @@ export default function LatihanPage() {
     const statusRows = await getCompletedBagiansForModul(
       supabase,
       Number(modulId),
-      penggunaData.id
+      penggunaData.id,
     );
 
     const statusByPelajaranId = new Map<
@@ -147,7 +147,7 @@ export default function LatihanPage() {
       const multi = await calculateMultiplePelajaranProgress(
         supabase,
         sortedPelajarans,
-        penggunaData.id
+        penggunaData.id,
       );
       const sumCompleted = multi.reduce((acc, p) => acc + (p.completed_count || 0), 0);
       const sumTotal = multi.reduce((acc, p) => acc + (p.total_count || 0), 0);
@@ -164,7 +164,7 @@ export default function LatihanPage() {
         localStorage.setItem(`aizone.modul.${modulId}.info`, JSON.stringify(modulData || []));
         localStorage.setItem(
           `aizone.pelajarans.${modulId}`,
-          JSON.stringify(pelajaransWithProgress || [])
+          JSON.stringify(pelajaransWithProgress || []),
         );
       }
     } catch {}
@@ -413,7 +413,7 @@ export default function LatihanPage() {
                         boxShadow: '0px 3px 0px 0px #2d5d94',
                       }}
                       as={Link}
-                      href={`/belajar/${modulId}/${bagian.bagian}`}
+                      href={`/belajar/${modulId}/units`}
                     >
                       Pelajari Lagi
                     </Button>
@@ -428,7 +428,7 @@ export default function LatihanPage() {
                         boxShadow: '0px 3px 0px 0px #2d5d94',
                       }}
                       as={Link}
-                      href={`/belajar/${modulId}/${bagian.bagian}`}
+                      href={`/belajar/${modulId}/units`}
                     >
                       Lanjutkan Belajar
                     </Button>

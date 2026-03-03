@@ -611,11 +611,9 @@ export default function DashboardPage() {
                   <Button
                     as={Link}
                     href={
-                      selectedOngoing?.activeBagian
-                        ? `/belajar/${selectedOngoing.id}/${selectedOngoing.activeBagian}`
-                        : selectedOngoing
-                          ? `/belajar/${selectedOngoing.id}`
-                          : "/belajar"
+                      selectedOngoing
+                        ? `/belajar/${selectedOngoing.id}/units`
+                        : "/belajar"
                     }
                     scroll={false}
                     prefetch
@@ -681,9 +679,7 @@ export default function DashboardPage() {
                           totalCount={selectedOngoing.totalCount}
                           overridePercent={selectedOngoing.overallPercent}
                           href={
-                            selectedOngoing.activeBagian
-                              ? `/belajar/${selectedOngoing.id}/${selectedOngoing.activeBagian}`
-                              : `/belajar/${selectedOngoing.id}`
+                            `/belajar/${selectedOngoing.id}/units`
                           }
                         />
                       ) : (

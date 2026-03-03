@@ -33,8 +33,6 @@ export default function Quiz() {
   const modulParam = params?.modul as string | undefined;
   const bagianParam = params?.bagian as string | undefined;
   const nomorLatihan = searchParams?.get('id');
-  const pelajaranParam = searchParams?.get('pelajaran');
-  const idPelajaran = pelajaranParam ? parseInt(pelajaranParam) : null;
   const [exercises, setExercises] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,9 +52,11 @@ export default function Quiz() {
   const [wrongPrompts, setWrongPrompts] = useState<string[]>([]);
   const [finalAdvice, setFinalAdvice] = useState('');
   const [adviceLoading, setAdviceLoading] = useState(false);
+  const [policyViolations, setPolicyViolations] = useState(0);
 
   // Chat overlay state
   // Chat overlay state
+  const [selectedPelajaranId, setSelectedPelajaranId] = useState<number | null>(null);
   const [modulTitle, setModulTitle] = useState<string>('');
   const [pelajaranTitle, setPelajaranTitle] = useState<string>('');
   const [chatOpen, setChatOpen] = useState(false);
@@ -76,6 +76,56 @@ export default function Quiz() {
     }
   }, [chatMessages, isAsking, chatOpen]);
   const [typingMessageIndex, setTypingMessageIndex] = useState<number | null>(null);
+
+  // Basic client-side anti-cheat hardening
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    const handleKeydown = (e: KeyboardEvent) => {
+      // Block common devtools/inspect shortcuts
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    const handleVisibility = () => {
+      if (document.hidden) {
+        setPolicyViolations((v) => v + 1);
+      }
+    };
+    const devtoolsCheck = () => {
+      const widthThreshold = window.outerWidth - window.innerWidth > 160;
+      const heightThreshold = window.outerHeight - window.innerHeight > 120;
+      if (widthThreshold || heightThreshold) {
+        setPolicyViolations((v) => v + 1);
+      }
+    };
+    const interval = window.setInterval(devtoolsCheck, 1500);
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeydown as any, true);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', handleVisibility);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeydown as any, true);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', handleVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (policyViolations >= 3) {
+      try {
+        alert('Aktivitas mencurigakan terdeteksi. Sesi kuis dihentikan.');
+      } catch {}
+      handleExit();
+    }
+  }, [policyViolations]);
 
   useEffect(() => {
     async function fetchTitles() {
@@ -165,6 +215,119 @@ export default function Quiz() {
       .replace(/javascript:/gi, '');
   };
 
+  // Guard akses: blokir jika bagian/latihan masih dikunci
+  useEffect(() => {
+    async function guardAccess() {
+      if (!modulParam || !bagianParam) return;
+      const supabase = createClient();
+      const reqNomor = nomorLatihan ? parseInt(nomorLatihan) : undefined;
+      // Auth -> id_pengguna
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace(modulParam ? `/belajar/${modulParam}/units` : '/belajar');
+        return;
+      }
+      const { data: pengguna } = await supabase
+        .from('penggunas')
+        .select('id')
+        .eq('uuid', user.id)
+        .single();
+      if (!pengguna?.id) {
+        router.replace('/belajar');
+        return;
+      }
+      // Tentukan id_pelajaran yang benar berdasarkan route (modul & bagian)
+      const { data: pel } = await supabase
+        .from('pelajarans')
+        .select('id')
+        .eq('id_modul', modulParam)
+        .eq('bagian', bagianParam)
+        .single();
+      const routePelajaranId = pel?.id ?? null;
+      if (!routePelajaranId) {
+        router.replace(`/belajar/${modulParam}/units`);
+        return;
+      }
+      setSelectedPelajaranId(routePelajaranId);
+      // Hitung activeBagianByProgress
+      const { data: allPelajarans } = await supabase
+        .from('pelajarans')
+        .select('id, bagian')
+        .eq('id_modul', modulParam)
+        .order('bagian', { ascending: true });
+      let activeBagianByProgress: number | null = null;
+      if (allPelajarans && allPelajarans.length > 0) {
+        for (const p of allPelajarans) {
+          const { data: latList } = await supabase
+            .from('latihans')
+            .select('nomor_latihan')
+            .eq('id_pelajaran', p.id)
+            .order('nomor_latihan', { ascending: true });
+          const uniqLat = latList
+            ? Array.from(new Map(latList.map((item) => [item.nomor_latihan, item])).values())
+            : [];
+          uniqLat.sort((a: any, b: any) => a.nomor_latihan - b.nomor_latihan);
+          const { data: hasilList } = await supabase
+            .from('hasil_latihans')
+            .select('nomor_latihan')
+            .eq('id_pengguna', pengguna.id)
+            .eq('id_pelajaran', p.id);
+          const selesai = new Set((hasilList || []).map((h) => h.nomor_latihan));
+          const hasIncomplete = uniqLat.some((l: any) => !selesai.has(l.nomor_latihan));
+          if (hasIncomplete) {
+            activeBagianByProgress = p.bagian;
+            break;
+          }
+        }
+        if (!activeBagianByProgress) {
+          activeBagianByProgress = allPelajarans[0].bagian;
+        }
+      }
+      const reqBagian = parseInt(String(bagianParam));
+      if (activeBagianByProgress && reqBagian > activeBagianByProgress) {
+        router.replace(`/belajar/${modulParam}/units`);
+        return;
+      }
+      // Cek allowed nomor_latihan di pelajaran ini: semua yang sudah selesai + next yang belum
+      const { data: latList } = await supabase
+        .from('latihans')
+        .select('nomor_latihan')
+        .eq('id_pelajaran', routePelajaranId)
+        .order('nomor_latihan', { ascending: true });
+      const uniqLat = latList
+        ? Array.from(new Map(latList.map((item) => [item.nomor_latihan, item])).values())
+        : [];
+      uniqLat.sort((a: any, b: any) => a.nomor_latihan - b.nomor_latihan);
+      const { data: hasilList } = await supabase
+        .from('hasil_latihans')
+        .select('nomor_latihan')
+        .eq('id_pengguna', pengguna.id)
+        .eq('id_pelajaran', routePelajaranId);
+      const selesai = new Set((hasilList || []).map((h) => h.nomor_latihan));
+      let nextNomor: number | null = null;
+      for (const l of uniqLat) {
+        if (!selesai.has(l.nomor_latihan)) {
+          nextNomor = l.nomor_latihan;
+          break;
+        }
+      }
+      // Jika reqNomor tidak ada (misal langsung /quiz tanpa id), biarkan lanjut
+      if (typeof reqNomor === 'number') {
+        const isCompleted = selesai.has(reqNomor);
+        const isCurrent = nextNomor === null ? false : nextNomor === reqNomor;
+        if (!isCompleted && !isCurrent) {
+          // Redirect ke nomor yang diizinkan
+          const target = `/belajar/${modulParam}/units`;
+          router.replace(target);
+          return;
+        }
+      }
+    }
+    guardAccess();
+  }, [modulParam, bagianParam, nomorLatihan]);
+
   const getQuizContext = (exercise: any) => {
     if (!exercise) return '';
     const t = exercise.type;
@@ -251,8 +414,6 @@ Jika user tidak menentukan panjang atau gaya secara spesifik, gunakan panduan be
 [Exercise Details]
 ${context}
 `.trim();
-
-      console.log('[Story Agent] Sending Prompt:', enrichedPrompt);
 
       const response = await fetch('/api/ai/story/generate', {
         method: 'POST',
@@ -609,27 +770,73 @@ ${context}
 
   useEffect(() => {
     async function loadData() {
-      setIsLoading(true);
-      const { data, error } = await fetchExercises({
-        id_pelajaran: idPelajaran ?? undefined,
-        nomor_latihan: nomorLatihan ? parseInt(nomorLatihan) : undefined,
-      });
-      // Data sudah terfilter di server jika parameter disediakan; fallback ke filter client-side
-      const filtered = (data || []).filter((ex: any) => {
-        const matchNomor = nomorLatihan ? String(ex.nomor_latihan) === nomorLatihan : true;
-        const matchPelajaran = idPelajaran ? ex.id_pelajaran === idPelajaran : true;
-        return matchNomor && matchPelajaran;
-      });
-      setExercises(filtered);
-      console.log(filtered);
-      setIsLoading(false);
-      if (error || filtered.length === 0) {
+      if (!modulParam || !bagianParam) return;
+      if (!selectedPelajaranId) return;
+      try {
+        setIsLoading(true);
+        const { data, error } = await fetchExercises({
+          id_pelajaran: selectedPelajaranId,
+          nomor_latihan: nomorLatihan ? parseInt(nomorLatihan) : undefined,
+        });
+        // Seeded shuffle for options/items to reduce answer sharing
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const seedBase =
+          (user?.id || '') + ':' + String(selectedPelajaranId) + ':' + String(nomorLatihan || '');
+        const seeded = (data || []).map((ex: any) => {
+          const hash = Array.from(seedBase + ':' + String(ex.id)).reduce(
+            (acc, ch) => acc + ch.charCodeAt(0),
+            0,
+          );
+          const rand = (n: number) => {
+            // Mulberry32-like
+            let t = (hash + n) >>> 0;
+            t += 0x6d2b79f5;
+            t = Math.imul(t ^ (t >>> 15), 1 | t);
+            t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+          const shuffle = (arr: any[]) => {
+            const a = Array.isArray(arr) ? [...arr] : [];
+            for (let i = a.length - 1; i > 0; i--) {
+              const j = Math.floor(rand(i) * (i + 1));
+              [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+          };
+          if (ex?.data) {
+            const d = { ...ex.data };
+            if (Array.isArray(d.options)) d.options = shuffle(d.options);
+            if (Array.isArray(d.items)) d.items = shuffle(d.items);
+            if (Array.isArray(d.code_lines)) d.code_lines = shuffle(d.code_lines);
+            // never include long explanations if present
+            delete (d as any).explanation;
+            delete (d as any).rationale;
+            delete (d as any).solution_text;
+            return { ...ex, data: d };
+          }
+          return ex;
+        });
+        const filtered = (seeded || []).filter((ex: any) => {
+          const matchNomor = nomorLatihan ? String(ex.nomor_latihan) === nomorLatihan : true;
+          const matchPelajaran = ex.id_pelajaran === selectedPelajaranId;
+          return matchNomor && matchPelajaran;
+        });
+        setExercises(filtered);
+        setIsLoading(false);
+        if (error || filtered.length === 0) {
+          setError('Gagal memuat soal. Silakan coba lagi.');
+        }
+      } catch {
+        setIsLoading(false);
         setError('Gagal memuat soal. Silakan coba lagi.');
       }
     }
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nomorLatihan, pelajaranParam]);
+  }, [nomorLatihan, selectedPelajaranId]);
 
   const handlePrevious = () => {
     // Hanya bisa previous jika soal sebelumnya sudah dikerjakan
@@ -689,10 +896,8 @@ ${context}
         await supabase.rpc('reset_quiz_streak', { p_uuid: user.id }).match(() => {});
       }
     } catch {}
-    if (modulParam && bagianParam) {
-      router.replace(`/belajar/${modulParam}/${bagianParam}`);
-    } else if (modulParam) {
-      router.replace(`/belajar/${modulParam}`);
+    if (modulParam) {
+      router.replace(`/belajar/${modulParam}/units`);
     } else {
       router.replace('/belajar');
     }
@@ -747,7 +952,6 @@ ${context}
         alert('Gagal menyimpan hasil latihan. Silakan coba lagi.');
         isSubmittingRef.current = false;
       } else {
-        console.log('Hasil berhasil disimpan:', result.data);
         setEarnedExp((result as any).earnedExp ?? 0);
 
         // Setelah hasil tersimpan, ambil EXP terbaru dan simpan ke localStorage
@@ -889,10 +1093,10 @@ ${context}
               localStorage.removeItem('dashboard_ai_advice');
             }
 
-            if (modulParam && bagianParam) {
-              router.push(`/belajar/${modulParam}/${bagianParam}`);
+            if (modulParam) {
+              router.push(`/belajar/${modulParam}/units`);
             } else {
-              router.back();
+              router.push('/belajar');
             }
           }}
         >

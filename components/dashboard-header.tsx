@@ -178,6 +178,8 @@ export const DashboardHeader = ({
   useEffect(() => {
     const lvl = JOURNEY_LEVELS.find((l) => l.label === journeyLabel);
     if (!lvl) return;
+    // Skip showing modal for the very first level
+    if (levelData.level <= 1) return;
     const storageKey = `aizone.levelUpSeen:${lvl.key}`;
     try {
       const seen = localStorage.getItem(storageKey);
@@ -189,7 +191,7 @@ export const DashboardHeader = ({
     } catch {
       // ignore storage errors
     }
-  }, [exp, journeyLabel]);
+  }, [exp, journeyLabel, levelData.level]);
 
   // Prefill dari localStorage (client-only) agar cepat tampil tanpa menunggu fetch
   useEffect(() => {

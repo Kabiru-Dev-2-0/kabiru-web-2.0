@@ -40,12 +40,7 @@ export const LearningPathCard = ({
         {/* Header Section */}
         {/* Image Section */}
         <div className="w-full h-[180px] relative rounded-lg overflow-hidden">
-          <Image
-            src={imgSrc}
-            alt={`Modul ${nomor}`}
-            fill
-            className="object-cover"
-          />
+          <Image src={imgSrc} alt={`Modul ${nomor}`} fill className="object-cover" />
         </div>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-0.5">
@@ -57,7 +52,9 @@ export const LearningPathCard = ({
                 {modules} lesson
               </span>
             </div>
-            <h3 className="text-2xl font-bold leading-8 text-[#11181C] px-3">{title}</h3>
+            <h3 className="text-2xl font-bold leading-8 text-[#11181C] px-3 min-h-[4.4rem] overflow-hidden">
+              {title}
+            </h3>
           </div>
           {/* Footer Section */}
           <div className="flex flex-col items-center justify-between gap-5 px-3 pb-3 pt-0 min-h-[7.7rem] text-wrap w-inherit">

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { createClient } from '@/utils/supabase/server';
 
 export async function POST(req: Request) {
   try {
@@ -29,11 +30,78 @@ export async function POST(req: Request) {
       ? `${latestOngoing.title} (${latestOngoing.progress}%)`
       : 'Belum ada modul yang sedang dikerjakan';
 
-    const prompt = `Peran: AIZone Study Companion yang ramah dan suportif untuk website belajar koding 'Kabiru'.
+    let materiContext = '';
+    try {
+      const supabase = await createClient();
+      const modulId =
+        latestOngoing && typeof latestOngoing.id === 'number' ? (latestOngoing.id as number) : null;
+
+      // 1) Coba berdasarkan ID (jika dikirim oleh client)
+      if (modulId !== null) {
+        const { data: modul } = await supabase
+          .from('moduls')
+          .select('id, judul, deskripsi')
+          .eq('id', modulId)
+          .single();
+        if (modul) {
+          const { data: subs } = await supabase
+            .from('pelajarans')
+            .select('id, bagian, judul, deskripsi')
+            .eq('id_modul', modul.id)
+            .order('bagian', { ascending: true });
+          const subText =
+            (subs || [])
+              .slice(0, 3)
+              .map((p: any) => `Bagian ${p.bagian}: ${p.judul} — ${p.deskripsi}`)
+              .join('\n- ') || '';
+          materiContext = `Modul: ${modul.judul}\nDeskripsi: ${modul.deskripsi}${
+            subText ? `\nSubmodul:\n- ${subText}` : ''
+          }`;
+        }
+      }
+
+      // 2) Jika ID tidak ada atau lookup gagal, fallback berdasarkan judul modul
+      if (!materiContext && latestOngoing?.title) {
+        const title = String(latestOngoing.title).trim();
+        if (title) {
+          const { data: modulByTitle } = await supabase
+            .from('moduls')
+            .select('id, judul, deskripsi')
+            .ilike('judul', title) // gunakan pencocokan case-insensitive
+            .limit(1)
+            .maybeSingle();
+          if (modulByTitle) {
+            const { data: subs } = await supabase
+              .from('pelajarans')
+              .select('id, bagian, judul, deskripsi')
+              .eq('id_modul', modulByTitle.id)
+              .order('bagian', { ascending: true });
+            const subText =
+              (subs || [])
+                .slice(0, 3)
+                .map((p: any) => `Bagian ${p.bagian}: ${p.judul} — ${p.deskripsi}`)
+                .join('\n- ') || '';
+            materiContext = `Modul: ${modulByTitle.judul}\nDeskripsi: ${modulByTitle.deskripsi}${
+              subText ? `\nSubmodul:\n- ${subText}` : ''
+            }`;
+          }
+        }
+      }
+
+      if (!materiContext && latestOngoing) {
+        const desc = latestOngoing.description || '';
+        materiContext = `Modul: ${latestOngoing.title}${desc ? `\nDeskripsi: ${desc}` : ''}`;
+      }
+    } catch {}
+
+    const prompt = `Peran: Study Companion yang ramah dan suportif untuk website belajar koding 'Kabiru'.
     
 Data Siswa (${username || 'Teman'}):
 - Modul Selesai: ${completedList}
 - Fokus Saat Ini: ${ongoingText}
+
+Konteks Materi Modul (gunakan ini untuk memberikan saran yang relevan):
+${materiContext || 'Tidak ada konteks materi tersedia'}
 
 Tugas:
 Buatlah 2 variasi kalimat penyemangat singkat (maksimal 30 kata per kalimat) untuk siswa ini.
@@ -41,18 +109,20 @@ Konten harus mencakup:
 1. Apresiasi spesifik terhadap progress mereka.
 2. Dorongan untuk lanjut belajar pada modul fokus saat ini.
 3. Nada bicara santai, ceria, dan memotivasi. Gunakan emoji yang relevan.
-4. Paparkan juga progress terkini mereka dan berikan saran konkret untuk meningkatkan mereka.
+4. Paparkan juga progress terkini mereka dan berikan saran konkret YANG RELEVAN dengan konteks materi. Jangan melenceng dari konteks materi yang ada.
 
 Format Output Wajib: JSON Array of Strings.
 PENTING: Pastikan format JSON valid, jangan gunakan markdown block, dan escape karakter quote (") di dalam string jika ada.
 Contoh:
 ["Kalimat saran 1... 🚀", "Kalimat saran 2... 🎉"]`;
 
+    console.log('Prompt:', prompt);
+
     const completion = await openai.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       model: 'deepseek-chat',
       max_tokens: 2000,
-      temperature: 0.8,
+      temperature: 0.4,
     });
 
     const raw = completion.choices[0].message.content || '';

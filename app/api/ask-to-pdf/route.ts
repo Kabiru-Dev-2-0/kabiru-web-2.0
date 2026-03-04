@@ -14,7 +14,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const question = (body?.question as string) || '';
-    const top_k = Number(body?.top_k ?? 4);
+    const top_k_raw = Number(body?.top_k ?? 4);
+    const top_k = Number.isFinite(top_k_raw) ? Math.max(1, Math.min(10, top_k_raw)) : 4;
     const quiz_context = (body?.quiz_context as string) || '';
     const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
 
@@ -28,31 +29,31 @@ export async function POST(req: Request) {
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const embedRes = await ai.models.embedContent({
-      model: 'gemini-embedding-001',
-      contents: question,
-      config: { outputDimensionality: 768 },
-    });
-    const questionEmbedding = embedRes?.embeddings?.[0]?.values;
-
-    if (!Array.isArray(questionEmbedding)) {
-      return NextResponse.json({ error: 'Invalid embedding response' }, { status: 500 });
+    let questionEmbedding: number[] | null = null;
+    const testFlags: any =
+      process.env.NODE_ENV !== 'production' && (body?.test_flags || body?.test)
+        ? body?.test_flags || body?.test
+        : null;
+    const forceNoEmbedding = !!(testFlags && testFlags.force_no_embedding);
+    if (!forceNoEmbedding) {
+      try {
+        const embedRes = await ai.models.embedContent({
+          model: 'gemini-embedding-001',
+          contents: question,
+          config: { outputDimensionality: 768 },
+        });
+        const vals = embedRes?.embeddings?.[0]?.values as unknown;
+        if (Array.isArray(vals)) {
+          questionEmbedding = vals as number[];
+        }
+      } catch {}
     }
 
     const supabase = await createClient();
-    const { data: documents, error: searchError } = await supabase.rpc(
-      process.env.SUPABASE_QUERY_NAME || 'match_documents',
-      { query_embedding: questionEmbedding, match_count: top_k },
-    );
+    let documents: any[] = [];
+    let attemptedSearch = false;
 
-    if (searchError) {
-      return NextResponse.json(
-        { error: `Database search failed: ${searchError.message}` },
-        { status: 500 },
-      );
-    }
-
-    if (!documents || documents.length === 0) {
+    if (testFlags && testFlags.force_no_documents) {
       return NextResponse.json({
         answer:
           'Saya tidak menemukan informasi yang relevan di dokumen untuk menjawab pertanyaan ini.',
@@ -60,11 +61,89 @@ export async function POST(req: Request) {
       });
     }
 
+    if (Array.isArray(questionEmbedding)) {
+      attemptedSearch = true;
+      const { data: docs, error: searchError } = await supabase.rpc(
+        process.env.SUPABASE_QUERY_NAME || 'match_documents',
+        { query_embedding: questionEmbedding, match_count: top_k },
+      );
+
+      if (searchError) {
+        return NextResponse.json(
+          { error: `Database search failed: ${searchError.message}` },
+          { status: 500 },
+        );
+      }
+
+      documents = Array.isArray(docs) ? docs : [];
+      if (documents.length === 0) {
+        return NextResponse.json({
+          answer:
+            'Saya tidak menemukan informasi yang relevan di dokumen untuk menjawab pertanyaan ini.',
+          contexts: [],
+        });
+      }
+    }
+
     const contexts = (documents as SupabaseDocument[]).map((doc) => doc.content);
 
     const historyText = history
       .map((m: any) => `${m?.role === 'user' ? 'User' : 'AI'}: ${m?.text ?? ''}`)
       .join('\n');
+
+    let groundTruthText = '';
+    try {
+      const jenisMatch = quiz_context.match(/Jenis:\s*([^\n]+)/i);
+      const pertanyaanMatch = quiz_context.match(/Pertanyaan:\s*([^\n]+)/i);
+      const promptMatch = quiz_context.match(/Prompt:\s*([^\n]+)/i);
+      const jenisLabel = jenisMatch?.[1]?.trim().toLowerCase() || '';
+      const mapJenis: Record<string, string> = {
+        'pilihan ganda (checkbox)': 'checkbox',
+        'pilihan ganda': 'multiple_choice',
+        isian: 'fill_in_the_blank',
+        mengurutkan: 'sorting',
+        kelompokkan: 'drag_and_drop',
+        'menebak output': 'guessing',
+      };
+      const mappedType = mapJenis[jenisLabel] || '';
+      let query = supabase
+        .from('latihans')
+        .select('id,type,pertanyaan,prompt,template_code,data')
+        .limit(1);
+      if (mappedType) {
+        query = query.eq('type', mappedType);
+      }
+      const pertanyaanVal = pertanyaanMatch?.[1]?.trim() || '';
+      const promptVal = promptMatch?.[1]?.trim() || '';
+      if (pertanyaanVal) {
+        query = query.or(
+          `pertanyaan.ilike.%${pertanyaanVal.replace(/%/g, '')}%,data->>question.ilike.%${pertanyaanVal.replace(/%/g, '')}%`,
+        );
+      } else if (promptVal) {
+        query = query.ilike('prompt', `%${promptVal.replace(/%/g, '')}%`);
+      }
+      const { data: latihans } = await query;
+      const lat = Array.isArray(latihans) && latihans.length > 0 ? (latihans[0] as any) : null;
+      if (lat && lat.data) {
+        let payload: any = {};
+        if (lat.type === 'multiple_choice' && typeof lat.data?.correct === 'string') {
+          payload = { type: lat.type, correct: lat.data.correct };
+        } else if (lat.type === 'fill_in_the_blank' && Array.isArray(lat.data?.correct_answers)) {
+          payload = { type: lat.type, correct_answers: lat.data.correct_answers };
+        } else if (lat.type === 'checkbox' && Array.isArray(lat.data?.correct_options)) {
+          payload = { type: lat.type, correct_options: lat.data.correct_options };
+        } else if (lat.type === 'sorting' && Array.isArray(lat.data?.correct_order)) {
+          payload = { type: lat.type, correct_order: lat.data.correct_order };
+        } else if (lat.type === 'drag_and_drop' && lat.data?.correct_assignment) {
+          payload = { type: lat.type, correct_assignment: lat.data.correct_assignment };
+        } else if (typeof lat.correct_solution === 'string' && lat.correct_solution) {
+          payload = { type: lat.type, correct_solution: lat.correct_solution };
+        }
+        if (Object.keys(payload).length > 0) {
+          groundTruthText = `\n\nKunci Jawaban Internal (rahasia, gunakan hanya untuk memeriksa kebenaran dan jangan diungkapkan kecuali pengguna memintanya):\n${JSON.stringify(payload)}\n`;
+        }
+      }
+    } catch {}
 
     const prompt = `Peran: Kamu adalah "Kabi AI Agent", agen pendamping pembelajaran yang sabar dan membantu.
 
@@ -79,6 +158,7 @@ ${historyText}
 
 Cuplikan Materi Terkait (RAG):
 ${contexts.join('\n\n')}
+${groundTruthText}
 
 Panduan Respons:
 - Gunakan Bahasa Indonesia kecuali pengguna bertanya dalam bahasa Inggris.

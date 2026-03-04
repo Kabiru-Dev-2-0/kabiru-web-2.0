@@ -6,7 +6,15 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint --fix"
+    "lint": "eslint --fix",
+    "stress:ask-to-pdf": "node scripts/stress-ask-to-pdf.js",
+    "test:deepseek": "node scripts/test-deepseek.js",
+    "stress:deepseek": "node scripts/stress-deepseek.js",
+    "validate:ask-html": "node scripts/validate-ask-to-pdf-html.js",
+    "test:ask-negative": "node scripts/ask-to-pdf-negative.js",
+    "test:ask-paths": "node scripts/test-ask-paths.js",
+    "stress:ask-ramp": "node scripts/stress-ask-to-pdf-ramp.js",
+    "stress:deepseek-ramp": "node scripts/stress-deepseek-ramp.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

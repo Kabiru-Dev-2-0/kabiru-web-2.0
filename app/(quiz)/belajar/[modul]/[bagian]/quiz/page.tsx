@@ -1069,9 +1069,10 @@ ${context}
           </p>
         ) : null}
 
-        {!(wrongPrompts.length > 0 && finalAdvice) ? (
+        {!(wrongPrompts.length > 0) ? (
           <p className="mt-3 text-lg text-[#3F3F46] text-center w-[80%]">
-            Kamu berhasil menyelesaikan soal tanpa ada yang salah. Ayo semangat dan lanjutkan lagi perjalanan belajarmu!
+            Kamu berhasil menyelesaikan soal tanpa ada yang salah. Ayo semangat dan lanjutkan lagi
+            perjalanan belajarmu!
           </p>
         ) : null}
         {wrongPrompts.length > 0 ? (

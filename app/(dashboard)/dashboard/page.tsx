@@ -55,15 +55,13 @@ const tourSteps: TourStep[] = [
   {
     id: 4,
     title: 'Streak belajar',
-    description:
-      'Konsistensi kamu dalam belajar secara berturut-turut setiap hari.',
+    description: 'Konsistensi kamu dalam belajar secara berturut-turut setiap hari.',
     selector: '[data-tour-target="streak"]',
   },
   {
     id: 5,
     title: 'Menu Belajar',
-    description:
-      'Kamu dapat mengakses materi pembelajaran dari modul yang kamu pilih.',
+    description: 'Kamu dapat mengakses materi pembelajaran dari modul yang kamu pilih.',
     selector: '[data-tour-target="nav-belajar"]',
     placement: 'right',
   },
@@ -276,7 +274,7 @@ function DashboardProductTour() {
               >
                 {'<'}
               </button>
-              <span className= "text-white/90 font-normal">
+              <span className="text-white/90 font-normal">
                 {currentStep}/{TOUR_TOTAL_STEPS}
               </span>
               <button
@@ -370,7 +368,12 @@ export default function DashboardPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             username: username,
-            ongoingCourses: ongoingCourses.map((c) => ({ title: c.title, progress: c.progress })),
+            ongoingCourses: ongoingCourses.map((c) => ({
+              id: c.id,
+              title: c.title,
+              description: c.description,
+              progress: c.progress,
+            })),
             completedModules: completedModules.map((m) => ({ judul: m.judul })),
           }),
         });
@@ -464,11 +467,9 @@ export default function DashboardPage() {
             const rows = await getCompletedBagiansForModul(supabase as any, modul.id, penggunaId);
             const totalCount = rows.length;
             const completedCount = rows.filter((r) => r.status === 'done').length;
-             const overallPercent = rows.length
-               ? Math.round(
-                   rows.reduce((acc, r) => acc + (r.progress || 0), 0) / rows.length
-                 )
-               : 0;
+            const overallPercent = rows.length
+              ? Math.round(rows.reduce((acc, r) => acc + (r.progress || 0), 0) / rows.length)
+              : 0;
 
             // Tentukan bagian & unit aktif (node oranye) untuk modul terpilih
             let activeBagian: number | undefined = undefined;
@@ -525,32 +526,52 @@ export default function DashboardPage() {
         } else {
           setSelectedOngoing(null);
         }
+        const candidates = await Promise.all(
+          moduls.map(async (m) => {
+            const percent = await computePercentForModul(m.id);
+            return {
+              id: m.id,
+              title: m.judul,
+              description: m.deskripsi,
+              progress: percent,
+              total: 100,
+              iconComponent:
+                m.nomor_modul % 2 ? (
+                  <DataPieColor className="w-10 h-10" />
+                ) : (
+                  <MoleculeColor className="w-10 h-10" />
+                ),
+              category: 'Progres Kamu',
+            };
+          }),
+        );
 
-        const targetIds = [chosenId, ...moduls.map((m) => m.id)]
-          .filter((v, i, arr) => typeof v === 'number' && arr.indexOf(v) === i)
-          .slice(0, 2) as number[];
-        const ongoingRows = (
-          await Promise.all(
-            targetIds.map(async (id) => {
-              const modul = moduls.find((m) => m.id === id)!;
-              const percent = await computePercentForModul(id);
-              return {
-                id,
-                title: modul.judul,
-                description: modul.deskripsi,
-                progress: percent,
-                total: 100,
-                iconComponent:
-                  modul.nomor_modul % 2 ? (
-                    <DataPieColor className="w-10 h-10" />
-                  ) : (
-                    <MoleculeColor className="w-10 h-10" />
-                  ),
-                category: 'Progres Kamu',
-              };
-            }),
-          )
-        ).filter((x) => typeof x.progress === 'number');
+        let ongoingRows: Array<{
+          id: number;
+          title: string;
+          description: string;
+          progress: number;
+          total: number;
+          iconComponent: React.ReactNode;
+          category: string;
+        }> = [];
+
+        if (chosenId) {
+          const chosen = candidates.find((c) => c.id === chosenId);
+          if (chosen) {
+            ongoingRows.push(chosen);
+          }
+          const others = candidates
+            .filter((c) => c.id !== chosenId && c.progress > 0)
+            .sort((a, b) => b.progress - a.progress)
+            .slice(0, Math.max(0, 2 - ongoingRows.length));
+          ongoingRows = [...ongoingRows, ...others];
+        } else {
+          ongoingRows = candidates
+            .filter((c) => c.progress > 0)
+            .sort((a, b) => b.progress - a.progress)
+            .slice(0, 2);
+        }
 
         const completedRows: Modul[] = (
           await Promise.all(
@@ -610,11 +631,7 @@ export default function DashboardPage() {
                   )}
                   <Button
                     as={Link}
-                    href={
-                      selectedOngoing
-                        ? `/belajar/${selectedOngoing.id}/units`
-                        : "/belajar"
-                    }
+                    href={selectedOngoing ? `/belajar/${selectedOngoing.id}/units` : '/belajar'}
                     scroll={false}
                     prefetch
                     color="default"
@@ -678,9 +695,7 @@ export default function DashboardPage() {
                           completedCount={selectedOngoing.completedCount}
                           totalCount={selectedOngoing.totalCount}
                           overridePercent={selectedOngoing.overallPercent}
-                          href={
-                            `/belajar/${selectedOngoing.id}/units`
-                          }
+                          href={`/belajar/${selectedOngoing.id}/units`}
                         />
                       ) : (
                         <Card className="w-[333px] border border-[#F4F4F5] shadow-sm" radius="lg">

@@ -87,7 +87,7 @@ export const DashboardHeader = ({
   // Effect to detect streak increase
   useEffect(() => {
     // Debugging logs
-    console.log('[StreakDebug] Update:', { current: currentStreak, prev: prevStreakRef.current });
+    // console.log('[StreakDebug] Update:', { current: currentStreak, prev: prevStreakRef.current });
 
     if (currentStreak === null) return;
 
@@ -98,7 +98,7 @@ export const DashboardHeader = ({
          const parsedStored = Number(storedStreak);
          // If current > stored from LS, it means streak increased while away from this component
          if (currentStreak > parsedStored) {
-            console.log('[StreakDebug] Streak increased (detected via LS)! Triggering modal.');
+            // console.log('[StreakDebug] Streak increased (detected via LS)! Triggering modal.');
             const timer = setTimeout(() => {
               setShowStreakModal(true);
             }, 500);
@@ -114,13 +114,13 @@ export const DashboardHeader = ({
       // Always update LS with current
       localStorage.setItem('aizone.prevStreak', String(currentStreak));
       
-      console.log('[StreakDebug] Initial set:', currentStreak);
+      // console.log('[StreakDebug] Initial set:', currentStreak);
       return;
     }
 
     // Check if streak increased by 1 (or more)
     if (currentStreak > prevStreakRef.current) {
-      console.log('[StreakDebug] Streak increased! Triggering modal.');
+      // console.log('[StreakDebug] Streak increased! Triggering modal.');
       const timer = setTimeout(() => {
         setShowStreakModal(true);
       }, 500); 
@@ -138,7 +138,7 @@ export const DashboardHeader = ({
   useEffect(() => {
     (window as any).debugTriggerStreak = () => setShowStreakModal(true);
     (window as any).debugIncreaseStreak = () => setCurrentStreak(prev => (prev || 0) + 1);
-    console.log('[StreakDebug] Debug functions ready: window.debugTriggerStreak(), window.debugIncreaseStreak()');
+    // console.log('[StreakDebug] Debug functions ready: window.debugTriggerStreak(), window.debugIncreaseStreak()');
   }, []);
 
   const levelData = useMemo(() => calculateLevelProgress(exp), [exp]);

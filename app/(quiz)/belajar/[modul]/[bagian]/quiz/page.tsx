@@ -52,7 +52,7 @@ export default function Quiz() {
   const [wrongPrompts, setWrongPrompts] = useState<string[]>([]);
   const [finalAdvice, setFinalAdvice] = useState('');
   const [adviceLoading, setAdviceLoading] = useState(false);
-  const [policyViolations, setPolicyViolations] = useState(0);
+  const [, setPolicyViolations] = useState(0);
 
   // Chat overlay state
   // Chat overlay state
@@ -117,15 +117,6 @@ export default function Quiz() {
       window.removeEventListener('blur', handleVisibility);
     };
   }, []);
-
-  useEffect(() => {
-    if (policyViolations >= 3) {
-      try {
-        alert('Aktivitas mencurigakan terdeteksi. Sesi kuis dihentikan.');
-      } catch {}
-      handleExit();
-    }
-  }, [policyViolations]);
 
   useEffect(() => {
     async function fetchTitles() {

@@ -16,6 +16,8 @@ export interface GeneratedImage {
   prompt_used: string;
   file_path?: string;
   base64_data?: string;
+  /** When base64_data is raw (not a full data: URL), e.g. image/png from Gemini / OpenRouter */
+  mime_type?: string;
   success: boolean;
   error_message?: string;
 }
@@ -50,10 +52,14 @@ export interface WorkflowState {
 }
 
 const STORY_STEPS = [
+  { id: 'supervisor', label: 'Supervisor' },
   { id: 'planning', label: 'Perencanaan' },
   { id: 'research', label: 'Riset Konten' },
   { id: 'writing', label: 'Penulisan Cerita' },
   { id: 'critique', label: 'Evaluasi' },
+  { id: 'hitl_plan', label: 'Tinjau rencana' },
+  { id: 'hitl_critique', label: 'Persetujuan evaluasi' },
+  { id: 'qa', label: 'Jawaban langsung' },
   { id: 'finalize', label: 'Finalisasi' },
 ];
 

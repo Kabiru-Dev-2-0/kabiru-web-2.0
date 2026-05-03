@@ -48,6 +48,14 @@ public-hoist-pattern[]=*@heroui/*
 
 After modifying the `.npmrc` file, you need to run `pnpm install` again to ensure that the dependencies are installed correctly.
 
+## Story workflow (Skripsi API)
+
+The quiz chat calls `POST /api/ai/story/generate`, which proxies to Skripsi `POST /api/interactive/chat` (supervisor-first graph). The UI shows the **Supervisor** step first, then planning / research / writing / critique as SSE events arrive. The client keeps a stable **`thread_id`** per tab session (in-memory ref) for LangGraph checkpoint continuity on follow-up turns, and sends the last **eight** chat turns as **`history`** (`{ role, text }`) so the supervisor can use recent context without using the database.
+
+Illustrations from the backend may send `generated_images[]` with **raw base64** plus optional `mime_type` (Gemini / normalized OpenRouter), or a **full data URL** in `base64_data` (older OpenRouter payloads). The quiz UI builds the image `src` with `imageSrcFromGeneratedImage` so OpenRouter is not double-prefixed with `data:image/png;base64,`.
+
+Completed stories are kept in a **`storyArtifacts`** list (per browser tab) and linked to the matching AI chat turn via **`storyArtifactId`**. The workflow tracker + “buka cerita” UI is **inline under that message** (newest story: full tracker + CTA; older: compact row + **Buka**). **`prior_stories`** (title + excerpt, last five) is sent on each new story run for the Skripsi supervisor. For **QA** (`/api/ask-to-pdf`), the client sends **`story_context`** (full stored stories, capped) so questions like “jelaskan ceritanya” still work when RAG returns no PDF hits. QA workflow steps still merge into `agentOutputs`.
+
 ## License
 
 Licensed under the [MIT license](https://github.com/heroui-inc/next-app-template/blob/main/LICENSE).

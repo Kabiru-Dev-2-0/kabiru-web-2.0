@@ -1,13 +1,30 @@
 import { NextResponse } from 'next/server';
 
 const STORY_AGENT_API_URL = process.env.STORY_AGENT_API_URL || 'http://127.0.0.1:8000';
+const STORY_AGENT_API_KEY = process.env.STORY_AGENT_API_KEY || '';
+
+interface ChatTurn {
+  role: string;
+  text: string;
+}
+
+interface PriorStoryRef {
+  title: string;
+  excerpt: string;
+}
 
 interface StoryRequest {
   prompt: string;
+  thread_id?: string;
   target_age?: string;
   language?: string;
   story_length?: string;
   active_writers?: string[];
+  hitl_resume?: string;
+  /** Recent UI messages for supervisor context (in-memory; no DB). */
+  history?: ChatTurn[];
+  /** Earlier completed stories in this tab (title + excerpt) for supervisor recall. */
+  prior_stories?: PriorStoryRef[];
 }
 
 export async function POST(req: Request) {
@@ -21,18 +38,28 @@ export async function POST(req: Request) {
     console.log('[Story API] Connecting to backend:', STORY_AGENT_API_URL);
     console.log('[Story API] Received Enriched Prompt:\n', body.prompt);
 
+    // Generate thread_id jika tidak dikirim client (untuk sesi baru)
+    const thread_id = body.thread_id || crypto.randomUUID();
+
     // Forward request to Skripsi backend
     let response: Response;
     try {
-      response = await fetch(`${STORY_AGENT_API_URL}/api/workflow/generate`, {
+      response = await fetch(`${STORY_AGENT_API_URL}/api/interactive/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(STORY_AGENT_API_KEY ? { 'X-API-Key': STORY_AGENT_API_KEY } : {}),
+        },
         body: JSON.stringify({
-          prompt: body.prompt,
+          user_message: body.prompt,
+          thread_id,
           target_age: body.target_age || '15-18',
           language: body.language || 'Indonesian',
           story_length: body.story_length || 'medium',
           active_writers: body.active_writers || null,
+          hitl_resume: body.hitl_resume || null,
+          history: Array.isArray(body.history) ? body.history : null,
+          prior_stories: Array.isArray(body.prior_stories) ? body.prior_stories : null,
         }),
       });
     } catch (fetchError: any) {

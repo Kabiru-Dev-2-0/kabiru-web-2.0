@@ -301,7 +301,7 @@ export default function LatihanPage() {
                         Modul {moduls[0]?.nomor_modul ?? modulId}
                       </span>
                     </div>
-                    <h1 className="text-2xl font-bold text-[#3F3F46]">{moduls[0].judul}</h1>
+                    <h1 className="text-2xl font-bold text-[#3F3F46]">{moduls[0]?.judul}</h1>
                   </div>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">

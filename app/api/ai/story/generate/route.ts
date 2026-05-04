@@ -5,24 +5,31 @@ const STORY_AGENT_DEFAULT_VERCEL_URL = 'https://agentic-ai-story-based-learning.
 const STORY_AGENT_DEFAULT_LOCAL_URL = 'http://127.0.0.1:8000';
 const STORY_AGENT_DEFAULT_DUMMY_KEY = 'dummy';
 
-function storyAgentBaseUrl(): string {
-  // IMPORTANT: Production must not call localhost or depend on host env vars.
-  // Some hosting providers inject env vars (or reuse dev defaults) that point to localhost.
-  // To keep production stable without needing dashboard access, always use the hardcoded URL.
-  if (process.env.NODE_ENV === 'production') {
+function _isNonLocalHost(host: string | null): boolean {
+  if (!host) return false;
+  const h = host.toLowerCase();
+  return !(h.includes('localhost') || h.includes('127.0.0.1'));
+}
+
+function storyAgentBaseUrl(requestHost: string | null): string {
+  // IMPORTANT: Production must not call localhost or depend on dashboard env vars.
+  // Hosting providers (including non-Vercel) may not set NODE_ENV=production, so
+  // derive "production-ness" from the incoming request host.
+  const isProductionLike = _isNonLocalHost(requestHost);
+  if (isProductionLike) {
     return STORY_AGENT_DEFAULT_VERCEL_URL.replace(/\/$/, '');
   }
+
   const fromEnv = process.env.STORY_AGENT_API_URL?.trim();
-  if (fromEnv) {
-    return fromEnv.replace(/\/$/, '');
-  }
+  if (fromEnv) return fromEnv.replace(/\/$/, '');
   return STORY_AGENT_DEFAULT_LOCAL_URL.replace(/\/$/, '');
 }
 
 function storyAgentApiKey(): string {
   const fromEnv = process.env.STORY_AGENT_API_KEY?.trim();
   if (fromEnv) return fromEnv;
-  if (process.env.NODE_ENV === 'production') return STORY_AGENT_DEFAULT_DUMMY_KEY;
+  // Same reasoning as URL: production-like if running on a non-local host.
+  if (_isNonLocalHost(process.env.VERCEL_URL ?? null)) return STORY_AGENT_DEFAULT_DUMMY_KEY;
   return '';
 }
 
@@ -58,11 +65,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    const STORY_AGENT_API_URL = storyAgentBaseUrl();
+    const requestHost = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    const STORY_AGENT_API_URL = storyAgentBaseUrl(requestHost);
     const STORY_AGENT_API_KEY = storyAgentApiKey();
-    if (process.env.NODE_ENV === 'production' && !process.env.STORY_AGENT_API_URL?.trim() && STORY_AGENT_API_KEY === STORY_AGENT_DEFAULT_DUMMY_KEY) {
+    if (_isNonLocalHost(requestHost) && !process.env.STORY_AGENT_API_URL?.trim() && STORY_AGENT_API_KEY === STORY_AGENT_DEFAULT_DUMMY_KEY) {
       console.warn(
-        '[Story API] STORY_AGENT_API_URL unset: using built-in Vercel default. STORY_AGENT_API_KEY unset: using dummy key.'
+        '[Story API] Using built-in production default URL and dummy key (env not configured).'
       );
     }
 

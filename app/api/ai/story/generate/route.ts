@@ -106,7 +106,10 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: 'Cannot connect to Story Agent backend',
-          details: `Make sure Skripsi backend is running at ${STORY_AGENT_API_URL}. Error: ${fetchError.message}`
+          // Avoid leaking / confusing localhost values in production UIs.
+          details: `Backend request failed. Error: ${fetchError.message}`,
+          resolved_backend_url: STORY_AGENT_API_URL,
+          request_host: requestHost,
         },
         { status: 503 }
       );

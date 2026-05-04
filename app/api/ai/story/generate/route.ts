@@ -8,7 +8,16 @@ const STORY_AGENT_DEFAULT_DUMMY_KEY = 'dummy';
 function storyAgentBaseUrl(): string {
   const fromEnv = process.env.STORY_AGENT_API_URL?.trim();
   if (fromEnv) {
-    return fromEnv.replace(/\/$/, '');
+    const normalized = fromEnv.replace(/\/$/, '');
+    // Guard: some hosting providers inject env vars that are only valid for local dev.
+    // In production, never route to localhost.
+    if (
+      process.env.NODE_ENV === 'production' &&
+      (normalized.includes('127.0.0.1') || normalized.includes('localhost'))
+    ) {
+      return STORY_AGENT_DEFAULT_VERCEL_URL.replace(/\/$/, '');
+    }
+    return normalized;
   }
   // IMPORTANT: Production must not default to localhost.
   // If the hosting platform does not allow setting env vars, keep this hardcoded fallback.

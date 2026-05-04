@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 
-const STORY_AGENT_API_URL = process.env.STORY_AGENT_API_URL || 'http://127.0.0.1:8000';
+/** Skripsi / story-agent backend: default when deployed on Vercel without env (set via GitHub-only workflow). */
+const STORY_AGENT_DEFAULT_VERCEL_URL = 'https://agentic-ai-story-based-learning.vercel.app';
+const STORY_AGENT_DEFAULT_LOCAL_URL = 'http://127.0.0.1:8000';
+
+function storyAgentBaseUrl(): string {
+  const fromEnv = process.env.STORY_AGENT_API_URL?.trim();
+  if (fromEnv) {
+    return fromEnv.replace(/\/$/, '');
+  }
+  if (process.env.VERCEL) {
+    return STORY_AGENT_DEFAULT_VERCEL_URL.replace(/\/$/, '');
+  }
+  return STORY_AGENT_DEFAULT_LOCAL_URL.replace(/\/$/, '');
+}
+
 const STORY_AGENT_API_KEY = process.env.STORY_AGENT_API_KEY || '';
 
 interface ChatTurn {
@@ -33,6 +47,13 @@ export async function POST(req: Request) {
 
     if (!body.prompt?.trim()) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+    }
+
+    const STORY_AGENT_API_URL = storyAgentBaseUrl();
+    if (process.env.VERCEL && !process.env.STORY_AGENT_API_URL?.trim() && !STORY_AGENT_API_KEY) {
+      console.warn(
+        '[Story API] STORY_AGENT_API_URL unset: using built-in Vercel default. STORY_AGENT_API_KEY is also unset; backend may return 401.'
+      );
     }
 
     console.log('[Story API] Connecting to backend:', STORY_AGENT_API_URL);

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 /** Skripsi / story-agent backend: default when deployed on Vercel without env (set via GitHub-only workflow). */
 const STORY_AGENT_DEFAULT_VERCEL_URL = 'https://agentic-ai-story-based-learning.vercel.app';
 const STORY_AGENT_DEFAULT_LOCAL_URL = 'http://127.0.0.1:8000';
+const STORY_AGENT_DEFAULT_DUMMY_KEY = 'dummy';
 
 function storyAgentBaseUrl(): string {
   const fromEnv = process.env.STORY_AGENT_API_URL?.trim();
@@ -15,7 +16,12 @@ function storyAgentBaseUrl(): string {
   return STORY_AGENT_DEFAULT_LOCAL_URL.replace(/\/$/, '');
 }
 
-const STORY_AGENT_API_KEY = process.env.STORY_AGENT_API_KEY || '';
+function storyAgentApiKey(): string {
+  const fromEnv = process.env.STORY_AGENT_API_KEY?.trim();
+  if (fromEnv) return fromEnv;
+  if (process.env.VERCEL) return STORY_AGENT_DEFAULT_DUMMY_KEY;
+  return '';
+}
 
 interface ChatTurn {
   role: string;
@@ -50,9 +56,10 @@ export async function POST(req: Request) {
     }
 
     const STORY_AGENT_API_URL = storyAgentBaseUrl();
-    if (process.env.VERCEL && !process.env.STORY_AGENT_API_URL?.trim() && !STORY_AGENT_API_KEY) {
+    const STORY_AGENT_API_KEY = storyAgentApiKey();
+    if (process.env.VERCEL && !process.env.STORY_AGENT_API_URL?.trim() && STORY_AGENT_API_KEY === STORY_AGENT_DEFAULT_DUMMY_KEY) {
       console.warn(
-        '[Story API] STORY_AGENT_API_URL unset: using built-in Vercel default. STORY_AGENT_API_KEY is also unset; backend may return 401.'
+        '[Story API] STORY_AGENT_API_URL unset: using built-in Vercel default. STORY_AGENT_API_KEY unset: using dummy key.'
       );
     }
 

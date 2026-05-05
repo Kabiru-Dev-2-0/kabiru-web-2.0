@@ -41,6 +41,14 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+
+  // API routes must not be intercepted by HTML redirects (login / onboarding).
+  // Otherwise POST /api/... becomes a browser redirect and breaks fetch + SSE clients.
+  if (pathname.startsWith('/api')) {
+    return supabaseResponse;
+  }
+
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&

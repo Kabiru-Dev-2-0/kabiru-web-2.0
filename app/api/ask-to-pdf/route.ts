@@ -17,6 +17,8 @@ export async function POST(req: Request) {
     const top_k_raw = Number(body?.top_k ?? 4);
     const top_k = Number.isFinite(top_k_raw) ? Math.max(1, Math.min(10, top_k_raw)) : 4;
     const quiz_context = (body?.quiz_context as string) || '';
+    const story_context_raw = typeof body?.story_context === 'string' ? body.story_context.trim() : '';
+    const story_context = story_context_raw.slice(0, 16000);
     const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
 
     if (!question.trim()) {
@@ -76,7 +78,7 @@ export async function POST(req: Request) {
       }
 
       documents = Array.isArray(docs) ? docs : [];
-      if (documents.length === 0) {
+      if (documents.length === 0 && !story_context) {
         return NextResponse.json({
           answer:
             'Saya tidak menemukan informasi yang relevan di dokumen untuk menjawab pertanyaan ini.',
@@ -85,7 +87,10 @@ export async function POST(req: Request) {
       }
     }
 
-    const contexts = (documents as SupabaseDocument[]).map((doc) => doc.content);
+    let contexts = (documents as SupabaseDocument[]).map((doc) => doc.content);
+    if (story_context) {
+      contexts = [`[Cerita / narasi dari AI Chat (bukan dokumen PDF)]\n${story_context}`, ...contexts];
+    }
 
     const historyText = history
       .map((m: any) => `${m?.role === 'user' ? 'User' : 'AI'}: ${m?.text ?? ''}`)
@@ -156,14 +161,15 @@ ${quiz_context}
 Riwayat Percakapan (terbaru → lama):
 ${historyText}
 
-Cuplikan Materi Terkait (RAG):
-${contexts.join('\n\n')}
+Cuplikan Materi Terkait (RAG dan/atau cerita dari chat):
+${contexts.length ? contexts.join('\n\n') : '(tidak ada cuplikan — jawab singkat bahwa konteks kurang, atau gunakan cerita dari chat jika tersedia di atas.)'}
 ${groundTruthText}
 
 Panduan Respons:
 - Gunakan Bahasa Indonesia kecuali pengguna bertanya dalam bahasa Inggris.
 - Berperan sebagai pendamping: berikan petunjuk bertahap, ajukan pertanyaan pemandu, dan dorong cara berpikir yang benar.
-- Dasarkan penjelasan pada Konteks Soal dan RAG; jika kurang, jelaskan kekurangan dan beri saran pendekatan.
+- Dasarkan penjelasan pada Konteks Soal, cuplikan RAG, dan bagian "[Cerita / narasi dari AI Chat]" jika ada; untuk pertanyaan tentang ringkasan/isu cerita, utamakan teks cerita itu.
+- Jika hanya ada cerita dari chat (tanpa cuplikan RAG), jawab dari cerita tersebut dengan ringkas.
 - Jaga ringkas dan terstruktur: gunakan paragraf pendek atau poin, 3–6 langkah.
 - Hindari langsung memberi jawaban akhir kecuali diminta atau pengguna buntu; prioritaskan metode penyelesaian.
 - Untuk pilihan ganda, bantu eliminasi opsi salah berdasarkan bukti.

@@ -26,6 +26,39 @@ import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 
+/** Skripsi API: raw base64 + optional mime_type, or legacy full data URL in base64_data (OpenRouter). */
+function imageSrcFromGeneratedImage(img: {
+  base64_data?: string;
+  mime_type?: string;
+  file_path?: string;
+}): string {
+  const raw = img.base64_data?.trim();
+  if (raw) {
+    if (raw.startsWith('data:')) return raw;
+    const mime =
+      img.mime_type && img.mime_type.includes('/')
+        ? img.mime_type
+        : `image/${img.mime_type || 'png'}`;
+    return `data:${mime};base64,${raw}`;
+  }
+  return img.file_path || '';
+}
+
+function isQuizStorySuccessLine(t: string): boolean {
+  return (
+    t.includes('Cerita berhasil dibuat') ||
+    t.includes('Detail langkah') ||
+    t.includes('panel sebelah kanan')
+  );
+}
+
+type QuizChatMessage = {
+  role: 'ai' | 'user';
+  text: string;
+  /** Links this AI turn to a frozen workflow snapshot shown inline below the bubble. */
+  storyArtifactId?: string;
+};
+
 export default function Quiz() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -75,6 +108,7 @@ export default function Quiz() {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, isAsking, chatOpen]);
+
   const [typingMessageIndex, setTypingMessageIndex] = useState<number | null>(null);
 
   // Basic client-side anti-cheat hardening
@@ -155,6 +189,76 @@ export default function Quiz() {
 
   // agentOutputs: { } // This line seems to be a copy-paste error from the original document, removing it.
   const [workflowMode, setWorkflowMode] = useState<'STORY' | 'QA'>('QA');
+  /** Completed stories in this tab (oldest → newest); supervisor recall via prior_stories on each new run. */
+  const [storyArtifacts, setStoryArtifacts] = useState<{ id: string; state: WorkflowState }[]>([]);
+  /** Which artifact the right-hand canvas shows; null = prefer live finalStory then newest artifact. */
+  const [canvasStoryId, setCanvasStoryId] = useState<string | null>(null);
+  const storyLinkPendingRef = useRef<{ id: string } | null>(null);
+
+  useEffect(() => {
+    const fs = (workflowState.finalStory || '').trim();
+    if (!fs) return;
+
+    storyLinkPendingRef.current = null;
+
+    setStoryArtifacts((prev) => {
+      const existing = prev.find((a) => (a.state.finalStory || '').trim() === fs);
+      if (existing) {
+        storyLinkPendingRef.current = { id: existing.id };
+        return prev;
+      }
+      const id =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `st_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      storyLinkPendingRef.current = { id };
+      return [
+        ...prev,
+        {
+          id,
+          state: {
+            ...workflowState,
+            agentOutputs: { ...workflowState.agentOutputs },
+            generatedImages: [...workflowState.generatedImages],
+          },
+        },
+      ];
+    });
+
+    const link = storyLinkPendingRef.current;
+    storyLinkPendingRef.current = null;
+    if (!link) return;
+
+    setChatMessages((msgs) => {
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        if (msgs[i].role !== 'ai') continue;
+        if (msgs[i].storyArtifactId === link.id) return msgs;
+        if (!isQuizStorySuccessLine(msgs[i].text || '')) continue;
+        const copy = [...msgs];
+        copy[i] = { ...copy[i], storyArtifactId: link.id };
+        return copy;
+      }
+      const last = msgs.length - 1;
+      if (last >= 0 && msgs[last].role === 'ai' && !msgs[last].storyArtifactId) {
+        const copy = [...msgs];
+        copy[last] = { ...copy[last], storyArtifactId: link.id };
+        return copy;
+      }
+      return msgs;
+    });
+  }, [workflowState]);
+
+  /** Stable LangGraph thread for multi-turn story chat (in-memory; same tab session). */
+  const storyThreadIdRef = useRef<string | null>(null);
+  const ensureStoryThreadId = () => {
+    if (!storyThreadIdRef.current) {
+      storyThreadIdRef.current =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `story_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    }
+    return storyThreadIdRef.current;
+  };
   // const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Load Chat History - DISABLED for now
@@ -354,14 +458,18 @@ export default function Quiz() {
     return ctx;
   };
 
-  // Real Story Agent Runner - connects to Skripsi backend via SSE
-  const runStoryWorkflow = async (userPrompt: string) => {
+  // Real Story Agent Runner - connects to Skripsi backend via SSE (supervisor-first interactive graph)
+  const runStoryWorkflow = async (
+    userPrompt: string,
+    historyForApi: { role: string; text: string }[],
+  ) => {
     setWorkflowMode('STORY');
     setIsChatMaximized(true); // Auto maximize for story
 
-    // Reset workflow state - starts empty, steps appear as they are encountered
+    const threadId = ensureStoryThreadId();
+
     setWorkflowState({
-      currentStage: 'planning',
+      currentStage: 'supervisor',
       activeWriters: [],
       canvas: null,
       generatedImages: [],
@@ -370,9 +478,9 @@ export default function Quiz() {
       storyTitle: 'Sedang Membuat Cerita...',
       metrics: { quality_score: 0, revision_count: 0 },
       agentOutputs: {
-        planning: {
-          title: 'Perencanaan',
-          content: 'Memulai perencanaan cerita...',
+        supervisor: {
+          title: 'Supervisor',
+          content: 'Menganalisis permintaan dan memilih langkah kerja...',
           status: 'running',
         },
       },
@@ -381,6 +489,8 @@ export default function Quiz() {
     // Add placeholder message for AI to trigger the unified UI
     setChatMessages((prev) => [...prev, { role: 'ai', text: '' }]);
     setIsAsking(false); // Hide the generic "thinking" bubble immediately
+
+    let qaDirectAnswer = '';
 
     try {
       // Enrich prompt with learning context
@@ -406,14 +516,28 @@ Jika user tidak menentukan panjang atau gaya secara spesifik, gunakan panduan be
 ${context}
 `.trim();
 
+      const PRIOR_STORY_MAX = 5;
+      const PRIOR_EXCERPT_LEN = 2500;
+      const priorSlice = storyArtifacts.slice(-PRIOR_STORY_MAX);
+      const prior_stories = priorSlice.map((a) => {
+        const n = storyArtifacts.indexOf(a) + 1;
+        return {
+          title: a.state.storyTitle || a.state.diagramTitle || `Cerita ${n}`,
+          excerpt: (a.state.finalStory || '').slice(0, PRIOR_EXCERPT_LEN),
+        };
+      });
+
       const response = await fetch('/api/ai/story/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: enrichedPrompt,
+          thread_id: threadId,
           target_age: '15-18',
           language: 'Indonesian',
           story_length: 'medium',
+          history: historyForApi.map((m) => ({ role: m.role, text: m.text })),
+          prior_stories: prior_stories.length ? prior_stories : undefined,
         }),
       });
 
@@ -446,8 +570,9 @@ ${context}
         for (const line of lines) {
           if (line.startsWith('event:')) {
             const eventType = line.replace('event:', '').trim();
-            // Map SSE event to workflow stage
             const eventToStage: Record<string, string> = {
+              'SUPERVISOR::MULAI': 'supervisor',
+              'SUPERVISOR::MEMUTUSKAN': 'supervisor',
               'RISET::MULAI': 'research',
               'RISET::MENEMUKAN_INFORMASI': 'research',
               'PERENCANA::MULAI': 'planning',
@@ -456,6 +581,12 @@ ${context}
               'PENULIS::SELESAI': 'writing',
               'KRITIK::MULAI': 'critique',
               'KRITIK::MENGEVALUASI': 'critique',
+              'QA::MULAI': 'qa',
+              'QA::MENJAWAB': 'qa',
+              'HITL_RENCANA::MULAI': 'hitl_plan',
+              'HITL_RENCANA::MENUNGGU': 'hitl_plan',
+              'HITL::MULAI': 'hitl_critique',
+              'HITL::MENUNGGU': 'hitl_critique',
               'WORKFLOW::SELESAI': 'finalize',
             };
             const stage = eventToStage[eventType] || null;
@@ -466,8 +597,74 @@ ${context}
             try {
               const data = JSON.parse(line.replace('data:', '').trim());
 
-              // Update agent outputs based on event data
-              if (data.agent === 'research') {
+              if (data.agent === 'supervisor_node') {
+                const doneSupervisor = data.status === 'done';
+                const nextStep = data.next_step || '';
+                const mode = data.interaction_mode || '';
+                setWorkflowState((prev) => ({
+                  ...prev,
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    supervisor: {
+                      title: 'Supervisor',
+                      content: doneSupervisor
+                        ? `Keputusan: lanjut ke «${nextStep}» (${mode || 'generation'})`
+                        : 'Menganalisis permintaan...',
+                      status: doneSupervisor ? 'completed' : 'running',
+                    },
+                  },
+                }));
+              } else if (data.agent === 'qa_response_node' && data.status === 'done') {
+                const ans = data.answer || data.direct_response || '';
+                if (ans) qaDirectAnswer = ans;
+                setWorkflowState((prev) => ({
+                  ...prev,
+                  currentStage: 'finalize',
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    qa: {
+                      title: 'Jawaban langsung',
+                      content: ans.slice(0, 400) + (ans.length > 400 ? '…' : ''),
+                      status: 'completed',
+                    },
+                    finalize: {
+                      title: 'Selesai',
+                      content: 'Supervisor menjawab tanpa alur cerita penuh.',
+                      status: 'completed',
+                    },
+                  },
+                }));
+              } else if (data.agent === 'planning_hitl_gate' && data.status === 'done') {
+                setWorkflowState((prev) => ({
+                  ...prev,
+                  currentStage: 'hitl_plan',
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    hitl_plan: {
+                      title: 'Tinjau rencana',
+                      content:
+                        data.message ||
+                        'Kirim persetujuan atau umpan balik (hitl_resume) untuk melanjutkan.',
+                      status: 'running',
+                    },
+                  },
+                }));
+              } else if (data.agent === 'hitl_gate' && data.status === 'done') {
+                setWorkflowState((prev) => ({
+                  ...prev,
+                  currentStage: 'hitl_critique',
+                  agentOutputs: {
+                    ...prev.agentOutputs,
+                    hitl_critique: {
+                      title: 'Persetujuan evaluasi',
+                      content:
+                        data.message ||
+                        'Menunggu persetujuan manusia sebelum melanjutkan.',
+                      status: 'running',
+                    },
+                  },
+                }));
+              } else if (data.agent === 'research') {
                 setWorkflowState((prev) => ({
                   ...prev,
                   agentOutputs: {
@@ -583,6 +780,7 @@ ${context}
                     },
                   },
                 }));
+                setCanvasStoryId(null);
                 setIsCanvasOpen(true);
               }
             } catch (e) {
@@ -592,16 +790,15 @@ ${context}
         }
       }
 
-      // Add final story to chat by UPDATING the last placeholder message
-      // Note: We pass raw markdown because ReactMarkdown handles it.
-
+      // Update last AI placeholder: full story goes to canvas; short confirmation (or QA answer) in chat
       setChatMessages((msgs) => {
         const newMsgs = [...msgs];
         if (newMsgs.length > 0) {
-          // Instead of full story, just show success message
           newMsgs[newMsgs.length - 1] = {
             ...newMsgs[newMsgs.length - 1],
-            text: 'Cerita berhasil dibuat! Silakan cek di panel sebelah kanan.',
+            text: qaDirectAnswer
+              ? qaDirectAnswer
+              : 'Cerita berhasil dibuat! Detail langkah dan tombol baca lengkap ada tepat di bawah pesan ini.',
           };
         }
         return newMsgs;
@@ -627,6 +824,22 @@ ${context}
         return newMsgs;
       });
     }
+  };
+
+  const buildStoryContextForQa = () => {
+    if (storyArtifacts.length === 0) return '';
+    const parts: string[] = [];
+    storyArtifacts.forEach((a, i) => {
+      const title = a.state.storyTitle || a.state.diagramTitle || `Cerita ${i + 1}`;
+      const body = (a.state.finalStory || '').slice(0, 7000);
+      parts.push(`## ${title}\n${body}`);
+    });
+    const joined = parts.join('\n\n---\n\n');
+    const hint =
+      storyArtifacts.length > 1
+        ? 'Beberapa cerita tersedia; untuk pertanyaan seperti "jelaskan ceritanya" utamakan cerita TERBARU (blok paling bawah) kecuali pengguna menyebut judul tertentu.\n\n'
+        : '';
+    return (hint + joined).slice(0, 15500);
   };
 
   const handleSendMessage = async () => {
@@ -656,7 +869,8 @@ ${context}
       }
 
       if (intent === 'STORY') {
-        await runStoryWorkflow(content);
+        const historyToSend = [...chatMessages, { role: 'user' as const, text: content }].slice(-8);
+        await runStoryWorkflow(content, historyToSend);
         setIsAsking(false);
         return;
       }
@@ -664,11 +878,12 @@ ${context}
       // QA Workflow (RAG)
       setWorkflowMode('QA');
 
-      // Step 1: Analyzing
+      // Step 1: Analyzing (merge so story step history is not wiped)
       setWorkflowState((prev) => ({
         ...prev,
         currentStage: 'analyzing',
         agentOutputs: {
+          ...prev.agentOutputs,
           analyzing: {
             title: 'Analisis',
             content: 'Memahami pertanyaan pengguna...',
@@ -694,6 +909,7 @@ ${context}
       const quizContext = getQuizContext(ex);
 
       const historyToSend = [...chatMessages, { role: 'user', text: content }].slice(-8);
+      const story_context = buildStoryContextForQa();
 
       const res = await fetch('/api/ask-to-pdf', {
         method: 'POST',
@@ -703,6 +919,7 @@ ${context}
           top_k: 4,
           quiz_context: quizContext,
           history: historyToSend,
+          ...(story_context ? { story_context } : {}),
         }),
       });
 
@@ -842,6 +1059,8 @@ ${context}
       }
       setCurrentIndex(currentIndex - 1);
       setChatMessages([{ role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' }]);
+      setStoryArtifacts([]);
+      setCanvasStoryId(null);
       setChatInput('');
       setIsAsking(false);
     }
@@ -860,6 +1079,8 @@ ${context}
       }
       setCurrentIndex(currentIndex + 1);
       setChatMessages([{ role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' }]);
+      setStoryArtifacts([]);
+      setCanvasStoryId(null);
       setChatInput('');
       setIsAsking(false);
     }
@@ -868,6 +1089,19 @@ ${context}
   const handleAgentClick = () => {
     setChatOpen(true);
   };
+
+  const resolveStoryCanvasState = (): WorkflowState | null => {
+    if (canvasStoryId) {
+      const found = storyArtifacts.find((a) => a.id === canvasStoryId);
+      if (found?.state.finalStory) return found.state;
+    }
+    if (workflowState.finalStory) return workflowState;
+    const last = storyArtifacts[storyArtifacts.length - 1];
+    if (last?.state.finalStory) return last.state;
+    return null;
+  };
+  const storyCanvasStateResolved = resolveStoryCanvasState();
+  const hasStoryForCanvas = Boolean(storyCanvasStateResolved?.finalStory);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1216,7 +1450,7 @@ ${context}
                 >
                   <div className="flex h-full w-full gap-4">
                     <div
-                      className={`${isChatMaximized && workflowMode === 'STORY' && isCanvasOpen ? 'w-[400px] flex-shrink-0' : 'w-full'} h-full transition-all duration-300`}
+                      className={`${isChatMaximized && hasStoryForCanvas && isCanvasOpen ? 'w-[400px] flex-shrink-0' : 'w-full'} h-full transition-all duration-300`}
                     >
                       <Card
                         className={`border-2 border-[#E4E4E7] bg-white shadow-[0px_2px_0px_0px_rgba(228,228,231,1)] h-full ${isChatMaximized ? 'rounded-[24px]' : 'rounded-[18px]'}`}
@@ -1257,7 +1491,51 @@ ${context}
 
                           {/* Messages Area */}
                           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 min-h-0">
-                            {chatMessages.map((m, idx) => (
+                            {chatMessages.map((m, idx) => {
+                              let storyArt =
+                                m.role === 'ai' && m.storyArtifactId
+                                  ? storyArtifacts.find((a) => a.id === m.storyArtifactId)
+                                  : undefined;
+
+                              if (
+                                !storyArt &&
+                                m.role === 'ai' &&
+                                isQuizStorySuccessLine(m.text)
+                              ) {
+                                const completionOrder = chatMessages
+                                  .slice(0, idx)
+                                  .filter(
+                                    (x) =>
+                                      x.role === 'ai' && isQuizStorySuccessLine(x.text),
+                                  ).length;
+                                if (
+                                  completionOrder >= 0 &&
+                                  completionOrder < storyArtifacts.length
+                                ) {
+                                  storyArt = storyArtifacts[completionOrder];
+                                }
+                              }
+                              const isStoryRichBubble =
+                                m.role === 'ai' &&
+                                !storyArt &&
+                                workflowMode === 'STORY' &&
+                                idx === chatMessages.length - 1 &&
+                                workflowState.currentStage !== 'idle' &&
+                                !workflowState.finalStory;
+                              const isNewestStoryArtifact =
+                                !!storyArt &&
+                                storyArtifacts.length > 0 &&
+                                storyArtifacts[storyArtifacts.length - 1]?.id === storyArt.id;
+                              const storyTitle =
+                                storyArt?.state.storyTitle ||
+                                storyArt?.state.diagramTitle ||
+                                'Cerita selesai';
+                              const isThisStoryCanvasOpen =
+                                !!storyArt &&
+                                isCanvasOpen &&
+                                (canvasStoryId === storyArt.id ||
+                                  (canvasStoryId === null && isNewestStoryArtifact));
+                              return (
                               <div
                                 key={idx}
                                 className={`flex ${m.role === 'ai' ? 'items-start gap-2' : 'justify-end'}`}
@@ -1270,11 +1548,89 @@ ${context}
                                   />
                                 )}
                                 <div className="relative mx-1 max-w-[85%]">
-                                  {/* Unified Bubble for Story Workflow */}
-                                  {m.role === 'ai' &&
-                                  workflowMode === 'STORY' &&
-                                  idx === chatMessages.length - 1 &&
-                                  workflowState.currentStage !== 'idle' ? (
+                                  {m.role === 'ai' && storyArt ? (
+                                    <div className="bg-[#205994] text-white border-none rounded-[18px] overflow-hidden shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]">
+                                      <div className="px-4 py-3 border-b border-white/10">
+                                        {typingMessageIndex === idx ? (
+                                          <TypingText
+                                            text={m.text}
+                                            speed={1}
+                                            onComplete={() => setTypingMessageIndex(null)}
+                                          />
+                                        ) : (
+                                          <span
+                                            className="text-sm leading-[1.55em]"
+                                            dangerouslySetInnerHTML={{ __html: m.text }}
+                                          />
+                                        )}
+                                      </div>
+                                      {isNewestStoryArtifact ? (
+                                        <>
+                                          <div className="border-b border-white/20 max-h-[200px] overflow-y-auto">
+                                            <InlineWorkflowTracker state={storyArt.state} />
+                                          </div>
+                                          <div className="px-4 py-3">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                if (isThisStoryCanvasOpen) {
+                                                  setIsCanvasOpen(false);
+                                                  setCanvasStoryId(null);
+                                                } else {
+                                                  setCanvasStoryId(storyArt.id);
+                                                  setIsCanvasOpen(true);
+                                                }
+                                              }}
+                                              className="w-full text-left bg-gradient-to-r from-white/10 to-transparent hover:from-white/20 hover:to-white/5 border border-white/10 hover:border-white/30 transition-all duration-300 rounded-xl p-4 flex items-center gap-4 group active:scale-[0.98] backdrop-blur-sm shadow-lg overflow-hidden relative"
+                                            >
+                                              <div className="absolute -left-10 -top-10 w-20 h-20 bg-blue-500/20 rounded-full blur-2xl group-hover:bg-blue-400/30 transition-colors duration-500" />
+                                              <div className="relative w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-inner border border-white/5">
+                                                {isThisStoryCanvasOpen ? (
+                                                  <ReadingModeMobileRegular className="w-6 h-6 text-blue-200" />
+                                                ) : (
+                                                  <div className="relative">
+                                                    <ReadingModeMobileRegular className="w-6 h-6 text-blue-200" />
+                                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-400 rounded-full animate-pulse border border-[#205994]" />
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <div className="relative flex-1 min-w-0">
+                                                <h4 className="font-bold text-white text-md tracking-wide group-hover:text-blue-100 transition-colors truncate">
+                                                  {storyTitle}
+                                                </h4>
+                                                <p className="text-white/60 text-xs mt-1 group-hover:text-white/80 transition-colors font-medium">
+                                                  {isThisStoryCanvasOpen
+                                                    ? 'Klik untuk menutup cerita'
+                                                    : 'Klik untuk membaca cerita lengkap'}
+                                                </p>
+                                              </div>
+                                              <div
+                                                className={`relative ml-auto w-8 h-8 rounded-full flex items-center justify-center bg-white/5 group-hover:bg-white/10 transition-colors ${isThisStoryCanvasOpen ? 'rotate-90' : 'rotate-0'} transition-transform duration-300 flex-shrink-0`}
+                                              >
+                                                <ChevronRightRegular className="w-5 h-5 text-white/50 group-hover:text-white" />
+                                              </div>
+                                            </button>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <div className="flex items-center gap-2 px-3 py-2.5 border-t border-white/10">
+                                          <span className="flex-1 min-w-0 truncate text-sm font-medium">
+                                            {storyTitle}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setCanvasStoryId(storyArt.id);
+                                              setIsCanvasOpen(true);
+                                            }}
+                                            className="shrink-0 text-xs font-semibold text-white/90 hover:text-white underline underline-offset-2"
+                                          >
+                                            Buka
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : isStoryRichBubble ? (
                                     <div className="bg-[#205994] text-white border-none rounded-[18px] overflow-hidden shadow-[0px_2px_0px_0px_rgba(32,89,148,1)]">
                                       {/* Top: Workflow Tracker (Collapsible) */}
                                       <div className="border-b border-white/20">
@@ -1304,47 +1660,6 @@ ${context}
                                             Menunggu hasil...
                                           </span>
                                         )}
-
-                                        {/* Story Result Card */}
-                                        {workflowState.finalStory && (
-                                          <div className="mt-4 pt-4 border-t border-white/10">
-                                            <button
-                                              onClick={() => setIsCanvasOpen(!isCanvasOpen)}
-                                              className="w-full text-left bg-gradient-to-r from-white/10 to-transparent hover:from-white/20 hover:to-white/5 border border-white/10 hover:border-white/30 transition-all duration-300 rounded-xl p-4 flex items-center gap-4 group active:scale-[0.98] backdrop-blur-sm shadow-lg overflow-hidden relative"
-                                            >
-                                              {/* Decorative Glow */}
-                                              <div className="absolute -left-10 -top-10 w-20 h-20 bg-blue-500/20 rounded-full blur-2xl group-hover:bg-blue-400/30 transition-colors duration-500" />
-
-                                              <div className="relative w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-inner border border-white/5">
-                                                {isCanvasOpen ? (
-                                                  <ReadingModeMobileRegular className="w-6 h-6 text-blue-200" />
-                                                ) : (
-                                                  <div className="relative">
-                                                    <ReadingModeMobileRegular className="w-6 h-6 text-blue-200" />
-                                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-400 rounded-full animate-pulse border border-[#205994]" />
-                                                  </div>
-                                                )}
-                                              </div>
-                                              <div className="relative flex-1">
-                                                <h4 className="font-bold text-white text-md tracking-wide group-hover:text-blue-100 transition-colors">
-                                                  {workflowState.storyTitle ||
-                                                    workflowState.diagramTitle ||
-                                                    'Cerita Selesai Dibuat'}
-                                                </h4>
-                                                <p className="text-white/60 text-xs mt-1 group-hover:text-white/80 transition-colors font-medium">
-                                                  {isCanvasOpen
-                                                    ? 'Klik untuk menutup cerita'
-                                                    : 'Klik untuk membaca cerita lengkap'}
-                                                </p>
-                                              </div>
-                                              <div
-                                                className={`relative ml-auto w-8 h-8 rounded-full flex items-center justify-center bg-white/5 group-hover:bg-white/10 transition-colors ${isCanvasOpen ? 'rotate-90' : 'rotate-0'} transition-transform duration-300`}
-                                              >
-                                                <ChevronRightRegular className="w-5 h-5 text-white/50 group-hover:text-white" />
-                                              </div>
-                                            </button>
-                                          </div>
-                                        )}
                                       </div>
                                     </div>
                                   ) : (
@@ -1372,20 +1687,21 @@ ${context}
                                     </div>
                                   )}
 
-                                  {/* Tail Decoration (only for standard bubbles or custom handling needed?) */}
-                                  {!(
-                                    m.role === 'ai' &&
-                                    workflowMode === 'STORY' &&
-                                    idx === chatMessages.length - 1
-                                  ) &&
+                                  {/* Tail Decoration */}
+                                  {!isStoryRichBubble &&
+                                    !(m.role === 'ai' && storyArt) &&
                                     (m.role === 'ai' ? (
                                       <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
                                     ) : (
                                       <div className="absolute -right-1 top-4 w-3 h-3 bg-[#F5A524] rotate-45 rounded-sm"></div>
                                     ))}
+                                  {m.role === 'ai' && storyArt ? (
+                                    <div className="absolute -left-1 top-4 w-3 h-3 bg-[#205994] rotate-45 rounded-sm"></div>
+                                  ) : null}
                                 </div>
                               </div>
-                            ))}
+                            );
+                            })}
                             {/* Loading indicator - AI is thinking */}
                             {isAsking && (
                               <div className="flex items-start gap-2 animate-in fade-in slide-in-from-bottom-2">
@@ -1451,7 +1767,7 @@ ${context}
                         </CardBody>
                       </Card>
                     </div>
-                    {isChatMaximized && workflowMode === 'STORY' && isCanvasOpen && (
+                    {isChatMaximized && hasStoryForCanvas && isCanvasOpen && (
                       <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -1460,20 +1776,21 @@ ${context}
                         className="flex-1 h-full min-w-0"
                       >
                         <StoryCanvas
-                          content={workflowState.finalStory || ''}
+                          content={storyCanvasStateResolved?.finalStory || ''}
                           title={
-                            workflowState.storyTitle ||
-                            workflowState.diagramTitle ||
+                            storyCanvasStateResolved?.storyTitle ||
+                            storyCanvasStateResolved?.diagramTitle ||
                             'Generated Story'
                           }
-                          onClose={() => setIsCanvasOpen(false)}
-                          images={workflowState.generatedImages.map((img) => ({
-                            url: img.base64_data
-                              ? `data:image/png;base64,${img.base64_data}`
-                              : img.file_path || '',
+                          onClose={() => {
+                            setIsCanvasOpen(false);
+                            setCanvasStoryId(null);
+                          }}
+                          images={(storyCanvasStateResolved?.generatedImages || []).map((img) => ({
+                            url: imageSrcFromGeneratedImage(img),
                             alt: img.prompt_used || 'Generated Image',
                           }))}
-                          diagram={workflowState.draftDiagram}
+                          diagram={storyCanvasStateResolved?.draftDiagram || ''}
                         />
                       </motion.div>
                     )}

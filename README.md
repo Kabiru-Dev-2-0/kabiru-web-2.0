@@ -54,11 +54,15 @@ The quiz chat calls `POST /api/ai/story/generate`, which proxies to Skripsi `POS
 
 **Where the backend URL comes from**
 
-1. If `STORY_AGENT_API_URL` is set (e.g. in `.env.local` for dev or in the host environment for production), that value is used.
-2. If it is **not** set and the app runs on **Vercel** (`VERCEL` is set), the route uses the built-in production default `https://agentic-ai-story-based-learning.vercel.app` so a deploy from GitHub still reaches the story backend without relying on `.env.local` (which Next.js does not load on Vercel the same way as local dev).
-3. Otherwise (typical local `next dev`), the default is `http://127.0.0.1:8000`.
+1. If the incoming request host is not `localhost` / `127.0.0.1`, the route uses the built-in production default `https://agentic-ai-story-based-learning.vercel.app` (no dashboard env required).
+2. Otherwise (local dev), if `STORY_AGENT_API_URL` is set in `.env.local`, that value is used.
+3. If unset locally, the default is `http://127.0.0.1:8000`.
 
-`STORY_AGENT_API_KEY` is **not** hardcoded. If the Skripsi deployment requires `X-API-Key`, set `STORY_AGENT_API_KEY` in the **kabiru** project environment on the host (Vercel dashboard, or any secret injection the team uses). Without it, the default URL may still be used but requests can return **401**.
+On production-like hosts, if `STORY_AGENT_API_KEY` is unset, the route may send a temporary dummy key for bootstrapping. Prefer setting `STORY_AGENT_API_KEY` to match Skripsi `API_KEY` when env access exists.
+
+**Middleware:** Paths under `/api` skip Supabase login and onboarding redirects so `POST /api/ai/story/generate` is not replaced by an HTML redirect (which breaks fetch and SSE).
+
+If the browser shows **401** with JSON like `{"detail":"Not authenticated"}`, check **Vercel Deployment Protection** on the project (that response often comes from protection, not from this app code).
 
 The UI shows the **Supervisor** step first, then planning / research / writing / critique as SSE events arrive. The client keeps a stable **`thread_id`** per tab session (in-memory ref) for LangGraph checkpoint continuity on follow-up turns, and sends the last **eight** chat turns as **`history`** (`{ role, text }`) so the supervisor can use recent context without using the database.
 

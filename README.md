@@ -50,7 +50,19 @@ After modifying the `.npmrc` file, you need to run `pnpm install` again to ensur
 
 ## Story workflow (Skripsi API)
 
-The quiz chat calls `POST /api/ai/story/generate`, which proxies to Skripsi `POST /api/interactive/chat` (supervisor-first graph). The UI shows the **Supervisor** step first, then planning / research / writing / critique as SSE events arrive. The client keeps a stable **`thread_id`** per tab session (in-memory ref) for LangGraph checkpoint continuity on follow-up turns, and sends the last **eight** chat turns as **`history`** (`{ role, text }`) so the supervisor can use recent context without using the database.
+The quiz chat calls `POST /api/ai/story/generate`, which proxies to Skripsi `POST /api/interactive/chat` (supervisor-first graph).
+
+**Where the backend URL comes from**
+
+1. If the incoming request host is not `localhost` / `127.0.0.1`, the route uses the built-in production default `https://agentic-ai-story-based-learning.vercel.app` (no dashboard env required).
+2. Otherwise (local dev), if `STORY_AGENT_API_URL` is set in `.env.local`, that value is used.
+3. If unset locally, the default is `http://127.0.0.1:8000`.
+
+On production-like hosts, if `STORY_AGENT_API_KEY` is unset, the route may send a temporary dummy key for bootstrapping. Prefer setting `STORY_AGENT_API_KEY` to match Skripsi `API_KEY` when env access exists.
+
+If the browser shows **401** with JSON like `{"detail":"Not authenticated"}`, check **Vercel Deployment Protection** on the project (that response often comes from protection, not from this app code).
+
+The UI shows the **Supervisor** step first, then planning / research / writing / critique as SSE events arrive. The client keeps a stable **`thread_id`** per tab session (in-memory ref) for LangGraph checkpoint continuity on follow-up turns, and sends the last **eight** chat turns as **`history`** (`{ role, text }`) so the supervisor can use recent context without using the database.
 
 Illustrations from the backend may send `generated_images[]` with **raw base64** plus optional `mime_type` (Gemini / normalized OpenRouter), or a **full data URL** in `base64_data` (older OpenRouter payloads). The quiz UI builds the image `src` with `imageSrcFromGeneratedImage` so OpenRouter is not double-prefixed with `data:image/png;base64,`.
 

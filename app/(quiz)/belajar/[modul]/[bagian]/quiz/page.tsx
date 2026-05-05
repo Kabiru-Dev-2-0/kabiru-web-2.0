@@ -95,7 +95,7 @@ export default function Quiz() {
   const [chatOpen, setChatOpen] = useState(false);
   const [isChatMaximized, setIsChatMaximized] = useState(false);
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<{ role: 'ai' | 'user'; text: string }[]>([
+  const [chatMessages, setChatMessages] = useState<QuizChatMessage[]>([
     { role: 'ai', text: 'Halo, aku asistenmu, apakah kamu butuh bantuan?' },
   ]);
   const [chatInput, setChatInput] = useState('');
@@ -193,25 +193,24 @@ export default function Quiz() {
   const [storyArtifacts, setStoryArtifacts] = useState<{ id: string; state: WorkflowState }[]>([]);
   /** Which artifact the right-hand canvas shows; null = prefer live finalStory then newest artifact. */
   const [canvasStoryId, setCanvasStoryId] = useState<string | null>(null);
-  const storyLinkPendingRef = useRef<{ id: string } | null>(null);
 
   useEffect(() => {
     const fs = (workflowState.finalStory || '').trim();
     if (!fs) return;
 
-    storyLinkPendingRef.current = null;
+    let artifactLinkId: string | null = null;
 
     setStoryArtifacts((prev) => {
       const existing = prev.find((a) => (a.state.finalStory || '').trim() === fs);
       if (existing) {
-        storyLinkPendingRef.current = { id: existing.id };
+        artifactLinkId = existing.id;
         return prev;
       }
       const id =
         typeof crypto !== 'undefined' && crypto.randomUUID
           ? crypto.randomUUID()
           : `st_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-      storyLinkPendingRef.current = { id };
+      artifactLinkId = id;
       return [
         ...prev,
         {
@@ -225,23 +224,22 @@ export default function Quiz() {
       ];
     });
 
-    const link = storyLinkPendingRef.current;
-    storyLinkPendingRef.current = null;
-    if (!link) return;
+    if (!artifactLinkId) return;
+    const storyArtifactLinkId: string = artifactLinkId;
 
     setChatMessages((msgs) => {
       for (let i = msgs.length - 1; i >= 0; i--) {
         if (msgs[i].role !== 'ai') continue;
-        if (msgs[i].storyArtifactId === link.id) return msgs;
+        if (msgs[i].storyArtifactId === storyArtifactLinkId) return msgs;
         if (!isQuizStorySuccessLine(msgs[i].text || '')) continue;
         const copy = [...msgs];
-        copy[i] = { ...copy[i], storyArtifactId: link.id };
+        copy[i] = { ...copy[i], storyArtifactId: storyArtifactLinkId };
         return copy;
       }
       const last = msgs.length - 1;
       if (last >= 0 && msgs[last].role === 'ai' && !msgs[last].storyArtifactId) {
         const copy = [...msgs];
-        copy[last] = { ...copy[last], storyArtifactId: link.id };
+        copy[last] = { ...copy[last], storyArtifactId: storyArtifactLinkId };
         return copy;
       }
       return msgs;

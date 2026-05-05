@@ -38,6 +38,12 @@ npm install
 npm run dev
 ```
 
+### Supabase env (local + cloud)
+
+Client, server, and middleware read the URL from `NEXT_PUBLIC_SUPABASE_URL` and the key from `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, with fallback to `NEXT_PUBLIC_SUPABASE_ANON_KEY` (see `utils/supabase/env.ts`).
+
+If dev logs `Error: fetch failed` from `@supabase/auth-js` in the Edge middleware, check network or VPN, confirm the Supabase project is not paused, and that the key matches the project. Middleware continues the request without session refresh if the call fails so the app does not hard-fail.
+
 ### Setup pnpm (optional)
 
 If you are using `pnpm`, you need to add the following code to your `.npmrc` file:
@@ -59,8 +65,6 @@ The quiz chat calls `POST /api/ai/story/generate`, which proxies to Skripsi `POS
 3. If unset locally, the default is `http://127.0.0.1:8000`.
 
 On production-like hosts, if `STORY_AGENT_API_KEY` is unset, the route may send a temporary dummy key for bootstrapping. Prefer setting `STORY_AGENT_API_KEY` to match Skripsi `API_KEY` when env access exists.
-
-**Middleware:** Paths under `/api` skip Supabase login and onboarding redirects so `POST /api/ai/story/generate` is not replaced by an HTML redirect (which breaks fetch and SSE).
 
 If the browser shows **401** with JSON like `{"detail":"Not authenticated"}`, check **Vercel Deployment Protection** on the project (that response often comes from protection, not from this app code).
 

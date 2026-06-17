@@ -59,15 +59,26 @@ export default function BelajarPage() {
       setLoading(true);
       const { data: modulsData, error: modErr } = await supabase
         .from('moduls')
-        .select('id, judul, deskripsi, nomor_modul, gambar')
+        .select('*')
         .order('nomor_modul', { ascending: true });
       if (modErr) {
         setError('Gagal mengambil data modul');
         setLoading(false);
         return;
       }
-      setModuls(modulsData || []);
-      const ids = (modulsData || []).map((m: any) => m.id);
+      // Client-side filter: if the rows include a `jenjang` column, only keep jenjang === 'sma'
+      let fetchedModuls = (modulsData || []) as any[];
+      if (
+        fetchedModuls.length > 0 &&
+        Object.prototype.hasOwnProperty.call(fetchedModuls[0], 'jenjang')
+      ) {
+        fetchedModuls = fetchedModuls.filter((m: any) => {
+          const j = typeof m?.jenjang === 'string' ? m.jenjang.toLowerCase() : '';
+          return j === 'sma';
+        });
+      }
+      setModuls(fetchedModuls);
+      const ids = fetchedModuls.map((m: any) => m.id);
       if (ids.length > 0) {
         const { data: pelData } = await supabase
           .from('pelajarans')

@@ -80,13 +80,19 @@ export async function updateSession(request: NextRequest) {
           const belumAda = !dataRow;
 
           if (isBaru || belumAda) {
-            const url = request.nextUrl.clone();
-            url.pathname = '/perkenalan';
-            return NextResponse.redirect(url);
-          }
-        } else {
+          await supabase.auth.signOut();
+
           const url = request.nextUrl.clone();
-          url.pathname = '/perkenalan';
+          url.pathname = '/login';
+
+          return NextResponse.redirect(url);
+        }
+        } else {
+          await supabase.auth.signOut();
+
+          const url = request.nextUrl.clone();
+          url.pathname = '/login';
+
           return NextResponse.redirect(url);
         }
       } catch {

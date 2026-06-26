@@ -49,7 +49,7 @@ export default function OnBoarding() {
                 {/* HEADER */}
                 <LevelHeader
                   name={user?.username || "Pemain"}
-                  level="Pemula"
+                  level="Siswa"
                   avatar={user?.avatar || "/imageAssets/avatar/default.png"}
                   exp={user?.exp || 0}
                 />

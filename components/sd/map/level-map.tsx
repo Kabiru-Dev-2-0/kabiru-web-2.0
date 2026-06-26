@@ -161,7 +161,7 @@ function getModuleState(
                     user?.username ||
                     "Pemain"
                   }
-                  level="Pemula"
+                  level="Siswa"
                   avatar={
                     user?.avatar ||
                     "/imageAssets/avatar/default.png"

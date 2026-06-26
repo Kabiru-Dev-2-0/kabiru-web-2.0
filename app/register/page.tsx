@@ -1,22 +1,14 @@
-'use client';
-import { Card, CardBody, CardHeader } from '@heroui/card';
-import { Input } from '@heroui/input';
-import { Button } from '@heroui/button';
-import { Link } from '@heroui/link';
-import { Divider } from '@heroui/divider';
-import { Spinner } from '@heroui/spinner';
-import {
-  LockClosedRegular,
-  MailRegular,
-  PersonRegular,
-  ArrowCircleRightRegular,
-} from '@fluentui/react-icons';
-import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { useRouter } from "next/navigation";
-import { IconFSchool } from 'react-fluentui-emoji/lib/flat';
+"use client";
 
-export default function LoginPage() {
+import { Card, CardBody } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { Link } from "@heroui/link";
+import { useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import { IconFSchool } from "react-fluentui-emoji/lib/flat";
+
+export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,10 +18,10 @@ export default function LoginPage() {
       const supabase = createClient();
       const redirectTo = `${window.location.origin}/auth/callback`;
       await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo,
-          scopes: 'openid email profile',
+          scopes: "openid email profile",
         },
       });
     } catch {
@@ -38,82 +30,89 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFDFD] flex flex-col">
-      {/* Main Content */}
-      <div className="flex-1 flex justify-center items-center overflow-y-auto h-full bg-[#3674B5]">
-        <div className="flex justify-center items-center px-0 py-6 h-[80vh] w-full">
-          <div className="flex justify-center items-center gap-6 w-[100%]">
-            <div className="w-[60%]">
-              <Card className="border-2 border-[#E4E4E7] bg-white rounded-[18px] shadow-[0px_2px_0px_0px_rgba(228,228,231,1)]">
-                <CardBody className="p-8 flex flex-col gap-4">
-                  <main className="flex flex-row items-center justify-center gap-4 flex-wrap w-full min-h-[60vh]">
-                    <div>
+    <div className="min-h-screen bg-[#3674B5] flex flex-col">
+      <div className="flex-1 flex justify-center items-center px-4 py-8 sm:px-6 lg:px-8">
+        <div className="w-full max-w-5xl">
+          <Card className="border-2 border-[#E4E4E7] bg-white rounded-[18px] shadow-[0px_2px_0px_0px_rgba(228,228,231,1)] w-full">
+            <CardBody className="p-6 sm:p-8 lg:p-10">
+              <main className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-10 w-full min-h-[50vh] lg:min-h-[60vh]">
+                {/* Illustration — hidden on mobile, shown on tablet+ */}
+                <div className="hidden sm:flex justify-center items-center flex-shrink-0">
+                  <img
+                    src="/imageAssets/strategy.png"
+                    alt="Register Illustration"
+                    className="w-44 h-44 sm:w-56 sm:h-56 lg:w-80 lg:h-80 object-contain"
+                  />
+                </div>
+
+                {/* Content Section */}
+                <section className="flex flex-col gap-8 items-center justify-center text-center w-full lg:w-[50%]">
+                  {/* Illustration — visible only on mobile */}
+                  <div className="flex sm:hidden justify-center">
+                    <img
+                      src="/imageAssets/strategy.png"
+                      alt="Register Illustration"
+                      className="w-28 h-28 object-contain"
+                    />
+                  </div>
+
+                  {/* Heading */}
+                  <div className="flex flex-col gap-2 items-center justify-center">
+                    <h2 className="text-2xl sm:text-3xl font-semibold text-[#3674B5] leading-snug">
+                      Daftar & Mulai Petualanganmu!
+                    </h2>
+                    <p className="text-sm sm:text-base text-[#71717A] max-w-sm">
+                      Belajar Koding dan Kecerdasan Artifisial dengan seru tanpa
+                      ribet. Yuk buat akunmu dan mulai eksplor!
+                    </p>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex flex-col gap-3 items-center justify-center w-full max-w-xs sm:max-w-sm">
+                    <Button
+                      type="button"
+                      variant="bordered"
+                      radius="lg"
+                      size="lg"
+                      className="font-semibold text-sm sm:text-base w-full text-[#838383] border-1 border-[#3674B5] shadow-xs shadow-[#3674B5]"
+                      isDisabled={isLoading}
+                      onPress={handleGoogleLogin}>
                       <img
-                        src="/imageAssets/strategy.png"
-                        alt="Login Illustration"
-                        className="sm:w-100 sm:h-100 h-40 w-40 object-contain"
+                        src="/imageAssets/google.svg"
+                        alt="Google Icon"
+                        className="w-5 h-5 sm:w-6 sm:h-6 object-contain flex-shrink-0"
                       />
-                    </div>
-                    <section className="flex flex-col gap-10 items-center justify-center text-center w-[50%]">
-                      <div className="flex flex-col gap-2 items-center justify-center">
-                        <h2 className="text-3xl font-semibold text-[#3674B5]">
-                          Daftar & Mulai Petualanganmu!
-                        </h2>
-                        <p className="text-base text-[#71717A]">
-                          Belajar Koding dan Kecerdasan Artifisial dengan seru tanpa ribet. Yuk buat
-                          akunmu dan mulai eksplor!
-                        </p>
-                      </div>
-                      {/* BUTTONS */}
-                      <div className="flex flex-col gap-3 items-center justify-center">
-                      <Button
-                        type="button"
-                        variant="bordered"
-                        radius="lg"
-                        size="lg"
-                        className="font-semibold text-base px-10 text-[#838383] border-1 border-[#3674B5] shadow-xs shadow-[#3674B5]"
-                        isDisabled={isLoading}
-                        onPress={handleGoogleLogin}
-                      >
-                        <img
-                          src="/imageAssets/google.svg"
-                          alt="Google Icon"
-                          className="w-6 h-6 object-contain"
-                        />
-                        Daftar dengan Google
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="bordered"
-                        radius="lg"
-                        size="lg"
-                        className="font-semibold text-base px-10 text-[#838383] border-1 border-[#3674B5] shadow-xs shadow-[#3674B5]"
-                        isDisabled={isLoading}
-                        onPress={() =>
-                          router.push("/sd/register")
-                        }
-                      >
-                        <IconFSchool size={24}></IconFSchool>
-                        Daftar Akun untuk SD
-                      </Button>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-base text-[#71717A]">
-                          Sudah punya akun?{' '}
-                          <Link
-                            href="/login"
-                            className="text-base text-[#000000] font-semibold hover:underline"
-                          >
-                            Masuk
-                          </Link>
-                        </span>
-                      </div>
-                    </section>
-                  </main>
-                </CardBody>
-              </Card>
-            </div>
-          </div>
+                      <span>Daftar dengan Google</span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="bordered"
+                      radius="lg"
+                      size="lg"
+                      className="font-semibold text-sm sm:text-base w-full text-[#838383] border-1 border-[#3674B5] shadow-xs shadow-[#3674B5]"
+                      isDisabled={isLoading}
+                      onPress={() => router.push("/sd/register")}>
+                      <IconFSchool size={22} />
+                      <span>Daftar Akun untuk SD</span>
+                    </Button>
+                  </div>
+
+                  {/* Login link */}
+                  <div className="text-center">
+                    <span className="text-sm sm:text-base text-[#71717A]">
+                      Sudah punya akun?{" "}
+                      <Link
+                        href="/login"
+                        className="text-sm sm:text-base text-[#7828C8] font-semibold hover:underline">
+                        Masuk
+                      </Link>
+                    </span>
+                  </div>
+                </section>
+              </main>
+            </CardBody>
+          </Card>
         </div>
       </div>
     </div>

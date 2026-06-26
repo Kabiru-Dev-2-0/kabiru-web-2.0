@@ -45,8 +45,6 @@ export default function SDRegisterPage() {
         )
         .maybeSingle();
 
-    console.log("ERROR:", error);
-
     if (error) {
       setEmailError(
         "Terjadi kesalahan saat memeriksa email"

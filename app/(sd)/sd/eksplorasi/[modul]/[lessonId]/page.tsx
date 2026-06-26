@@ -44,14 +44,9 @@ export default function DetailLessonPage() {
 
   const [modul, setModul] = useState<Modul | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [
-    totalExercises,
-    setTotalExercises,
-  ] = useState<number | null>(null);
+  const [totalExercises, setTotalExercises] = useState<number | null>(null);
   const totalProgress =
-    totalExercises !== null
-      ? totalExercises + 1
-      : undefined;
+    totalExercises !== null ? totalExercises + 1 : undefined;
 
   // =========================================
   // SHORT TEXT
@@ -110,8 +105,13 @@ export default function DetailLessonPage() {
     if (lessonId && !isNaN(lessonId)) {
       fetchLesson();
     }
-
   }, [lessonId]);
+
+  // =========================================
+  // FORMAT RENDER DETAIL MATERI PEMBAHASAN
+  // =========================================
+  const formattedMateri =
+    lesson?.materi?.replace(/containerstyle="([^"]*)"/g, 'style="$1"') || "";
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -131,14 +131,11 @@ export default function DetailLessonPage() {
       {/* ================= HEADER ================= */}
       <div className="relative z-30">
         <TopHeader
-            name={user?.username || "Pemain"}
-            level="Siswa"
-            avatar={user?.avatar || "/imageAssets/avatar/default.png"}
-                  
+          name={user?.username || "Pemain"}
+          level="Siswa"
+          avatar={user?.avatar || "/imageAssets/avatar/default.png"}
           showBack
-          showProgress={
-            totalProgress !== undefined
-          }
+          showProgress={totalProgress !== undefined}
           currentProgress={1}
           totalProgress={totalProgress || 1}
           exp={user?.exp || 0}
@@ -168,8 +165,7 @@ export default function DetailLessonPage() {
           shadow-2xl
 
           overflow-hidden
-        "
-      >
+        ">
         {/* ================= SCROLL AREA ================= */}
         <div
           className="
@@ -182,8 +178,7 @@ export default function DetailLessonPage() {
             py-8
 
             custom-scroll
-          "
-        >
+          ">
           {/* TITLE */}
           <h1
             className="
@@ -192,8 +187,7 @@ export default function DetailLessonPage() {
               font-black
               leading-tight
               mb-8
-            "
-          >
+            ">
             {lesson?.bagian}. {lesson?.judul}
           </h1>
 
@@ -208,7 +202,7 @@ export default function DetailLessonPage() {
             "
             dangerouslySetInnerHTML={{
               __html:
-                lesson?.materi ||
+                formattedMateri ||
                 `
                 <p>
                   Loading...
@@ -227,8 +221,7 @@ export default function DetailLessonPage() {
           left-18
           px-6 md:px-10
           z-30
-        "
-      >
+        ">
         <Breadcrumb
           items={[
             {
@@ -254,12 +247,9 @@ export default function DetailLessonPage() {
         right-[8%]
 
         z-50
-      "
-      >
+      ">
         <button
-          onClick={() =>
-            router.push(`/sd/latihan/${lesson?.id}`)
-          }
+          onClick={() => router.push(`/sd/latihan/${lesson?.id}`)}
           className="
           flex
           items-center
@@ -280,15 +270,13 @@ export default function DetailLessonPage() {
 
           hover:scale-105
           transition-all
-        "
-        >
+        ">
           <img
             src="/imageAssets/sd/icon-game.png"
             alt="game"
             className="w-10 h-10"
           />
-
-          MULAI BERMAIN
+          MULAI BERLATIH
         </button>
       </div>
 
@@ -309,35 +297,62 @@ export default function DetailLessonPage() {
         }
 
         .lesson-content p {
-          margin: 1rem 0;
+          margin: 0.5rem 0;
+        }
+
+        .lesson-content p[style*="text-align: center"] {
+          text-align: center;
+        }
+
+        .lesson-content p[style*="text-align: right"] {
+          text-align: right;
+        }
+
+        .lesson-content p[style*="text-align: left"] {
+          text-align: left;
         }
 
         .lesson-content h1 {
-          font-size: 2.5rem;
-          font-weight: 900;
-          margin-top: 2rem;
-          margin-bottom: 1rem;
-          color: #ffe08a;
+          font-size: 2rem;
+          font-weight: 800;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+          color: #ffffff;
         }
 
         .lesson-content h2 {
-          font-size: 2rem;
-          font-weight: 800;
-          margin-top: 1.5rem;
-          margin-bottom: 1rem;
-          color: #ffe08a;
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+          color: #ffffff;
+        }
+
+        .lesson-content h1[style*="text-align: center"],
+        .lesson-content h2[style*="text-align: center"] {
+          text-align: center;
+        }
+
+        .lesson-content h1[style*="text-align: right"],
+        .lesson-content h2[style*="text-align: right"] {
+          text-align: right;
+        }
+
+        .lesson-content h1[style*="text-align: left"],
+        .lesson-content h2[style*="text-align: left"] {
+          text-align: left;
         }
 
         .lesson-content ul {
           list-style-type: disc;
           padding-left: 2rem;
-          margin: 1rem 0;
+          margin: 0.5rem 0;
         }
 
         .lesson-content ol {
           list-style-type: decimal;
           padding-left: 2rem;
-          margin: 1rem 0;
+          margin: 0.5rem 0;
         }
 
         .lesson-content li {
@@ -358,10 +373,10 @@ export default function DetailLessonPage() {
           max-width: 100%;
           height: auto;
 
-          border-radius: 20px;
+          margin-left: auto;
+          margin-right: auto;
 
-          margin-top: 1.5rem;
-          margin-bottom: 1.5rem;
+          border-radius: 20px;
         }
 
         .lesson-content iframe {

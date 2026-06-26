@@ -3,10 +3,18 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { getSupabaseKey, getSupabaseUrl } from './env';
 
+const SD_PATHS = ['/game-selection', '/map', 'onboarding', '/sd']
+
 export async function updateSession(request: NextRequest) {
   const passthrough = NextResponse.next({ request });
+  const pathname = request.nextUrl.pathname;
 
   if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+    return passthrough;
+  }
+
+  const isSDPath = SD_PATHS.some((p) => pathname.startsWith(p));
+  if (isSDPath) {
     return passthrough;
   }
 

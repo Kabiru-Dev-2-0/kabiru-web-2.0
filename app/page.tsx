@@ -6,7 +6,7 @@ import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import {
   Bot24Color,
-  BookRegular, 
+  BookRegular,
   TrophyRegular,
   PeopleRegular,
   ArrowRightRegular,
@@ -21,6 +21,7 @@ import {
   DataTrending28Color,
   MegaphoneLoud28Color,
   BookOpenLightbulb32Color,
+  PuzzlePiece24Filled,
 } from "@fluentui/react-icons";
 
 export default function Home() {
@@ -132,6 +133,166 @@ export default function Home() {
                 alt="Preview hero dummy"
                 style={{ maxWidth: "100%" }}
               />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION: JENJANG */}
+      <section className="flex justify-center bg-white">
+        <div className="w-full max-w-[1440px] mt-62 px-6 md:px-16 lg:px-28 py-16 lg:py-10">
+          <div className="flex flex-col gap-12">
+            {/* Heading */}
+            <div className="w-full flex flex-col lg:flex-row justify-between items-start gap-8">
+              <h2 className="max-w-[520px] text-2xl md:text-4xl lg:text-5xl font-bold leading-snug lg:leading-[72px] text-black">
+                Belajar Seru Sesuai
+                <br />
+                <span className="text-[#3674B5]">
+                  Jenjang
+                </span>
+              </h2>
+
+              <p className="max-w-[500px] text-base md:text-lg text-black leading-relaxed md:leading-8">
+                Perjalanan belajar disusun secara bertahap. Setiap
+                jenjang memiliki fokus pembelajaran yang berbeda
+                sesuai kemampuan dan kebutuhan siswa.
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_2.35fr] gap-8">
+              {/* Left Banner */}
+              <div className="relative overflow-hidden rounded-[32px] min-h-[360px]">
+                <img
+                  src="imageAssets/landingpage/jenjang-picture.png"
+                  alt="Pilih Jenjang"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-t from-[#27093F]/80 via-[#27093F]/40 to-transparent" />
+
+                <div className="absolute bottom-0 left-0 p-8">
+                  <h3 className="text-white text-2xl font-bold mb-3">
+                    Pilih Jenjang Belajarmu
+                  </h3>
+
+                  <p className="text-white/90 text-base leading-relaxed">
+                    Setiap jenjang dengan masing-masing gaya
+                    pembelajaran.
+                  </p>
+                </div>
+              </div>
+              {/* Right Cards */}
+              <div
+                className="
+                  h-[360px]
+
+                  grid
+                  grid-cols-1
+                  md:grid-cols-3
+
+                  overflow-hidden
+                  rounded-[32px]
+
+                  bg-[#DCE6F2]
+                "
+              >
+                {/* SD */}
+                <div className="bg-[#C9D6E6] rounded-[30px]">
+                  <div className="p-8 flex flex-col h-full">
+                    <div className="w-12 h-12 rounded-full bg-[#3674B5] flex items-center justify-center mb-6">
+                      <img
+                        src="/imageAssets/landingpage/noto_puzzle-piece.png"
+                        alt="puzzle"
+                        className="w-8"
+                      />
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-black mb-4">
+                      SD/MI
+                    </h3>
+
+                    <p className="text-zinc-600 leading-relaxed flex-1">
+                      Kenalan dengan logika, pola, dan berpikir
+                      komputasional melalui aktivitas interaktif.
+                    </p>
+
+                    <Button
+                      as={Link}
+                      href="/register"
+                      radius="md"
+                      size="md"
+                      className="px-6 py-6 md:px-8 bg-[#F5A524] text-white text-sm md:text-base font-semibold rounded-xl shadow-[0px_3px_0px_0px_rgba(196,132,29,1.00)] outline outline-1 outline-offset-[-1px] outline-[#C4841D] hover:bg-[#CA8A04]"
+                    >
+                      Mulai Belajar
+                    </Button>
+                  </div>
+                </div>
+
+                {/* SMP */}
+                <div>
+                  <div className="p-8 flex flex-col h-full">
+                    <div className="w-12 h-12 rounded-full bg-[#3674B5] flex items-center justify-center mb-6">
+                      <img
+                        src="/imageAssets/landingpage/noto_brain.png"
+                        alt="brain"
+                        className="w-8"
+                      />
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-black mb-4">
+                      SMP/MTs
+                    </h3>
+
+                    <p className="text-zinc-600 leading-relaxed flex-1">
+                      Latih kemampuan berpikir komputasional lewat
+                      tantangan dasar koding dan AI.
+                    </p>
+
+                    <Button
+                      as={Link}
+                      href="/register"
+                      radius="md"
+                      size="md"
+                      className="px-6 py-6 md:px-8 bg-[#F5A524] text-white text-sm md:text-base font-semibold rounded-xl shadow-[0px_3px_0px_0px_rgba(196,132,29,1.00)] outline outline-1 outline-offset-[-1px] outline-[#C4841D] hover:bg-[#CA8A04]"
+                    >
+                      Mulai Belajar
+                    </Button>
+                  </div>
+                </div>
+
+                {/* SMA */}
+                <div className="bg-[#C9D6E6] rounded-[30px]">
+                  <div className="p-8 flex flex-col h-full">
+                    <div className="w-12 h-12 rounded-full bg-[#3674B5] flex items-center justify-center mb-6">
+                      <img
+                        src="/imageAssets/landingpage/noto_rocket.png"
+                        alt="rocket"
+                        className="w-8"
+                      />
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-black mb-4">
+                      SMA/SMK/MA
+                    </h3>
+
+                    <p className="text-zinc-600 leading-relaxed flex-1">
+                      Konsep yang lebih mendalam dan bangun proyek
+                      teknologi untuk masa depanmu.
+                    </p>
+
+                    <Button
+                      as={Link}
+                      href="/register"
+                      radius="md"
+                      size="md"
+                      className="px-6 py-6 md:px-8 bg-[#F5A524] text-white text-sm md:text-base font-semibold rounded-xl shadow-[0px_3px_0px_0px_rgba(196,132,29,1.00)] outline outline-1 outline-offset-[-1px] outline-[#C4841D] hover:bg-[#CA8A04]"
+                    >
+                      Mulai Belajar
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -588,9 +749,9 @@ export default function Home() {
             {/* Brand Section */}
             <div className="flex flex-col gap-4 max-w-md">
               <div className="flex items-center gap-3">
-                
+
                 <div className="flex flex-col">
-                  <img src="imageAssets/LogoApp-white.png" alt="" className="h-12"/>
+                  <img src="imageAssets/LogoApp-white.png" alt="" className="h-12" />
                 </div>
               </div>
               <p className="text-sm text-white/60 leading-relaxed">

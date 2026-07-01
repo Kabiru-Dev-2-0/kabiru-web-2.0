@@ -9,6 +9,7 @@ type Props = {
   exp: number;
   avatar: string;
   isCurrentUser?: boolean;
+  noShadow?: boolean;
 };
 
 export default function CardLeaderboard({
@@ -18,6 +19,7 @@ export default function CardLeaderboard({
   exp,
   avatar,
   isCurrentUser = false,
+  noShadow = false,
 }: Props) {
   const [animate, setAnimate] =
     useState(false);
@@ -61,8 +63,12 @@ export default function CardLeaderboard({
 
         ${
           isCurrentUser
-            ? "bg-[#E8D9FF] shadow-[0_-8px_20px_rgba(0,0,0,0.20)]"
-            : "bg-[#F7F3E6]"
+          ? `bg-[#E8D9FF] ${
+              noShadow
+                ? ""
+                : "shadow-[0_-8px_20px_rgba(0,0,0,0.20)]"
+            }`
+          : "bg-[#F7F3E6]"
         }
       `}
     >

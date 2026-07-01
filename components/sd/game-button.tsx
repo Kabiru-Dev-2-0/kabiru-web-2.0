@@ -1,6 +1,6 @@
 "use client";
 
-type Props = {
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   children?: React.ReactNode;
   icon?: React.ReactNode;
   onClick?: () => void;
@@ -22,6 +22,7 @@ export default function GameButton({
   size = "md",
   className = "",
   disabled = false,
+  ...rest
 }: Props) {
   const variantClasses = {
     green: "bg-gradient-to-r from-[#47E5A0] to-[#53A058]",
@@ -67,6 +68,7 @@ export default function GameButton({
 
   return (
     <button
+      {...rest}
       disabled={isDisabled}
       onClick={isDisabled ? undefined : onClick}
       className={`

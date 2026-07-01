@@ -106,9 +106,6 @@ useEffect(() => {
 
     setResetExercise(
       () => () => {
-        console.log(
-          "RESET SORTING"
-        );
 
         setItems(
           structuredClone(

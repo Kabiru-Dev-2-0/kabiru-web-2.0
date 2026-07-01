@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { getSupabaseKey, getSupabaseUrl } from './env';
 
-const SD_PATHS = ['/game-selection', '/map', 'onboarding', '/sd']
+const SD_PATHS = ['/game-selection', '/map', '/onboarding', '/sd']
 
 export async function updateSession(request: NextRequest) {
   const passthrough = NextResponse.next({ request });

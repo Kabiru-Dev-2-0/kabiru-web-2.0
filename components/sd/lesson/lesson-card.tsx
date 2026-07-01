@@ -21,10 +21,10 @@ export default function LessonCard({
     <Link href={href}>
       <div
         className="
-        w-[272px]
-        md:w-[280px]
-        lg:w-[300px]
-        rounded-[28px]
+        w-[252px]
+        md:w-[270px]
+        lg:w-[280px]
+        rounded-[18px]
         bg-slate-50
         overflow-hidden
         flex-shrink-0
@@ -90,7 +90,7 @@ export default function LessonCard({
               <h3
                 className="
                 text-[#1E293B]
-                font-black
+                font-extrabold
                 uppercase
                 text-[18px]
                 leading-[1.2]

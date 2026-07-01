@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import PodiumStage from "@/components/sd/leaderboard/podium-stage";
 import CardLeaderboard from "@/components/sd/leaderboard/card-leaderboard";
@@ -21,28 +21,22 @@ type LeaderboardUser = {
 
 const supabase = createClient();
 
-export default function LeaderBoard({
-  onClose,
-}: Props) {
-  const [leaderboard, setLeaderboard] =
-    useState<LeaderboardUser[]>([]);
+export default function LeaderBoard({ onClose }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [currentUsername, setCurrentUsername] =
-    useState("");
+  const currentUserRef = useRef<HTMLDivElement>(null);
+
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
+
+  const [currentUsername, setCurrentUsername] = useState("");
 
   useEffect(() => {
-    const user =
-      localStorage.getItem(
-        "sd_user"
-      );
+    const user = localStorage.getItem("sd_user");
 
     if (user) {
-      const parsed =
-        JSON.parse(user);
+      const parsed = JSON.parse(user);
 
-      setCurrentUsername(
-        parsed.username
-      );
+      setCurrentUsername(parsed.username);
     }
   }, []);
 
@@ -52,66 +46,64 @@ export default function LeaderBoard({
     }
   }, [currentUsername]);
 
+  {/* AUTO SCROLL CURRENT USER */}
+  useEffect(() => {
+    if (!currentUserVisible) return;
+
+    if (!scrollRef.current || !currentUserRef.current) return;
+
+    const container = scrollRef.current;
+    const target = currentUserRef.current;
+
+    container.scrollTo({
+      top:
+        target.offsetTop - container.clientHeight / 2 + target.clientHeight / 2,
+      behavior: "smooth",
+    });
+  }, [leaderboard]);
+
   async function loadLeaderboard() {
-    const { data, error } =
-      await supabase
-        .from("data_penggunas_sd")
-        .select(`
+    const { data, error } = await supabase
+      .from("data_penggunas_sd")
+      .select(
+        `
           id,
           nama_panggilan,
           username,
           avatar,
           exp
-        `)
-        .order("exp", {
-          ascending: false,
-        });
+        `,
+      )
+      .order("exp", {
+        ascending: false,
+      });
 
     if (error) {
       console.error(error);
       return;
     }
+    console.log("ERROR:", error);
 
-    console.log("DATA:", data);
-console.log("ERROR:", error);
+    const mapped = (data ?? []).map((user, index) => ({
+      rank: index + 1,
 
-    const mapped = (data ?? []).map(
-      (user, index) => ({
-        rank: index + 1,
+      name: user.nama_panggilan || user.username || "Pemain",
 
-        name:
-          user.nama_panggilan ||
-          user.username ||
-          "Pemain",
+      exp: user.exp ?? 0,
 
-        exp: user.exp ?? 0,
+      avatar: user.avatar || "/imageAssets/avatar/default.png",
 
-        avatar:
-          user.avatar ||
-          "/imageAssets/avatar/default.png",
-
-        isCurrentUser:
-          user.username ===
-          currentUsername,
-      })
-    );
+      isCurrentUser: user.username === currentUsername,
+    }));
 
     setLeaderboard(mapped);
   }
 
-  const currentUser =
-    leaderboard.find(
-      (item) =>
-        item.isCurrentUser
-    );
+  const currentUser = leaderboard.find((item) => item.isCurrentUser);
 
-  const currentUserVisible =
-    leaderboard
-      .slice(3, 13)
-      .some(
-        (item) =>
-          item.isCurrentUser
-      );
+  const currentUserVisible = leaderboard
+    .slice(3, 13)
+    .some((item) => item.isCurrentUser);
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -135,8 +127,7 @@ console.log("ERROR:", error);
           top-8
           right-8
           z-50
-        "
-      >
+        ">
         <GameButton
           variant="red"
           size="lg"
@@ -165,8 +156,7 @@ console.log("ERROR:", error);
 
           px-12
           py-8
-        "
-      >
+        ">
         {/* PODIUM */}
         <div
           className="
@@ -174,8 +164,7 @@ console.log("ERROR:", error);
             items-end
             justify-center
             gap-0
-          "
-        >
+          ">
           {leaderboard[1] && (
             <PodiumStage
               rank={2}
@@ -209,7 +198,7 @@ console.log("ERROR:", error);
 
         {/* PANEL */}
         <div
-        className="
+          className="
           relative
 
           w-[600px]
@@ -224,8 +213,7 @@ console.log("ERROR:", error);
           pb-5
 
           shadow-xl
-        "
-      >
+        ">
           {/* TITLE */}
           <div
             className="
@@ -234,8 +222,7 @@ console.log("ERROR:", error);
               left-1/2
               -translate-x-1/2
               z-20
-            "
-          >
+            ">
             <img
               src="/imageAssets/sd/leaderboard/title-ribbon.png"
               className="w-[640px] max-w-none"
@@ -252,16 +239,14 @@ console.log("ERROR:", error);
               px-6
               py-3
               mb-4
-            "
-          >
+            ">
             <div
               className="
                 text-center
                 font-black
                 text-gray-400
                 text-[24px]
-              "
-            >
+              ">
               PERINGKAT
             </div>
 
@@ -271,8 +256,7 @@ console.log("ERROR:", error);
                 font-black
                 text-[#9095A4]
                 text-[22px]
-              "
-            >
+              ">
               NAMA
             </div>
 
@@ -288,8 +272,7 @@ console.log("ERROR:", error);
                   font-black
                   text-[#9095A4]
                   text-[22px]
-                "
-              >
+                ">
                 EXP
               </div>
             </div>
@@ -297,63 +280,59 @@ console.log("ERROR:", error);
 
           {/* SCROLL LIST */}
           <div
+            ref={scrollRef}
             className="
               absolute
-
               top-[145px]
               left-5
               right-5
 
-              bottom-[95px]
-
               overflow-y-auto
-
               flex
               flex-col
               gap-3
-
               pr-2
-              mb-10
-
+              pb-8
               custom-scrollbar
             "
-          >
-            {leaderboard
-              .slice(3, 13)
-              .map((player) => (
+            style={{
+              bottom: currentUserVisible ? 20 : 95,
+            }}>
+            {leaderboard.slice(3, 13).map((player) => (
+              <div
+                key={player.rank}
+                ref={player.isCurrentUser ? currentUserRef : undefined}>
                 <CardLeaderboard
-                  key={player.rank}
                   rank={player.rank}
                   name={player.name}
                   exp={player.exp}
                   avatar={player.avatar}
-                  isCurrentUser={
-                    player.isCurrentUser
-                  }
+                  isCurrentUser={player.isCurrentUser}
+                  noShadow={player.isCurrentUser}
                 />
-              ))}
+              </div>
+            ))}
           </div>
 
           {/* FIXED CURRENT USER */}
-          {currentUser &&
-            !currentUserVisible && (
-              <div
-                className="
+          {currentUser && !currentUserVisible && (
+            <div
+              className="
                   absolute
 
                   left-5
                   right-5
                   bottom-5
-                "
-              >
-                <CardLeaderboard
-                  rank={currentUser.rank}
-                  name={currentUser.name}
-                  exp={currentUser.exp}
-                  avatar={currentUser.avatar}
-                  isCurrentUser
-                />
-              </div>
+                ">
+              <CardLeaderboard
+                rank={currentUser.rank}
+                name={currentUser.name}
+                exp={currentUser.exp}
+                avatar={currentUser.avatar}
+                isCurrentUser
+                noShadow={false}
+              />
+            </div>
           )}
         </div>
       </div>

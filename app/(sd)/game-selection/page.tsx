@@ -98,7 +98,7 @@ export default function GameSelectionPage() {
               variant="yellow"
               size="md"
               onClick={() =>
-                router.push("/map")
+                router.push("/onboarding")
               }
             >
               Mainkan

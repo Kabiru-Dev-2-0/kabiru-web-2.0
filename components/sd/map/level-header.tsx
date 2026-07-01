@@ -18,6 +18,10 @@ type Props = {
   exp: number;
 
   showBack?: boolean;
+
+  onBack?: () => void;
+
+  backHref?: string;
 };
 
 export default function TopHeader({
@@ -26,6 +30,8 @@ export default function TopHeader({
   avatar,
   exp,
   showBack = false,
+  onBack,
+  backHref,
 }: Props) {
   const router = useRouter();
 
@@ -36,20 +42,29 @@ export default function TopHeader({
         {/* LEFT */}
         {showBack && (
           <button
-            onClick={() =>
-              router.back()
-            }
+            onClick={() => {
+              if (onBack) {
+                onBack();
+                return;
+              }
+
+              if (backHref) {
+                router.push(backHref);
+                return;
+              }
+
+              router.back();
+            }}
             className="
                         flex items-center gap-3
                         bg-gradient-to-r from-yellow-400 to-orange-400
                         text-white font-black
                         px-4 md:px-6
-                        py-2 md:py-5
+                        py-3 md:py-4
                         rounded-full
                         whitespace-nowrap
                         cursor-pointer
-                        "
-          >
+                        ">
             {/* ICON */}
             <img
               src="/imageAssets/sd/icon-arrow-left-big.png"
@@ -58,16 +73,11 @@ export default function TopHeader({
             />
 
             {/* TEXT */}
-            <span className="text-2xl md:text-2xl">
-              KEMBALI
-            </span>
+            <span className="text-2xl md:text-2xl">KEMBALI</span>
           </button>
         )}
         {/* EXP */}
-          <ExpBadge
-            value={exp}
-            variant="default"
-          />
+        <ExpBadge value={exp} variant="default" size="lg" />
 
         {/* RIGHT */}
         <div className="flex items-center gap-3 md:gap-5">

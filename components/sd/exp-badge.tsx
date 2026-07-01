@@ -33,8 +33,8 @@ export default function ExpBadge({
     lg: {
       icon: "h-18 w-18 sm:h-[78px] sm:w-[78px] md:h-20 md:w-20",
       badge: "pl-18 pr-6 py-3.5 sm:py-4",
-      text: "text-xl sm:text-2xl md:text-3xl",
-      border: "border-[4px] sm:border-[4px] md:border-[5px]",
+      text: "text-xl sm:text-xl md:text-2xl",
+      border: "border-[3px] sm:border-[3px] md:border-[4px]",
     },
   };
 

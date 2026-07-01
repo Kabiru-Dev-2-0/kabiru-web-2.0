@@ -25,6 +25,7 @@ import Modal from "@/components/sd/modal";
 import {
   IconFOpenBook,
   IconFPartyPopper,
+  IconFRobot,
   IconFTrophy,
   IconFWorldMap,
 } from "react-fluentui-emoji/lib/flat";
@@ -56,7 +57,6 @@ export default function ExercisePage() {
 
   useEffect(() => {
     const savedUser = localStorage.getItem("sd_user");
-    console.log("LOCAL STORAGE USER:", savedUser);
 
     if (!savedUser) return;
 
@@ -111,6 +111,12 @@ export default function ExercisePage() {
 
   const [tutorialSteps, setTutorialSteps] = useState<any[]>([]);
 
+  const [isAnswerLocked, setIsAnswerLocked] = useState(false);
+
+  const checkButtonDisabled = showTutorial
+    ? false
+    : !canCheckAnswer || isAnswerLocked;
+
   // =========================
   // LEADERBOARD
   // =========================
@@ -119,7 +125,7 @@ export default function ExercisePage() {
 
     const timer = setTimeout(() => {
       handleCloseLeaderboard();
-    }, 10000000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [showLeaderboard]);
@@ -199,7 +205,13 @@ export default function ExercisePage() {
 
     const { data: userData } = await supabase
       .from("data_penggunas_sd")
-      .select("is_pengguna_baru")
+      .select(
+        `
+        is_pengguna_baru,
+        onboarding_completed,
+        tutorial_completed_types
+    `,
+      )
       .eq("id", user.id)
       .single();
 
@@ -210,41 +222,40 @@ export default function ExercisePage() {
       .eq("latihan_id", exercise.id)
       .maybeSingle();
 
-    const isNewUser = userData?.is_pengguna_baru;
+    const onboardingCompleted = userData?.onboarding_completed === false;
+
+    const completedTypes: string[] = userData?.tutorial_completed_types ?? [];
+
+    const currentType = exercise.type;
+
+    const alreadyCompleted = completedTypes.includes(currentType);
 
     const neverPlayed = !progress;
 
-    if (isNewUser || neverPlayed) {
-      setShowTutorial(true);
-    }
+    const shouldShowTutorial =
+      userData?.is_pengguna_baru &&
+      onboardingCompleted &&
+      !alreadyCompleted &&
+      neverPlayed;
+
+    setShowTutorial(shouldShowTutorial);
   }
 
   // =========================
   // CLOSE TUTORIAL
   // =========================
   async function closeTutorial() {
-    const { data: userData } =
-      await supabase
-        .from("data_penggunas_sd")
-        .select(
-          "tutorial_completed_types"
-        )
-        .eq("id", user.id)
-        .single();
+    const { data: userData } = await supabase
+      .from("data_penggunas_sd")
+      .select("tutorial_completed_types")
+      .eq("id", user.id)
+      .single();
 
-    const completedTypes: string[] =
-      userData?.tutorial_completed_types || [];
+    const completedTypes: string[] = userData?.tutorial_completed_types || [];
 
-    const currentType =
-     exercise?.type ?? "";
+    const currentType = exercise?.type ?? "";
 
-    const updatedTypes =
-    Array.from(
-      new Set([
-        ...completedTypes,
-        currentType,
-      ])
-    );
+    const updatedTypes = Array.from(new Set([...completedTypes, currentType]));
 
     const allTypes = [
       "drag_and_drop",
@@ -254,23 +265,30 @@ export default function ExercisePage() {
       "code_debugger",
     ];
 
-    const finishedAllTutorials =
-      allTypes.every((type) =>
-        updatedTypes.includes(type)
-      );
+    const finishedAllTutorials = allTypes.every((type) =>
+      updatedTypes.includes(type),
+    );
 
     await supabase
       .from("data_penggunas_sd")
       .update({
-        tutorial_completed_types:
-          updatedTypes,
-
-        is_pengguna_baru:
-          !finishedAllTutorials,
+        tutorial_completed_types: updatedTypes,
+        onboarding_completed: finishedAllTutorials,
+        is_pengguna_baru: !finishedAllTutorials,
       })
       .eq("id", user.id);
 
     setShowTutorial(false);
+
+    // refresh state lokal
+    setUser((prev: any) => ({
+      ...prev,
+      tutorial_completed_types: updatedTypes,
+      onboarding_completed: finishedAllTutorials,
+      is_pengguna_baru: !finishedAllTutorials,
+    }));
+
+    await checkTutorialStatus();
   }
 
   async function fetchData() {
@@ -344,9 +362,49 @@ export default function ExercisePage() {
 
     setExercise(data);
 
+    setCurrentProgress(2);
+
     setTutorialSteps(getTutorialSteps(data));
 
     setLoading(false);
+  }
+
+  // =========================
+  // LOAD NEXT & PREVIOUS EXERCISE
+  // =========================
+  function loadExercise(data: any, progress: number) {
+    setExercise(data);
+
+    setCurrentProgress(progress);
+
+    setFeedback({
+      open: false,
+      status: "correct",
+    });
+
+    setShowLeaderboard(false);
+
+    setShowTutorial(false);
+
+    setShakeBoard(false);
+
+    setCanCheckAnswer(false);
+
+    setIsAnswerLocked(false);
+
+    setCheckAnswerFn(undefined);
+
+    setTutorialSteps(getTutorialSteps(data));
+
+    boardRef.current?.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
   // =====================================
@@ -354,11 +412,6 @@ export default function ExercisePage() {
   // =====================================
   async function goToNextExercise() {
     if (!exercise) return;
-
-    // =========================
-    // ADD EXP
-    // =========================
-    const gainedExp = Number(exercise.points) || 0;
 
     const { data: progress } = await supabase
       .from("progress_latihan_sd")
@@ -508,37 +561,55 @@ export default function ExercisePage() {
       return;
     }
 
-    // =========================
-    // NEXT PROGRESS
-    // =========================
-    setCurrentProgress((prev) => prev + 1);
-
-    // =========================
-    // NEXT SOAL
-    // =========================
-    setExercise(data);
-
-    setCanCheckAnswer(false);
-
-    setTutorialSteps(getTutorialSteps(data));
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-
-    setTimeout(() => {
-      checkTutorialStatus();
-    }, 300);
-
-    boardRef.current?.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-
-    setCheckAnswerFn(undefined);
+    loadExercise(data, currentProgress + 1);
 
     return;
+  }
+
+  async function goToPreviousExercise() {
+    if (!exercise) return;
+    setFeedback({ open: false, status: "correct" });
+    setShowLeaderboard(false);
+    setShakeBoard(false);
+    setShowTutorial(false);
+    setCanCheckAnswer(false);
+    setIsAnswerLocked(false);
+    setCheckAnswerFn(undefined);
+    resetExerciseFn?.();
+    const { data: firstExercise } = await supabase
+      .from("latihans_sd")
+      .select("nomor_urut")
+      .eq("id_pelajaran", lessonId)
+      .order("nomor_urut", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const isFirstExercise =
+      firstExercise && exercise.nomor_urut <= firstExercise.nomor_urut;
+    if (isFirstExercise) {
+      router.push(`/sd/eksplorasi/${lesson?.id_modul}/${lessonId}`);
+      return;
+    }
+
+    // =========================
+    // FETCH PREVIOUS EXERCISE
+    // =========================
+    const { data, error } = await supabase
+      .from("latihans_sd")
+      .select("*")
+      .eq("id_pelajaran", lessonId)
+      .lt("nomor_urut", exercise.nomor_urut)
+      .order("nomor_urut", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    if (!data) return;
+    loadExercise(data, Math.max(currentProgress - 1, 2));
   }
 
   // =====================================
@@ -547,7 +618,7 @@ export default function ExercisePage() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center text-2xl font-bold">
-        Loading...
+        Memuat...
       </div>
     );
   }
@@ -585,11 +656,12 @@ export default function ExercisePage() {
             name={user?.username || "Pemain"}
             level="Siswa"
             avatar={user?.avatar || "/imageAssets/avatar/default.png"}
-            showBack
-            showProgress
             currentProgress={currentProgress}
             totalProgress={totalExercises + 1}
             exp={user?.exp || 0}
+            showProgress
+            showBack
+            onBack={goToPreviousExercise}
           />
         </div>
 
@@ -634,6 +706,19 @@ export default function ExercisePage() {
 
             custom-scroll
           ">
+            {/* TARGET TUTORIAL */}
+            <div
+              data-tutorial="scrollbar"
+              className="
+                absolute
+                top-3
+                right-[3px]
+                w-[18px]
+                bottom-3
+                rounded-full
+                pointer-events-none
+              "
+            />
             {/* ================= OVERLAY ANSWER FEEDBACK ================= */}
             <AnswerFeedback
               open={feedback.open}
@@ -658,28 +743,35 @@ export default function ExercisePage() {
             <h1
               className="
               text-center
-              text-white
-              text-2xl
+              text-amber-100
+              text-3xl
               font-black
-              mb-6
-            ">
-              {exercise.prompt}
+              mb-4
+            "> " {exercise.prompt} "
             </h1>
 
             {/* ================= QUESTION ================= */}
             <div
+              className="flex flex-row items-center justify-center gap-4 w-full bg-amber-100 rounded-3xl px-4 py-0 mb-8 outline-2 outline-offset-2 outline-white outline-dashed"
+            >
+              <IconFRobot size={120}></IconFRobot>
+              <div
               className="
               text-left
-              text-gray-100
-              text-sm/6
-              tracking-normal
-              mb-6
-              font-capriola
+              text-gray-800
+              text-[18px]/6
+              font-[550]
+              tracking-[0.01rem]
             "
+              style={{
+                      fontFamily: "var(--font-lilita-one)",
+                    }}
               dangerouslySetInnerHTML={{
                 __html: exercise.pertanyaan || "",
               }}
             />
+            </div>
+            
 
             {/* ================= EXERCISE ================= */}
             {exercise.type === "drag_and_drop" && (
@@ -690,6 +782,11 @@ export default function ExercisePage() {
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
                 onAnswerResult={(isCorrect) => {
+                  if (isCorrect) {
+                    setIsAnswerLocked(true);
+                    setCheckAnswerFn(undefined);
+                  }
+
                   if (!isCorrect) {
                     setShakeBoard(true);
 
@@ -714,6 +811,11 @@ export default function ExercisePage() {
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
                 onAnswerResult={(isCorrect) => {
+                  if (isCorrect) {
+                    setIsAnswerLocked(true);
+                    setCheckAnswerFn(undefined);
+                  }
+
                   if (!isCorrect) {
                     setShakeBoard(true);
 
@@ -738,6 +840,11 @@ export default function ExercisePage() {
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
                 onAnswerResult={(isCorrect) => {
+                  if (isCorrect) {
+                    setIsAnswerLocked(true);
+                    setCheckAnswerFn(undefined);
+                  }
+
                   if (!isCorrect) {
                     setShakeBoard(true);
 
@@ -762,6 +869,11 @@ export default function ExercisePage() {
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
                 onAnswerResult={(isCorrect) => {
+                  if (isCorrect) {
+                    setIsAnswerLocked(true);
+                    setCheckAnswerFn(undefined);
+                  }
+
                   if (!isCorrect) {
                     setShakeBoard(true);
 
@@ -786,6 +898,11 @@ export default function ExercisePage() {
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
                 onAnswerResult={(isCorrect) => {
+                  if (isCorrect) {
+                    setIsAnswerLocked(true);
+                    setCheckAnswerFn(undefined);
+                  }
+
                   if (!isCorrect) {
                     setShakeBoard(true);
 
@@ -853,9 +970,13 @@ export default function ExercisePage() {
 
           {/* CHECK */}
           <GameButton
-            disabled={!canCheckAnswer}
+            disabled={checkButtonDisabled}
             data-tutorial="btn-check"
-            onClick={() => checkAnswerFn?.()}
+            onClick={() => {
+              if (isAnswerLocked) return;
+
+              checkAnswerFn?.();
+            }}
             variant="green"
             size="lg"
             icon={
@@ -916,10 +1037,7 @@ export default function ExercisePage() {
 
         {/* ================= OVERLAY TUTORIAL ================= */}
         {showTutorial && (
-          <TutorialOverlay
-            steps={getTutorialSteps(exercise)}
-            onClose={closeTutorial}
-          />
+          <TutorialOverlay steps={tutorialSteps} onClose={closeTutorial} />
         )}
 
         {/* ================= STYLES ================= */}

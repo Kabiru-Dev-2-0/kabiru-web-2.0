@@ -49,11 +49,30 @@ export const tutorialData = {
   ),
 
   {
+    target: "scrollbar",
+    title: "Geser Halaman ke Atas-Bawah",
+    description:
+      "Jika isi soal belum terlihat seluruhnya, geser halaman ke atas-bawah menggunakan scroll mouse atau klik dan seret roda putih ke atas/bawah.",
+    placement: "left",
+  },
+
+  {
     target: "btn-check",
     title: "Periksa Jawaban",
     description:
       "Klik tombol PERIKSA JAWABAN untuk memeriksa jawaban.",
     placement: "top",
+  },
+
+  {
+      target: "btn-help",
+
+      title: "Petunjuk",
+
+      description:
+        "Tutorial ini bisa dibuka kembali kapan saja melalui tombol Petunjuk.",
+
+      placement: "top",
   },
 ],
 
@@ -82,6 +101,14 @@ export const tutorialData = {
         "Klik jawaban yang menurutmu paling sesuai untuk melanjutkan pola tersebut.",
 
       placement: "top",
+    },
+
+    {
+      target: "scrollbar",
+      title: "Geser Halaman ke Atas-Bawah",
+      description:
+        "Jika isi soal belum terlihat seluruhnya, geser halaman ke atas-bawah menggunakan scroll mouse atau klik dan seret roda putih ke atas/bawah.",
+      placement: "left",
     },
 
     {
@@ -146,6 +173,14 @@ export const tutorialData = {
     },
 
     {
+      target: "scrollbar",
+      title: "Geser Halaman ke Atas-Bawah",
+      description:
+        "Jika isi soal belum terlihat seluruhnya, geser halaman ke atas-bawah menggunakan scroll mouse atau klik dan seret roda putih ke atas/bawah.",
+      placement: "left",
+    },
+
+    {
       target: "btn-check",
 
       title: "Jalankan Program",
@@ -196,6 +231,14 @@ export const tutorialData = {
     },
 
     {
+      target: "scrollbar",
+      title: "Geser Halaman ke Atas-Bawah",
+      description:
+        "Jika isi soal belum terlihat seluruhnya, geser halaman ke atas-bawah menggunakan scroll mouse atau klik dan seret roda putih ke atas/bawah.",
+      placement: "left",
+    },
+
+    {
       target: "btn-check",
 
       title: "Periksa Jawaban",
@@ -243,6 +286,14 @@ export const tutorialData = {
         "Kemudian Klik tombol Hapus untuk menghilangkan langkah yang salah.",
 
       placement: "bottom",
+    },
+
+    {
+      target: "scrollbar",
+      title: "Geser Halaman ke Atas-Bawah",
+      description:
+        "Jika isi soal belum terlihat seluruhnya, geser halaman ke atas-bawah menggunakan scroll mouse atau klik dan seret roda putih ke atas/bawah.",
+      placement: "left",
     },
 
     {

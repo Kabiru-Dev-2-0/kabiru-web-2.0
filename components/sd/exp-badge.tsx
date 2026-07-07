@@ -20,19 +20,19 @@ export default function ExpBadge({
   const sizes = {
     sm: {
       icon: "h-12 w-12 sm:h-14 sm:w-14",
-      badge: "pl-12 pr-4 py-2.5",
+      badge: "w-[110px] pl-12 pr-4 py-2.5",
       text: "text-base sm:text-lg",
       border: "border-[3px]",
     },
     md: {
       icon: "h-16 w-16 sm:h-18 sm:w-18 md:h-[78px] md:w-[78px]",
-      badge: "pl-16 pr-5 py-3 sm:py-3.5",
+      badge: "w-[130px] sm:w-[145px] pl-16 pr-5 py-3 sm:py-3.5",
       text: "text-lg sm:text-xl md:text-2xl",
       border: "border-[3px] sm:border-[4px]",
     },
     lg: {
       icon: "h-18 w-18 sm:h-[78px] sm:w-[78px] md:h-20 md:w-20",
-      badge: "pl-18 pr-6 py-3.5 sm:py-4",
+      badge: "w-[130px] sm:w-[145px] md:w-[160px] pl-18 pr-6 py-4 sm:py-5",
       text: "text-xl sm:text-xl md:text-2xl",
       border: "border-[3px] sm:border-[3px] md:border-[4px]",
     },
@@ -43,7 +43,7 @@ export default function ExpBadge({
   return (
     <div className={`relative flex items-center ${className}`}>
       {/* ICON */}
-      <div className={`absolute -left-2 sm:-left-5 md:-left-4 z-20 ${currentSize.icon}`}>
+      <div className={`absolute -left-1 sm:-left-2 md:-left-3 z-20 ${currentSize.icon}`}>
         <img
           src="/imageAssets/sd/map/icon/icon-exp.png"
           alt="exp"

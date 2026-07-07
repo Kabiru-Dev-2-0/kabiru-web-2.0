@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import LevelHeader from "@/components/sd/map/level-header";
 
 import { createClient } from "@/utils/supabase/client";
-import { IconFTrophy, IconFVideoGame } from "react-fluentui-emoji/lib/flat";
+import { IconFTrophy, IconFVideoGame, IconFWorldMap } from "react-fluentui-emoji/lib/flat";
 import GameButton from "@/components/sd/game-button";
 import Modal from "@/components/sd/modal";
 import { useRouter } from "next/navigation";
@@ -121,10 +121,11 @@ export default function OnBoarding() {
                             ">
                     {/* SECONDARY BUTTONS */}
                     <GameButton
+                      onClick={() => router.push("/game-selection")}
                       variant="blue"
                       size="md"
-                      icon={<IconFVideoGame size={36}></IconFVideoGame>}>
-                      BERMAIN
+                      icon={<IconFWorldMap size={36}></IconFWorldMap>}>
+                      MAP LAINNYA
                     </GameButton>
                     {/* TERTIARY BUTTONS */}
                     <GameButton

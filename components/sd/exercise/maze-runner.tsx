@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   ArrowRightFilled,
@@ -13,11 +9,7 @@ import {
   ArrowDownFilled,
 } from "@fluentui/react-icons";
 
-import {
-  DndContext,
-  useDraggable,
-  useDroppable,
-} from "@dnd-kit/core";
+import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 
 type Position = {
   row: number;
@@ -39,28 +31,16 @@ type LabelType = {
 type Props = {
   exercise: any;
 
-  setCheckAnswer?: (
-    fn: () => void
-  ) => void;
+  setCheckAnswer?: (fn: () => void) => void;
 
-  setResetExercise?: (
-    fn: () => void
-  ) => void;
+  setResetExercise?: (fn: () => void) => void;
 
-  onAnswerResult?: (
-    isCorrect: boolean
-  ) => void;
+  onAnswerResult?: (isCorrect: boolean) => void;
 
-  onStateChange?: (
-    ready: boolean
-  ) => void;
+  onStateChange?: (ready: boolean) => void;
 };
 
-type CommandType =
-  | "UP"
-  | "DOWN"
-  | "LEFT"
-  | "RIGHT";
+type CommandType = "UP" | "DOWN" | "LEFT" | "RIGHT";
 
 const COMMAND_CONFIG = {
   RIGHT: {
@@ -98,86 +78,52 @@ export default function MazeRunnerExercise({
   // =====================================
   // DATA
   // =====================================
-  const grid =
-    exercise?.data?.grid || {
-      rows: 3,
-      cols: 3,
-    };
+  const grid = exercise?.data?.grid || {
+    rows: 3,
+    cols: 3,
+  };
 
-  const start =
-    exercise?.data?.start || {
-      row: 0,
-      col: 0,
-    };
+  const start = exercise?.data?.start || {
+    row: 0,
+    col: 0,
+  };
 
-  const goal =
-    exercise?.data?.goal || {
-      row: 2,
-      col: 2,
-    };
+  const goal = exercise?.data?.goal || {
+    row: 2,
+    col: 2,
+  };
 
-  const walls: Position[] =
-    exercise?.data?.walls || [];
+  const walls: Position[] = exercise?.data?.walls || [];
 
-  const decorations: DecorationType[] =
-    exercise?.data
-      ?.decorations || [];
+  const decorations: DecorationType[] = exercise?.data?.decorations || [];
 
-  const labels: LabelType[] =
-    exercise?.data?.labels || [];
+  const labels: LabelType[] = exercise?.data?.labels || [];
 
-  const correctPath: CommandType[] =
-    exercise?.data
-      ?.correct_path || [];
+  const correctPath: CommandType[] = exercise?.data?.correct_path || [];
 
-  const maxSteps =
-    exercise?.data
-      ?.max_steps ||
-    correctPath.length;
+  const maxSteps = exercise?.data?.max_steps || correctPath.length;
 
   // =====================================
   // RESPONSIVE CELL SIZE
   // =====================================
-  const cellSize =
-    grid.cols >= 5
-      ? 95
-      : grid.cols === 4
-        ? 110
-        : 140;
+  const cellSize = grid.cols >= 5 ? 95 : grid.cols === 4 ? 110 : 140;
 
   // =====================================
   // STATE
   // =====================================
-  const [
-    commands,
-    setCommands,
-  ] = useState<
-    (CommandType | null)[]
-  >(
-    Array(maxSteps).fill(
-      null
-    )
+  const [commands, setCommands] = useState<(CommandType | null)[]>(
+    Array(maxSteps).fill(null),
   );
 
-  const [
-    robotPosition,
-    setRobotPosition,
-  ] = useState(start);
+  const [robotPosition, setRobotPosition] = useState(start);
 
-  const [
-    isAnimating,
-    setIsAnimating,
-  ] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // =====================================
   // RESET
   // =====================================
   useEffect(() => {
-    setCommands(
-      Array(maxSteps).fill(
-        null
-      )
-    );
+    setCommands(Array(maxSteps).fill(null));
 
     setRobotPosition(start);
 
@@ -185,23 +131,16 @@ export default function MazeRunnerExercise({
   }, [exercise]);
 
   useEffect(() => {
-  onStateChange?.(
-    commands.length > 0
-  );
-}, [commands]);
+    onStateChange?.(commands.every((command) => command !== null));
+  }, [commands]);
 
   // =====================================
   // REMOVE COMMAND
   // =====================================
-  function removeCommand(
-    index: number
-  ) {
-    if (isAnimating)
-      return;
+  function removeCommand(index: number) {
+    if (isAnimating) return;
 
-    const updated = [
-      ...commands,
-    ];
+    const updated = [...commands];
 
     updated[index] = null;
 
@@ -211,47 +150,22 @@ export default function MazeRunnerExercise({
   // =====================================
   // DRAG END
   // =====================================
-  function handleDragEnd(
-    event: any
-  ) {
-    if (isAnimating)
-      return;
+  function handleDragEnd(event: any) {
+    if (isAnimating) return;
 
-    const {
-      active,
-      over,
-    } = event;
+    const { active, over } = event;
 
     if (!over) return;
 
-    if (
-      !over.id
-        .toString()
-        .startsWith(
-          "slot-"
-        )
-    )
-      return;
+    if (!over.id.toString().startsWith("slot-")) return;
 
-    const command =
-      active.id as CommandType;
+    const command = active.id as CommandType;
 
-    const slotIndex =
-      Number(
-        over.id
-          .toString()
-          .replace(
-            "slot-",
-            ""
-          )
-      );
+    const slotIndex = Number(over.id.toString().replace("slot-", ""));
 
-    const updated = [
-      ...commands,
-    ];
+    const updated = [...commands];
 
-    updated[slotIndex] =
-      command;
+    updated[slotIndex] = command;
 
     setCommands(updated);
   }
@@ -260,11 +174,7 @@ export default function MazeRunnerExercise({
   // RESET EXERCISE
   // =====================================
   function resetExercise() {
-    setCommands(
-      Array(maxSteps).fill(
-        null
-      )
-    );
+    setCommands(Array(maxSteps).fill(null));
 
     setRobotPosition(start);
 
@@ -285,73 +195,40 @@ export default function MazeRunnerExercise({
     for (const command of commands) {
       if (!command) continue;
 
-      await new Promise(
-        (resolve) =>
-          setTimeout(
-            resolve,
-            500
-          )
-      );
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      if (
-        command ===
-        "RIGHT"
-      ) {
+      if (command === "RIGHT") {
         current = {
           ...current,
-          col:
-            current.col +
-            1,
+          col: current.col + 1,
         };
       }
 
-      if (
-        command ===
-        "LEFT"
-      ) {
+      if (command === "LEFT") {
         current = {
           ...current,
-          col:
-            current.col -
-            1,
+          col: current.col - 1,
         };
       }
 
-      if (
-        command === "UP"
-      ) {
+      if (command === "UP") {
         current = {
           ...current,
-          row:
-            current.row -
-            1,
+          row: current.row - 1,
         };
       }
 
-      if (
-        command ===
-        "DOWN"
-      ) {
+      if (command === "DOWN") {
         current = {
           ...current,
-          row:
-            current.row +
-            1,
+          row: current.row + 1,
         };
       }
 
-      setRobotPosition(
-        current
-      );
+      setRobotPosition(current);
     }
 
-    await new Promise(
-      (resolve) =>
-        setTimeout(
-          resolve,
-          400
-        )
-    );
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
     setIsAnimating(false);
   }
@@ -361,35 +238,24 @@ export default function MazeRunnerExercise({
   // =====================================
   async function checkAnswerInternal() {
     const correctPaths =
-    exercise?.data?.correct_paths ||
-    (
-      exercise?.data?.correct_path
-        ? [exercise.data.correct_path]
-        : []
-    );
-    
-    const filledCommands =
-      commands.filter(Boolean);
+      exercise?.data?.correct_paths ||
+      (exercise?.data?.correct_path ? [exercise.data.correct_path] : []);
 
-    const isCorrect =
-    correctPaths.some(
+    const filledCommands = commands.filter(Boolean);
+
+    const isCorrect = correctPaths.some(
       (path: string[]) =>
-        JSON.stringify(path) ===
-        JSON.stringify(filledCommands)
+        JSON.stringify(path) === JSON.stringify(filledCommands),
     );
 
     if (isCorrect) {
       await animateRobot();
 
-      onAnswerResult?.(
-        true
-      );
+      onAnswerResult?.(true);
     } else {
       resetExercise();
 
-      onAnswerResult?.(
-        false
-      );
+      onAnswerResult?.(false);
     }
   }
 
@@ -398,10 +264,7 @@ export default function MazeRunnerExercise({
   // =====================================
   useEffect(() => {
     if (setCheckAnswer) {
-      setCheckAnswer(
-        () =>
-          checkAnswerInternal
-      );
+      setCheckAnswer(() => checkAnswerInternal);
     }
   }, [commands]);
 
@@ -411,16 +274,8 @@ export default function MazeRunnerExercise({
   const cells = useMemo(() => {
     const arr = [];
 
-    for (
-      let row = 0;
-      row < grid.rows;
-      row++
-    ) {
-      for (
-        let col = 0;
-        col < grid.cols;
-        col++
-      ) {
+    for (let row = 0; row < grid.rows; row++) {
+      for (let col = 0; col < grid.cols; col++) {
         arr.push({
           row,
           col,
@@ -432,11 +287,7 @@ export default function MazeRunnerExercise({
   }, [grid]);
 
   return (
-    <DndContext
-      onDragEnd={
-        handleDragEnd
-      }
-    >
+    <DndContext onDragEnd={handleDragEnd}>
       <div className="pb-32">
         <div
           className="
@@ -445,8 +296,7 @@ export default function MazeRunnerExercise({
             justify-center
             gap-14
             flex-wrap
-          "
-        >
+          ">
           {/* ================= LEFT BOARD ================= */}
           <div
             data-tutorial="maze-board"
@@ -458,49 +308,26 @@ export default function MazeRunnerExercise({
             "
             style={{
               gridTemplateColumns: `repeat(${grid.cols}, ${cellSize}px)`,
-            }}
-          >
-            {cells.map(
-              (cell) => {
-                const isGoal =
-                  cell.row ===
-                    goal.row &&
-                  cell.col ===
-                    goal.col;
+            }}>
+            {cells.map((cell) => {
+              const isGoal = cell.row === goal.row && cell.col === goal.col;
 
-                const isWall =
-                  walls.some(
-                    (
-                      wall
-                    ) =>
-                      wall.row ===
-                        cell.row &&
-                      wall.col ===
-                        cell.col
-                  );
+              const isWall = walls.some(
+                (wall) => wall.row === cell.row && wall.col === cell.col,
+              );
 
-                const decoration =
-                  decorations.find(
-                    (
-                      item
-                    ) =>
-                      item.row ===
-                        cell.row &&
-                      item.col ===
-                        cell.col
-                  );
+              const decoration = decorations.find(
+                (item) => item.row === cell.row && item.col === cell.col,
+              );
 
-                const label =
-                  labels.find(
-                    (item) =>
-                      item.row === cell.row &&
-                      item.col === cell.col
-                  );
+              const label = labels.find(
+                (item) => item.row === cell.row && item.col === cell.col,
+              );
 
-                return (
-                  <div
-                    key={`${cell.row}-${cell.col}`}
-                    className="
+              return (
+                <div
+                  key={`${cell.row}-${cell.col}`}
+                  className="
                       border
                       border-[#B9AA84]
 
@@ -515,81 +342,62 @@ export default function MazeRunnerExercise({
                       transition-all
                       duration-300
                     "
-                    style={{
-                      width: cellSize,
-                      height: cellSize,
-                    }}
-                  >
+                  style={{
+                    width: cellSize,
+                    height: cellSize,
+                  }}>
+                  {/* ROBOT */}
+                  {robotPosition.row === cell.row &&
+                    robotPosition.col === cell.col && (
+                      <div className="text-[90px]">🤖</div>
+                    )}
 
-                    {/* ROBOT */}
-                    {robotPosition.row === cell.row &&
-                      robotPosition.col === cell.col && (
-                        <div className="text-[90px]">
-                          🤖
-                        </div>
-                      )}
-
-                    {/* GOAL */}
-                    {isGoal &&
-                      !label &&
-                      !(
-                        robotPosition.row === cell.row &&
-                        robotPosition.col === cell.col
-                      ) && (
-                        <div className="text-[90px]">
-                          🚩
-                        </div>
-                      )
-                    }
-
-                    {/* WALL */}
-                    {!(
+                  {/* GOAL */}
+                  {isGoal &&
+                    !label &&
+                    !(
                       robotPosition.row === cell.row &&
                       robotPosition.col === cell.col
-                    ) &&
-                      !isGoal &&
-                      isWall && (
-                        <div className="text-[90px]">
-                          🚧
-                        </div>
-                      )}
+                    ) && <div className="text-[90px]">🚩</div>}
 
-                    {/* TREE */}
-                    {!(
-                      robotPosition.row === cell.row &&
-                      robotPosition.col === cell.col
-                    ) &&
-                      !isGoal &&
-                      !isWall &&
-                      decoration?.type ===
-                        "tree" && (
-                        <div className="text-[90px]">
-                          🌳
-                        </div>
-                      )}
+                  {/* WALL */}
+                  {!(
+                    robotPosition.row === cell.row &&
+                    robotPosition.col === cell.col
+                  ) &&
+                    !isGoal &&
+                    isWall && <div className="text-[90px]">🚧</div>}
 
-                    {/* ROCK */}
-                    {!(
-                      robotPosition.row === cell.row &&
-                      robotPosition.col === cell.col
-                    ) &&
-                      !isGoal &&
-                      !isWall &&
-                      decoration?.type ===
-                        "rock" && (
-                        <div className="text-[90px]">
-                          🪨
-                        </div>
-                      )}
+                  {/* TREE */}
+                  {!(
+                    robotPosition.row === cell.row &&
+                    robotPosition.col === cell.col
+                  ) &&
+                    !isGoal &&
+                    !isWall &&
+                    decoration?.type === "tree" && (
+                      <div className="text-[90px]">🌳</div>
+                    )}
 
-                    {/* LABEL */}
-                    {!(
-                      robotPosition.row === cell.row &&
-                      robotPosition.col === cell.col
-                    ) &&
-                      label && (
-                        <div
-                          className="
+                  {/* ROCK */}
+                  {!(
+                    robotPosition.row === cell.row &&
+                    robotPosition.col === cell.col
+                  ) &&
+                    !isGoal &&
+                    !isWall &&
+                    decoration?.type === "rock" && (
+                      <div className="text-[90px]">🪨</div>
+                    )}
+
+                  {/* LABEL */}
+                  {!(
+                    robotPosition.row === cell.row &&
+                    robotPosition.col === cell.col
+                  ) &&
+                    label && (
+                      <div
+                        className="
                             absolute
                             inset-0
 
@@ -606,15 +414,13 @@ export default function MazeRunnerExercise({
                             leading-tight
 
                             text-[#1D1D1D]
-                          "
-                        >
-                          {label.text}
-                        </div>
-                      )}
-                  </div>
-                );
-              }
-            )}
+                          ">
+                        {label.text}
+                      </div>
+                    )}
+                </div>
+              );
+            })}
           </div>
 
           {/* ================= RIGHT AREA ================= */}
@@ -623,8 +429,7 @@ export default function MazeRunnerExercise({
               flex
               flex-col
               gap-8
-            "
-          >
+            ">
             {/* ================= INSTRUCTION AREA ================= */}
             <div
               data-tutorial="instruction-list"
@@ -638,8 +443,7 @@ export default function MazeRunnerExercise({
 
                 px-10
                 py-10
-              "
-            >
+              ">
               <div
                 className="
                   absolute
@@ -657,8 +461,7 @@ export default function MazeRunnerExercise({
                   font-black
                   text-[18px]
                   text-[#482A9A]
-                "
-              >
+                ">
                 AREA INSTRUKSI
               </div>
 
@@ -668,29 +471,15 @@ export default function MazeRunnerExercise({
                   gap-6
                   flex-wrap
                   justify-center
-                "
-              >
-                {commands.map(
-                  (
-                    command,
-                    index
-                  ) => (
-                    <InstructionSlot
-                      key={
-                        index
-                      }
-                      id={`slot-${index}`}
-                      command={
-                        command
-                      }
-                      onRemove={() =>
-                        removeCommand(
-                          index
-                        )
-                      }
-                    />
-                  )
-                )}
+                ">
+                {commands.map((command, index) => (
+                  <InstructionSlot
+                    key={index}
+                    id={`slot-${index}`}
+                    command={command}
+                    onRemove={() => removeCommand(index)}
+                  />
+                ))}
               </div>
             </div>
 
@@ -707,8 +496,7 @@ export default function MazeRunnerExercise({
 
                 px-10
                 py-10
-              "
-            >
+              ">
               <div
                 className="
                   absolute
@@ -729,11 +517,8 @@ export default function MazeRunnerExercise({
                   font-black
                   text-[18px]
                   text-[#A02ED6]
-                "
-              >
-                BLOK KODE
-                (SERET KE AREA
-                INSTRUKSI)
+                ">
+                BLOK KODE (SERET KE AREA INSTRUKSI)
               </div>
 
               <div
@@ -742,38 +527,17 @@ export default function MazeRunnerExercise({
                   gap-6
                   flex-wrap
                   justify-center
-                "
-              >
-                {(
-                  Object.entries(
-                    COMMAND_CONFIG
-                  ) as [
-                    CommandType,
-                    any,
-                  ][]
-                ).map(
-                  ([
-                    value,
-                    config,
-                  ]) => (
+                ">
+                {(Object.entries(COMMAND_CONFIG) as [CommandType, any][]).map(
+                  ([value, config]) => (
                     <DraggableCommand
-                      key={
-                        value
-                      }
-                      command={
-                        value
-                      }
-                      label={
-                        config.label
-                      }
-                      Icon={
-                        config.icon
-                      }
-                      color={
-                        config.color
-                      }
+                      key={value}
+                      command={value}
+                      label={config.label}
+                      Icon={config.icon}
+                      color={config.color}
                     />
-                  )
+                  ),
                 )}
               </div>
             </div>
@@ -787,18 +551,8 @@ export default function MazeRunnerExercise({
 // =====================================
 // DRAGGABLE COMMAND
 // =====================================
-function DraggableCommand({
-  command,
-  label,
-  Icon,
-  color,
-}: any) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-  } = useDraggable({
+function DraggableCommand({ command, label, Icon, color }: any) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: command,
   });
 
@@ -833,8 +587,7 @@ function DraggableCommand({
 
         cursor-grab
         touch-none
-      "
-    >
+      ">
       <Icon
         className={`
           text-[60px]
@@ -850,8 +603,7 @@ function DraggableCommand({
           text-[18px]
           font-bold
           text-[#374151]
-        "
-      >
+        ">
         {label}
       </div>
     </button>
@@ -861,26 +613,16 @@ function DraggableCommand({
 // =====================================
 // INSTRUCTION SLOT
 // =====================================
-function InstructionSlot({
-  id,
-  command,
-  onRemove,
-}: any) {
-  const {
-    setNodeRef,
-    isOver,
-  } = useDroppable({
+function InstructionSlot({ id, command, onRemove }: any) {
+  const { setNodeRef, isOver } = useDroppable({
     id,
   });
 
   const config = command
-  ? COMMAND_CONFIG[
-      command as keyof typeof COMMAND_CONFIG
-    ]
-  : null;
+    ? COMMAND_CONFIG[command as keyof typeof COMMAND_CONFIG]
+    : null;
 
-const Icon =
-  config?.icon;
+  const Icon = config?.icon;
 
   return (
     <button
@@ -908,15 +650,9 @@ const Icon =
 
         transition-all
 
-        ${
-          isOver
-            ? "scale-105 ring-4 ring-blue-300"
-            : ""
-        }
-      `}
-    >
-      {command &&
-      Icon ? (
+        ${isOver ? "scale-105 ring-4 ring-blue-300" : ""}
+      `}>
+      {command && Icon ? (
         <Icon
           className={`
             text-[60px]
@@ -925,12 +661,7 @@ const Icon =
           `}
         />
       ) : (
-        Number(
-          id.replace(
-            "slot-",
-            ""
-          )
-        ) + 1
+        Number(id.replace("slot-", "")) + 1
       )}
     </button>
   );

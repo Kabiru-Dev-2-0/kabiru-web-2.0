@@ -113,6 +113,20 @@ export default function ExercisePage() {
 
   const [isAnswerLocked, setIsAnswerLocked] = useState(false);
 
+  const [expProcessed, setExpProcessed] = useState(false);
+
+  const [allExercises, setAllExercises] = useState<any[]>([]);
+
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+
+  const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
+
+  const canPrev = currentExerciseIndex > 0;
+
+  const canNext =
+    currentExerciseIndex < allExercises.length - 1 &&
+    completedIds.has(Number(exercise?.id));
+
   const checkButtonDisabled = showTutorial
     ? false
     : !canCheckAnswer || isAnswerLocked;
@@ -294,9 +308,6 @@ export default function ExercisePage() {
   async function fetchData() {
     setLoading(true);
 
-    // =========================
-    // FETCH LESSON
-    // =========================
     const { data: lessonData } = await supabase
       .from("pelajarans_sd")
       .select("*")
@@ -306,310 +317,373 @@ export default function ExercisePage() {
     if (lessonData) {
       setLesson(lessonData);
 
-      // =========================
-      // FETCH MODUL
-      // =========================
       const { data: modulData } = await supabase
         .from("moduls_sd")
         .select("*")
         .eq("id", lessonData.id_modul)
         .maybeSingle();
 
-      if (modulData) {
-        setModul(modulData);
-      }
+      if (modulData) setModul(modulData);
     }
 
-    // =========================
-    // FETCH TOTAL EXERCISES
-    // =========================
-    const { count } = await supabase
-      .from("latihans_sd")
-      .select("*", {
-        count: "exact",
-        head: true,
-      })
-      .eq("id_pelajaran", lessonId);
-
-    setTotalExercises(count || 0);
-
-    // =========================
-    // FETCH FIRST EXERCISE
-    // =========================
-    const { data, error } = await supabase
+    const { data: exerciseList, error } = await supabase
       .from("latihans_sd")
       .select("*")
       .eq("id_pelajaran", lessonId)
-      .order("nomor_urut", {
-        ascending: true,
-      })
-      .limit(1)
-      .maybeSingle();
+      .order("nomor_urut", { ascending: true });
 
-    if (error) {
-      console.error(error);
-
+    if (error || !exerciseList || exerciseList.length === 0) {
       setLoading(false);
-
       return;
     }
 
-    if (!data) {
-      setLoading(false);
+    setAllExercises(exerciseList);
+    setTotalExercises(exerciseList.length);
 
-      return;
-    }
-
-    setExercise(data);
-
+    const firstExercise = exerciseList[0];
+    setExercise(firstExercise);
+    setCurrentExerciseIndex(0);
     setCurrentProgress(2);
+    setTutorialSteps(getTutorialSteps(firstExercise));
 
-    setTutorialSteps(getTutorialSteps(data));
+    if (user) {
+      const ids = exerciseList.map((e: any) => Number(e.id));
+      const { data: completedRows, error: completedError } = await supabase
+        .from("progress_latihan_sd")
+        .select("latihan_id")
+        .eq("pengguna_id", user.id)
+        .eq("is_completed", true)
+        .in("latihan_id", ids);
+
+      if (completedError) {
+        console.error("Gagal mengambil progress latihan:", completedError);
+      }
+
+      setCompletedIds(
+        new Set<number>(
+          (completedRows ?? []).map((r: any) => Number(r.latihan_id)),
+        ),
+      );
+    }
 
     setLoading(false);
   }
 
-  // =========================
-  // LOAD NEXT & PREVIOUS EXERCISE
-  // =========================
-  function loadExercise(data: any, progress: number) {
+  function loadExercise(data: any, index: number) {
     setExercise(data);
-
-    setCurrentProgress(progress);
-
-    setFeedback({
-      open: false,
-      status: "correct",
-    });
-
+    setCurrentExerciseIndex(index);
+    setCurrentProgress(index + 2);
+    setFeedback({ open: false, status: "correct" });
     setShowLeaderboard(false);
-
     setShowTutorial(false);
-
     setShakeBoard(false);
-
     setCanCheckAnswer(false);
-
     setIsAnswerLocked(false);
-
     setCheckAnswerFn(undefined);
-
+    setExpProcessed(false);
     setTutorialSteps(getTutorialSteps(data));
-
-    boardRef.current?.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    boardRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // =====================================
-  // NEXT EXERCISE
-  // =====================================
-  async function goToNextExercise() {
-    if (!exercise) return;
+  async function processCorrectAnswer(currentExercise: any) {
+    if (!currentExercise || !user || expProcessed) return;
 
-    const { data: progress } = await supabase
+    setExpProcessed(true);
+
+    const exerciseId = Number(currentExercise.id);
+
+    // Cek database, apakah soal ini sudah pernah diselesaikan atau belum
+    const { data: existingProgress, error: checkError } = await supabase
       .from("progress_latihan_sd")
-      .select("id")
+      .select("id, is_completed")
       .eq("pengguna_id", user.id)
-      .eq("latihan_id", exercise.id)
+      .eq("latihan_id", exerciseId)
       .maybeSingle();
 
-    const alreadyCompleted = !!progress;
+    if (checkError) {
+      console.error("Gagal mengecek progress latihan:", checkError);
+      setExpProcessed(false);
+      return;
+    }
 
+    const alreadyCompleted = existingProgress?.is_completed === true;
+
+    // Tambah EXP untuk soal yang belum pernah dikerjakan
     if (!alreadyCompleted) {
-      const gainedExp = Number(exercise.points) || 0;
-
+      const gainedExp = Number(currentExercise.points) || 0;
       const newExp = Number(user.exp || 0) + gainedExp;
 
-      await supabase
+      const { error: expError } = await supabase
         .from("data_penggunas_sd")
         .update({
           exp: newExp,
         })
         .eq("id", user.id);
 
-      user.exp = newExp;
+      if (expError) {
+        console.error("Gagal menambahkan EXP:", expError);
+        setExpProcessed(false);
+        return;
+      }
 
-      localStorage.setItem("sd_user", JSON.stringify(user));
-
-      setUser({
+      const updatedUser = {
         ...user,
         exp: newExp,
-      });
+      };
+
+      localStorage.setItem("sd_user", JSON.stringify(updatedUser));
+
+      setUser(updatedUser);
     }
 
-    await supabase.from("progress_latihan_sd").upsert({
-      pengguna_id: user.id,
-      latihan_id: exercise.id,
-      is_completed: true,
-      score: exercise.points,
-      completed_at: new Date().toISOString(),
-    });
+    // SIMPAN / UPDATE PROGRESS
+    const { error: progressError } = await supabase
+      .from("progress_latihan_sd")
+      .upsert(
+        {
+          pengguna_id: user.id,
+          latihan_id: exerciseId,
+          is_completed: true,
+          score: currentExercise.points,
+          completed_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "pengguna_id,latihan_id",
+        },
+      );
 
-    // =========================
-    // FETCH NEXT
-    // =========================
-    const { data, error } = await supabase
-      .from("latihans_sd")
-      .select("*")
-      .eq("id_pelajaran", lessonId)
-      .gt("nomor_urut", exercise.nomor_urut)
-      .order("nomor_urut", {
+    if (progressError) {
+      console.error("Gagal menyimpan progress latihan:", progressError);
+
+      setExpProcessed(false);
+      return;
+    }
+
+    // UPDATE STATE UNTUK CHEVRON
+    setCompletedIds((prev) => {
+      const updated = new Set(prev);
+
+      updated.add(exerciseId);
+
+      return updated;
+    });
+  }
+
+  async function goToNextExercise() {
+    if (!exercise || !user || !lesson) return;
+
+    const nextIndex = currentExerciseIndex + 1;
+
+    // MASIH ADA SOAL BERIKUTNYA
+    if (nextIndex < allExercises.length) {
+      loadExercise(allExercises[nextIndex], nextIndex);
+      return;
+    }
+
+    // ==============================
+    // SELESAIKAN PELAJARAN
+    // ==============================
+    const { error: lessonProgressError } = await supabase
+      .from("progress_pelajaran_sd")
+      .upsert(
+        {
+          pengguna_id: user.id,
+          pelajaran_id: lesson.id,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "pengguna_id,pelajaran_id",
+        },
+      );
+
+    if (lessonProgressError) {
+      console.error(
+        "Gagal menyelesaikan pelajaran:",
+        lessonProgressError
+      );
+      return;
+    }
+
+    // ==============================
+    // AMBIL SEMUA PELAJARAN MODUL
+    // ==============================
+    const { data: lessonIds, error: lessonIdsError } =
+      await supabase
+        .from("pelajarans_sd")
+        .select("id")
+        .eq("id_modul", lesson.id_modul);
+
+    if (lessonIdsError) {
+      console.error(
+        "Gagal mengambil pelajaran modul:",
+        lessonIdsError
+      );
+      return;
+    }
+
+    const ids = (lessonIds ?? []).map(
+      (item) => Number(item.id)
+    );
+
+    // ==============================
+    // AMBIL PELAJARAN YANG COMPLETE
+    // ==============================
+    const { data: completedLessons, error: completedError } =
+      await supabase
+        .from("progress_pelajaran_sd")
+        .select("pelajaran_id")
+        .eq("pengguna_id", user.id)
+        .eq("is_completed", true)
+        .in("pelajaran_id", ids);
+
+    if (completedError) {
+      console.error(
+        "Gagal mengambil progress pelajaran:",
+        completedError
+      );
+      return;
+    }
+
+    const uniqueCompleted = new Set(
+      (completedLessons ?? []).map(
+        (item) => Number(item.pelajaran_id)
+      )
+    );
+
+    const isModuleCompleted =
+      ids.length > 0 &&
+      ids.every((id) => uniqueCompleted.has(id));
+
+    console.log("SEMUA LESSON:", ids);
+    console.log(
+      "LESSON COMPLETE:",
+      Array.from(uniqueCompleted)
+    );
+    console.log(
+      "MODUL COMPLETE:",
+      isModuleCompleted
+    );
+
+    // ==============================
+    // MODUL BELUM SELESAI
+    // ==============================
+    if (!isModuleCompleted) {
+      setShowLessonFinishModal(true);
+      return;
+    }
+
+    // ==============================
+    // SELESAIKAN MODUL
+    // ==============================
+    const { error: modulProgressError } = await supabase
+      .from("progress_modul_sd")
+      .upsert(
+        {
+          pengguna_id: user.id,
+          modul_id: lesson.id_modul,
+          is_unlocked: true,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "pengguna_id,modul_id",
+        }
+      );
+
+    if (modulProgressError) {
+      console.error(
+        "Gagal menyelesaikan modul:",
+        modulProgressError
+      );
+      return;
+    }
+
+    // ==============================
+    // CARI MODUL BERIKUTNYA
+    // ==============================
+    const { data: currentModul } = await supabase
+      .from("moduls_sd")
+      .select("nomor_modul")
+      .eq("id", lesson.id_modul)
+      .single();
+
+    const { data: nextModul } = await supabase
+      .from("moduls_sd")
+      .select("id")
+      .gt(
+        "nomor_modul",
+        currentModul?.nomor_modul
+      )
+      .order("nomor_modul", {
         ascending: true,
       })
       .limit(1)
       .maybeSingle();
 
-    if (error) {
-      console.error(error);
-
-      return;
-    }
-
-    // =========================
-    // SEMUA SOAL SELESAI
-    // =========================
-    if (!data) {
-      // lesson selesai
-
-      await supabase.from("progress_pelajaran_sd").upsert({
-        pengguna_id: user.id,
-        pelajaran_id: lesson?.id,
-        is_completed: true,
-        completed_at: new Date().toISOString(),
-      });
-
-      const { count: totalLessons } = await supabase
-        .from("pelajarans_sd")
-        .select("*", {
-          count: "exact",
-          head: true,
-        })
-        .eq("id_modul", lesson?.id_modul);
-
-      const { data: lessonIds } = await supabase
-        .from("pelajarans_sd")
-        .select("id")
-        .eq("id_modul", lesson?.id_modul);
-
-      const ids = lessonIds?.map((item) => item.id) || [];
-
-      const { data: completedLessons } = await supabase
-        .from("progress_pelajaran_sd")
-        .select("*")
-        .eq("pengguna_id", user.id)
-        .eq("is_completed", true)
-        .in("pelajaran_id", ids);
-
-      const totalCompleted = completedLessons?.length || 0;
-
-      // =========================
-      // MODUL SELESAI
-      // =========================
-      if (totalCompleted >= (totalLessons || 0)) {
-        // modul sekarang selesai
-        await supabase.from("progress_modul_sd").upsert({
-          pengguna_id: user.id,
-          modul_id: lesson?.id_modul,
-          is_unlocked: true,
-          is_completed: true,
-        });
-
-        // cari modul sekarang
-        const { data: currentModul } = await supabase
-          .from("moduls_sd")
-          .select("nomor_modul")
-          .eq("id", lesson?.id_modul)
-          .single();
-
-        // cari modul berikutnya
-        const { data: nextModul } = await supabase
-          .from("moduls_sd")
-          .select("id")
-          .gt("nomor_modul", currentModul?.nomor_modul)
-          .order("nomor_modul", {
-            ascending: true,
-          })
-          .limit(1)
+    // ==============================
+    // UNLOCK MODUL BERIKUTNYA
+    // ==============================
+    if (nextModul) {
+      const { data: nextModulProgress } =
+        await supabase
+          .from("progress_modul_sd")
+          .select("is_completed")
+          .eq("pengguna_id", user.id)
+          .eq("modul_id", nextModul.id)
           .maybeSingle();
 
-        // unlock modul berikutnya
-        if (nextModul) {
-          await supabase.from("progress_modul_sd").upsert({
-            pengguna_id: user.id,
-            modul_id: nextModul.id,
-            is_unlocked: true,
-            is_completed: false,
-          });
+      // PENTING:
+      // Jangan timpa modul yang sudah complete
+      if (!nextModulProgress?.is_completed) {
+        const { error: nextModuleError } =
+          await supabase
+            .from("progress_modul_sd")
+            .upsert(
+              {
+                pengguna_id: user.id,
+                modul_id: nextModul.id,
+                is_unlocked: true,
+                is_completed: false,
+              },
+              {
+                onConflict:
+                  "pengguna_id,modul_id",
+              }
+            );
+
+        if (nextModuleError) {
+          console.error(
+            "Gagal membuka modul berikutnya:",
+            nextModuleError
+          );
+          return;
         }
-
-        setShowFinishModal(true);
-
-        return;
       }
-      // =========================
-      // LESSON SELESAI
-      // =========================
-      setShowLessonFinishModal(true);
-
-      return;
     }
 
-    loadExercise(data, currentProgress + 1);
-
-    return;
+    setShowFinishModal(true);
   }
 
-  async function goToPreviousExercise() {
+  function goToPreviousExercise() {
     if (!exercise) return;
-    setFeedback({ open: false, status: "correct" });
-    setShowLeaderboard(false);
-    setShakeBoard(false);
-    setShowTutorial(false);
-    setCanCheckAnswer(false);
-    setIsAnswerLocked(false);
-    setCheckAnswerFn(undefined);
-    resetExerciseFn?.();
-    const { data: firstExercise } = await supabase
-      .from("latihans_sd")
-      .select("nomor_urut")
-      .eq("id_pelajaran", lessonId)
-      .order("nomor_urut", { ascending: true })
-      .limit(1)
-      .maybeSingle();
 
-    const isFirstExercise =
-      firstExercise && exercise.nomor_urut <= firstExercise.nomor_urut;
-    if (isFirstExercise) {
+    resetExerciseFn?.();
+
+    if (currentExerciseIndex === 0) {
       router.push(`/sd/eksplorasi/${lesson?.id_modul}/${lessonId}`);
       return;
     }
 
-    // =========================
-    // FETCH PREVIOUS EXERCISE
-    // =========================
-    const { data, error } = await supabase
-      .from("latihans_sd")
-      .select("*")
-      .eq("id_pelajaran", lessonId)
-      .lt("nomor_urut", exercise.nomor_urut)
-      .order("nomor_urut", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const prevIndex = currentExerciseIndex - 1;
+    loadExercise(allExercises[prevIndex], prevIndex);
+  }
 
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    if (!data) return;
-    loadExercise(data, Math.max(currentProgress - 1, 2));
+  function goToNextExerciseDirect() {
+    if (!canNext) return;
+    const nextIndex = currentExerciseIndex + 1;
+    loadExercise(allExercises[nextIndex], nextIndex);
   }
 
   // =====================================
@@ -661,7 +735,12 @@ export default function ExercisePage() {
             exp={user?.exp || 0}
             showProgress
             showBack
-            onBack={goToPreviousExercise}
+            backHref={`/sd/eksplorasi/${lesson?.id_modul}/${lessonId}`}
+            showProgressNavigation
+            onProgressPrevious={goToPreviousExercise}
+            onProgressNext={goToNextExerciseDirect}
+            progressPreviousDisabled={!canPrev}
+            progressNextDisabled={!canNext}
           />
         </div>
 
@@ -747,31 +826,37 @@ export default function ExercisePage() {
               text-3xl
               font-black
               mb-4
-            "> " {exercise.prompt} "
+            ">
+              {" "}
+              " {exercise.prompt} "
             </h1>
 
             {/* ================= QUESTION ================= */}
-            <div
-              className="flex flex-row items-center justify-center gap-4 w-full bg-amber-100 rounded-3xl px-4 py-0 mb-8 outline-2 outline-offset-2 outline-white outline-dashed"
-            >
-              <IconFRobot size={120}></IconFRobot>
-              <div
-              className="
-              text-left
-              text-gray-800
-              text-[18px]/6
-              font-[550]
-              tracking-[0.01rem]
-            "
-              style={{
-                      fontFamily: "var(--font-lilita-one)",
-                    }}
-              dangerouslySetInnerHTML={{
-                __html: exercise.pertanyaan || "",
-              }}
-            />
+            <div className="flex flex-row items-start gap-3 w-full mb-8">
+              <IconFRobot
+                className="flex-shrink-0 mt-4 justify-center items-center"
+                size={64}></IconFRobot>
+              <div className="relative bg-amber-50 rounded-2xl px-5 py-4 flex-1 outline-2 outline-dashed outline-amber-50">
+                {/* Tail bubble */}
+                <div
+                  className="
+                  absolute
+                  -left-3
+                  top-6
+                  w-0 h-0
+                  border-t-[10px] border-t-transparent
+                  border-r-[14px] border-r-amber-50
+                  border-b-[10px] border-b-transparent
+                "
+                />
+                <div
+                  className="text-gray-800 text-[17px] font-semibold leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: exercise.pertanyaan || "",
+                  }}
+                />
+              </div>
             </div>
-            
 
             {/* ================= EXERCISE ================= */}
             {exercise.type === "drag_and_drop" && (
@@ -781,18 +866,16 @@ export default function ExercisePage() {
                 setCheckAnswer={setCheckAnswerFn}
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
-                onAnswerResult={(isCorrect) => {
+                onAnswerResult={async (isCorrect) => {
                   if (isCorrect) {
                     setIsAnswerLocked(true);
                     setCheckAnswerFn(undefined);
+                    await processCorrectAnswer(exercise);
                   }
 
                   if (!isCorrect) {
                     setShakeBoard(true);
-
-                    setTimeout(() => {
-                      setShakeBoard(false);
-                    }, 500);
+                    setTimeout(() => setShakeBoard(false), 500);
                   }
 
                   setFeedback({
@@ -810,18 +893,16 @@ export default function ExercisePage() {
                 setCheckAnswer={setCheckAnswerFn}
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
-                onAnswerResult={(isCorrect) => {
+                onAnswerResult={async (isCorrect) => {
                   if (isCorrect) {
                     setIsAnswerLocked(true);
                     setCheckAnswerFn(undefined);
+                    await processCorrectAnswer(exercise);
                   }
 
                   if (!isCorrect) {
                     setShakeBoard(true);
-
-                    setTimeout(() => {
-                      setShakeBoard(false);
-                    }, 500);
+                    setTimeout(() => setShakeBoard(false), 500);
                   }
 
                   setFeedback({
@@ -839,18 +920,16 @@ export default function ExercisePage() {
                 setCheckAnswer={setCheckAnswerFn}
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
-                onAnswerResult={(isCorrect) => {
+                onAnswerResult={async (isCorrect) => {
                   if (isCorrect) {
                     setIsAnswerLocked(true);
                     setCheckAnswerFn(undefined);
+                    await processCorrectAnswer(exercise);
                   }
 
                   if (!isCorrect) {
                     setShakeBoard(true);
-
-                    setTimeout(() => {
-                      setShakeBoard(false);
-                    }, 500);
+                    setTimeout(() => setShakeBoard(false), 500);
                   }
 
                   setFeedback({
@@ -868,18 +947,16 @@ export default function ExercisePage() {
                 setCheckAnswer={setCheckAnswerFn}
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
-                onAnswerResult={(isCorrect) => {
+                onAnswerResult={async (isCorrect) => {
                   if (isCorrect) {
                     setIsAnswerLocked(true);
                     setCheckAnswerFn(undefined);
+                    await processCorrectAnswer(exercise);
                   }
 
                   if (!isCorrect) {
                     setShakeBoard(true);
-
-                    setTimeout(() => {
-                      setShakeBoard(false);
-                    }, 500);
+                    setTimeout(() => setShakeBoard(false), 500);
                   }
 
                   setFeedback({
@@ -897,18 +974,16 @@ export default function ExercisePage() {
                 setCheckAnswer={setCheckAnswerFn}
                 setResetExercise={setResetExerciseFn}
                 onStateChange={setCanCheckAnswer}
-                onAnswerResult={(isCorrect) => {
+                onAnswerResult={async (isCorrect) => {
                   if (isCorrect) {
                     setIsAnswerLocked(true);
                     setCheckAnswerFn(undefined);
+                    await processCorrectAnswer(exercise);
                   }
 
                   if (!isCorrect) {
                     setShakeBoard(true);
-
-                    setTimeout(() => {
-                      setShakeBoard(false);
-                    }, 500);
+                    setTimeout(() => setShakeBoard(false), 500);
                   }
 
                   setFeedback({

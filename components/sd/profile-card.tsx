@@ -4,14 +4,16 @@ import { DoorArrowRight28Filled } from "@fluentui/react-icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Modal from "./modal";
+import { IconFTrophy } from "react-fluentui-emoji/lib/flat";
+import LeaderBoard from "./leaderboard/leaderboard";
 
 type Props = {
   name: string;
   level: string;
   avatar: string;
   variant?: "default" | "light";
-  className?: string; // Tambahkan className prop
-  avatarSize?: "sm" | "md" | "lg"; // Opsi ukuran avatar
+  className?: string;
+  avatarSize?: "sm" | "md" | "lg";
 };
 
 export default function ProfileCard({
@@ -25,6 +27,7 @@ export default function ProfileCard({
   const isLight = variant === "light";
   const router = useRouter();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   // Ukuran avatar yang responsif
   const avatarSizes = {
@@ -47,6 +50,41 @@ export default function ProfileCard({
 
   return (
     <div className={`relative group ${className}`}>
+      {/* ================= MODAL CONFIRM LOGOUT ================= */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[9999] bg-[#1F0234]/67 flex items-center justify-center p-4">
+          <Modal
+            title="Apakah Kamu Yakin?"
+            width="w-full max-w-[500px]"
+            autoHeight
+            buttonText="Keluar"
+            buttonVariant="red"
+            onButtonClick={handleLogout}
+            secondButtonText="Batal"
+            secondButtonVariant="gray"
+            onSecondButtonClick={() => setShowConfirmModal(false)}
+            onClose={() => setShowConfirmModal(false)}>
+            <div className="py-6 sm:py-8 px-2">
+              <p
+                className="
+                      text-center
+                      text-[18px] sm:text-[20px]
+                      font-bold
+                      text-[#1E293B]
+                    ">
+                Apakah kamu yakin untuk Keluar Akun?
+              </p>
+            </div>
+          </Modal>
+        </div>
+      )}
+
+      {/* ================= LEADERBOARD ================= */}
+      {showLeaderboard && (
+        <div className="fixed inset-0 z-[9999]">
+          <LeaderBoard onClose={() => setShowLeaderboard(false)} />
+        </div>
+      )}
       {/* PROFILE CARD */}
       <div
         className={`
@@ -154,34 +192,26 @@ export default function ProfileCard({
             </div>
           </div>
 
-          {/* ================= MODAL CONFIRM LOGOUT ================= */}
-          {showConfirmModal && (
-            <div className="fixed inset-0 z-[9999] bg-[#1F0234]/67 flex items-center justify-center p-4">
-              <Modal
-                title="Apakah Kamu Yakin?"
-                width="w-full max-w-[500px]"
-                autoHeight
-                buttonText="Keluar"
-                buttonVariant="red"
-                onButtonClick={handleLogout}
-                secondButtonText="Batal"
-                secondButtonVariant="gray"
-                onSecondButtonClick={() => setShowConfirmModal(false)}
-                onClose={() => setShowConfirmModal(false)}>
-                <div className="py-6 sm:py-8 px-2">
-                  <p
-                    className="
-                      text-center
-                      text-[18px] sm:text-[20px]
-                      font-bold
-                      text-[#1E293B]
-                    ">
-                    Apakah kamu yakin untuk Keluar Akun?
-                  </p>
-                </div>
-              </Modal>
-            </div>
-          )}
+          <button
+            onClick={() => setShowLeaderboard(true)}
+            className="
+              w-full
+              flex
+              items-center
+              gap-2
+              px-4 sm:px-5
+              py-3 sm:py-4
+              text-left
+              font-semibold
+              text-sm sm:text-base
+              text-gray-800
+              hover:bg-amber-100
+              transition-colors
+              duration-200
+            ">
+            <IconFTrophy size={24}></IconFTrophy>
+            Peringkat
+          </button>
 
           <button
             onClick={() => setShowConfirmModal(true)}
@@ -196,7 +226,7 @@ export default function ProfileCard({
               font-semibold
               text-sm sm:text-base
               text-rose-700
-              hover:bg-red-50
+              hover:bg-red-100
               transition-colors
               duration-200
             ">

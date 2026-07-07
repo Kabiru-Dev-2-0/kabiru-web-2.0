@@ -82,7 +82,6 @@ export default function LeaderBoard({ onClose }: Props) {
       console.error(error);
       return;
     }
-    console.log("ERROR:", error);
 
     const mapped = (data ?? []).map((user, index) => ({
       rank: index + 1,

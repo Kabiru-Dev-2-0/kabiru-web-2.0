@@ -476,6 +476,9 @@ function DropArea({
             px-8
             py-3
 
+            whitespace-nowrap
+            w-max
+
             rounded-t-[20px]
 
             font-black

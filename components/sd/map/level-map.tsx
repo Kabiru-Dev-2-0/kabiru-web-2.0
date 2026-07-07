@@ -71,27 +71,59 @@ export default function LevelMap() {
 
   useEffect(() => {
     if (!user) return;
+
     fetchProgress();
+
+    const timeout = setTimeout(fetchProgress, 500);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchProgress();
+      }
+    };
+
+    window.addEventListener("focus", fetchProgress);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener("focus", fetchProgress);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [user]);
 
   async function fetchProgress() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("progress_modul_sd")
-      .select("*")
-      .eq("pengguna_id", user.id);
+      .select("modul_id,is_completed,is_unlocked")
+      .eq("pengguna_id", user.id)
+      .order("modul_id", { ascending: true });
 
-    setProgressModules(data || []);
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setProgressModules([...(data ?? [])]);
   }
 
   function getModuleState(moduleId: number): "done" | "progress" | "locked" {
-    const progress = progressModules.find((p) => p.modul_id === moduleId);
+    const progress = progressModules.find(
+      (item) => Number(item.modul_id) === Number(moduleId),
+    );
 
-    if (moduleId === modules[0]?.id && !progress) {
+    if (progress?.is_completed === true) {
+      return "done";
+    }
+
+    if (progress?.is_unlocked === true) {
       return "progress";
     }
 
-    if (progress?.is_completed) return "done";
-    if (progress?.is_unlocked) return "progress";
+    if (moduleId === modules[0]?.id) {
+      return "progress";
+    }
+
     return "locked";
   }
 
@@ -114,7 +146,7 @@ export default function LevelMap() {
                   className="absolute inset-0 h-full w-full object-cover rounded-none md:rounded-[28px]"
                 />
 
-                {/* HEADER - dengan padding yang konsisten */}
+                {/* HEADER */}
                 <LevelHeader
                   name={user?.username || "Pemain"}
                   level="Siswa"
@@ -123,7 +155,8 @@ export default function LevelMap() {
                 />
 
                 {/* ================= MODULE AREA ================= */}
-                <div className="
+                <div
+                  className="
                   absolute
                   left-0
                   top-0
@@ -143,7 +176,8 @@ export default function LevelMap() {
                   md:pb-0
                 ">
                   {/* Horizontal scroll on desktop, vertical on mobile */}
-                  <div className="
+                  <div
+                    className="
                     w-full
                     h-full
                     overflow-y-auto
@@ -169,8 +203,7 @@ export default function LevelMap() {
                         md:px-6
                         md:py-0
                         md:min-w-max
-                      "
-                    >
+                      ">
                       {loading ? (
                         <p className="text-white text-lg sm:text-xl font-bold">
                           Memuat...
@@ -199,8 +232,7 @@ export default function LevelMap() {
                                 md:gap-17
                                 md:w-auto
                                 md:flex-shrink-0
-                              "
-                            >
+                              ">
                               <ModuleNode
                                 id_modul={mod.id}
                                 title={mod.title}
@@ -236,8 +268,7 @@ export default function LevelMap() {
                 <div className="pointer-events-none absolute -bottom-[40px] -right-[1px] w-[22%] min-w-[120px] md:min-w-[160px] hidden md:block">
                   <svg
                     viewBox="0 0 305 116"
-                    className="w-full h-full scale-x-[-1]"
-                  >
+                    className="w-full h-full scale-x-[-1]">
                     <path d="M0 0 H260 Q305 0 305 60 V116 H0 Z" fill="white" />
                   </svg>
                 </div>
@@ -245,8 +276,7 @@ export default function LevelMap() {
                 {/* ================= HELP ================= */}
                 <div
                   onClick={() => setOpenHelp(true)}
-                  className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-20 flex items-center gap-1 sm:gap-2 cursor-pointer"
-                >
+                  className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-20 flex items-center gap-1 sm:gap-2 cursor-pointer">
                   <img
                     src="/imageAssets/sd/map/icon/icon-ask-circle-super-mini.png"
                     alt="help"
@@ -278,15 +308,15 @@ export default function LevelMap() {
       {openHelp && (
         <div
           className="absolute inset-0 bg-[#1F0234]/67 flex items-center justify-center p-4 sm:p-6 z-50"
-          onClick={() => setOpenHelp(false)}
-        >
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg sm:max-w-xl md:max-w-[800px]">
+          onClick={() => setOpenHelp(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg sm:max-w-xl md:max-w-[800px]">
             <Modal
               title="PETUNJUK BELAJAR"
               width="w-full"
               buttonIcon={<IconFRocket size={30} />}
-              onClose={() => setOpenHelp(false)}
-            >
+              onClose={() => setOpenHelp(false)}>
               <div className="space-y-6 sm:space-y-8 overflow-y-auto max-h-[60vh] sm:max-h-[70vh] pr-1">
                 {/* Content 1 */}
                 <div className="flex items-start gap-3 sm:gap-4">
@@ -296,8 +326,7 @@ export default function LevelMap() {
                   <div className="flex-1 min-w-0">
                     <h3
                       className="text-amber-500 font-black uppercase text-[16px] sm:text-[18px] leading-[1.2]"
-                      style={{ fontFamily: "var(--font-lilita-one)" }}
-                    >
+                      style={{ fontFamily: "var(--font-lilita-one)" }}>
                       Pilih materi yang tersedia
                     </h3>
                     <p className="mt-2 text-gray-800 text-[14px] sm:text-[16px] leading-[1.35]">
@@ -307,12 +336,27 @@ export default function LevelMap() {
                     {/* Images: wrap on mobile, row on larger */}
                     <div className="mt-4 sm:mt-6 flex flex-wrap sm:flex-nowrap justify-start gap-6 sm:gap-12">
                       {[
-                        { src: "./imageAssets/sd/pb_opened.png", label: "Modul yang terbuka" },
-                        { src: "./imageAssets/sd/pb_done.png", label: "Modul sudah terselesaikan" },
-                        { src: "./imageAssets/sd/pb_locked.png", label: "Modul masih terkunci" },
+                        {
+                          src: "./imageAssets/sd/pb_opened.png",
+                          label: "Modul yang terbuka",
+                        },
+                        {
+                          src: "./imageAssets/sd/pb_done.png",
+                          label: "Modul sudah terselesaikan",
+                        },
+                        {
+                          src: "./imageAssets/sd/pb_locked.png",
+                          label: "Modul masih terkunci",
+                        },
                       ].map((item) => (
-                        <div key={item.label} className="flex flex-col items-center w-[100px] sm:w-[160px]">
-                          <img src={item.src} className="w-24 sm:w-42" alt={item.label} />
+                        <div
+                          key={item.label}
+                          className="flex flex-col items-center w-[100px] sm:w-[160px]">
+                          <img
+                            src={item.src}
+                            className="w-24 sm:w-42"
+                            alt={item.label}
+                          />
                           <p className="mt-2 sm:mt-3 text-center text-gray-800 text-[12px] sm:text-[14px] leading-[1.35]">
                             {item.label}
                           </p>
@@ -330,8 +374,7 @@ export default function LevelMap() {
                   <div className="flex-1 min-w-0">
                     <h3
                       className="text-amber-500 font-black uppercase text-[16px] sm:text-[18px] leading-[1.2]"
-                      style={{ fontFamily: "var(--font-lilita-one)" }}
-                    >
+                      style={{ fontFamily: "var(--font-lilita-one)" }}>
                       EKSPLORASI MODUL DAN LATIHAN SOAL
                     </h3>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -358,8 +401,7 @@ export default function LevelMap() {
                   <div className="flex-1 min-w-0">
                     <h3
                       className="text-amber-500 font-black uppercase text-[16px] sm:text-[18px] leading-[1.2]"
-                      style={{ fontFamily: "var(--font-lilita-one)" }}
-                    >
+                      style={{ fontFamily: "var(--font-lilita-one)" }}>
                       Buka MODUL berikutnya
                     </h3>
                     <p className="mt-2 text-gray-800 text-[14px] sm:text-[16px] leading-[1.35]">
@@ -377,8 +419,7 @@ export default function LevelMap() {
                   <div className="flex-1 min-w-0">
                     <h3
                       className="text-amber-500 font-black uppercase text-[16px] sm:text-[18px] leading-[1.2]"
-                      style={{ fontFamily: "var(--font-lilita-one)" }}
-                    >
+                      style={{ fontFamily: "var(--font-lilita-one)" }}>
                       EKSPLORASI MODUL DAN LATIHAN SOAL
                     </h3>
                     <p className="mt-2 text-gray-800 text-[14px] sm:text-[16px] leading-[1.35]">

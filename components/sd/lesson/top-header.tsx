@@ -18,6 +18,11 @@ type Props = {
   totalProgress?: number;
   onBack?: () => void;
   backHref?: string;
+  showProgressNavigation?: boolean;
+  onProgressPrevious?: () => void;
+  onProgressNext?: () => void;
+  progressPreviousDisabled?: boolean;
+  progressNextDisabled?: boolean;
 };
 
 export default function TopHeader({
@@ -31,6 +36,11 @@ export default function TopHeader({
   totalProgress = 0,
   onBack,
   backHref,
+  showProgressNavigation = false,
+  onProgressPrevious,
+  onProgressNext,
+  progressPreviousDisabled = false,
+  progressNextDisabled = false,
 }: Props) {
   const router = useRouter();
 
@@ -39,7 +49,7 @@ export default function TopHeader({
       {/* CONTAINER */}
       <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         {/* LEFT SECTION */}
-        <div className="flex flex-wrap items-center gap-8 sm:gap-12 md:gap-20 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-8 sm:gap-12 md:gap-16 w-full sm:w-auto">
           {/* BACK BUTTON */}
           {showBack && (
             <GameButton
@@ -75,14 +85,22 @@ export default function TopHeader({
 
           {/* PROGRESS BAR */}
           {showProgress && (
-            <div className="w-full sm:w-[200px] md:w-[300px] lg:w-[400px] xl:w-[520px] flex-1 min-w-[120px]">
-              <ProgressBar current={currentProgress} total={totalProgress} />
+            <div className="w-full sm:w-[200px] md:w-[300px] lg:w-[400px] xl:w-[500px] flex-1 min-w-[120px]">
+              <ProgressBar
+                current={currentProgress}
+                total={totalProgress}
+                onPrev={onProgressPrevious}
+                onNext={onProgressNext}
+                canPrev={!progressPreviousDisabled}
+                canNext={!progressNextDisabled}
+                showChevrons={showProgressNavigation}
+              />
             </div>
           )}
         </div>
 
         {/* RIGHT SECTION */}
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-5 w-full sm:w-auto justify-end">
+        <div className="flex items-end gap-1 sm:gap-2 md:gap-3 w-full sm:w-auto justify-end">
           {/* EXP BADGE */}
           <ExpBadge value={exp} variant="light" size="lg"/>
 

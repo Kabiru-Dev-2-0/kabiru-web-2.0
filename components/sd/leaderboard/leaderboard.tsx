@@ -23,19 +23,28 @@ const supabase = createClient();
 
 export default function LeaderBoard({ onClose }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
-
   const currentUserRef = useRef<HTMLDivElement>(null);
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
-
   const [currentUsername, setCurrentUsername] = useState("");
+
+  // ================================================
+  // KUNCI SCROLL BODY SELAMA LEADERBOARD TERBUKA
+  // (mencegah konten halaman di belakang ikut ter-scroll/terlihat)
+  // ================================================
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, []);
 
   useEffect(() => {
     const user = localStorage.getItem("sd_user");
 
     if (user) {
       const parsed = JSON.parse(user);
-
       setCurrentUsername(parsed.username);
     }
   }, []);
@@ -46,10 +55,17 @@ export default function LeaderBoard({ onClose }: Props) {
     }
   }, [currentUsername]);
 
-  {/* AUTO SCROLL CURRENT USER */}
+  const currentUser = leaderboard.find((item) => item.isCurrentUser);
+
+  const currentUserVisible = leaderboard
+    .slice(3, 13)
+    .some((item) => item.isCurrentUser);
+
+  {
+    /* AUTO SCROLL CURRENT USER */
+  }
   useEffect(() => {
     if (!currentUserVisible) return;
-
     if (!scrollRef.current || !currentUserRef.current) return;
 
     const container = scrollRef.current;
@@ -60,7 +76,7 @@ export default function LeaderBoard({ onClose }: Props) {
         target.offsetTop - container.clientHeight / 2 + target.clientHeight / 2,
       behavior: "smooth",
     });
-  }, [leaderboard]);
+  }, [leaderboard, currentUserVisible]);
 
   async function loadLeaderboard() {
     const { data, error } = await supabase
@@ -98,33 +114,22 @@ export default function LeaderBoard({ onClose }: Props) {
     setLeaderboard(mapped);
   }
 
-  const currentUser = leaderboard.find((item) => item.isCurrentUser);
-
-  const currentUserVisible = leaderboard
-    .slice(3, 13)
-    .some((item) => item.isCurrentUser);
-
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      {/* BACKGROUND */}
+    <div className="relative h-[100dvh] w-full overflow-y-auto overflow-x-hidden lg:overflow-hidden custom-scrollbar">
+      {/* BACKGROUND — fixed supaya tidak ikut ter-scroll & selalu full screen */}
       <img
         src="/imageAssets/sd/map/background-map.png"
         alt="background"
-        className="
-          absolute
-          inset-0
-          h-full
-          w-full
-          object-cover
-        "
+        className="fixed inset-0 -z-10 h-[100dvh] w-full object-cover"
       />
 
       {/* CLOSE */}
       <div
         className="
-          absolute
-          top-8
-          right-8
+          fixed
+          top-4 right-4
+          sm:top-6 sm:right-6
+          lg:top-8 lg:right-8
           z-50
         ">
         <GameButton
@@ -134,7 +139,7 @@ export default function LeaderBoard({ onClose }: Props) {
           icon={
             <img
               src="/imageAssets/sd/icon-crossmark.png"
-              className="w-8 h-10 ml-3"
+              className="w-6 h-8 sm:w-8 sm:h-10"
             />
           }
         />
@@ -146,23 +151,51 @@ export default function LeaderBoard({ onClose }: Props) {
           relative
           z-10
 
-          h-full
+          min-h-[100dvh]
           w-full
 
           flex
-          items-end
-          justify-between
+          flex-col
+          lg:flex-row
 
-          px-12
-          py-8
-        ">
+          items-center
+          lg:items-end
+
+          justify-start
+          lg:justify-between
+
+          gap-0
+
+          px-4
+          sm:px-8
+          lg:px-12
+
+          py-24
+          md:py-8
+        "
+      >
         {/* PODIUM */}
         <div
           className="
+            order-1
+            lg:order-1
+
             flex
             items-end
             justify-center
-            gap-0
+
+            w-full
+            lg:w-auto
+
+            scale-[0.72]
+            sm:scale-[0.86]
+            lg:scale-100
+
+            origin-top
+            lg:origin-bottom
+
+            -mb-32
+            lg:mb-0
           ">
           {leaderboard[1] && (
             <PodiumStage
@@ -198,33 +231,55 @@ export default function LeaderBoard({ onClose }: Props) {
         {/* PANEL */}
         <div
           className="
-          relative
+            order-2
+            lg:order-2
 
-          w-[600px]
-          h-[660px]
+            relative
 
-          bg-white
+            w-full
+            max-w-[620px]
+            lg:w-[600px]
 
-          rounded-[32px]
+            h-[520px]
+            sm:h-[560px]
+            lg:h-[660px]
 
-          pt-[80px]
-          px-5
-          pb-5
+            bg-white
 
-          shadow-xl
-        ">
+            rounded-[24px]
+            lg:rounded-[32px]
+
+            pt-[56px]
+            sm:pt-[64px]
+            lg:pt-[80px]
+
+            px-4
+            sm:px-5
+
+            pb-5
+
+            mt-2
+            lg:mt-0
+
+            shadow-xl
+          ">
           {/* TITLE */}
           <div
             className="
               absolute
-              top-[-70px]
+              top-[-40px]
+              sm:top-[-58px]
+              lg:top-[-70px]
               left-1/2
               -translate-x-1/2
               z-20
+              w-[380px]
+              sm:w-[380px]
+              lg:w-[640px]
             ">
             <img
               src="/imageAssets/sd/leaderboard/title-ribbon.png"
-              className="w-[640px] max-w-none"
+              className="w-full"
             />
           </div>
 
@@ -232,19 +287,28 @@ export default function LeaderBoard({ onClose }: Props) {
           <div
             className="
               grid
-              grid-cols-[120px_1fr_120px]
+              grid-cols-[70px_1fr_80px]
+              sm:grid-cols-[90px_1fr_100px]
+              lg:grid-cols-[120px_1fr_120px]
               bg-slate-100
-              rounded-[18px]
-              px-6
-              py-3
-              mb-4
+              rounded-[14px]
+              lg:rounded-[18px]
+              px-3
+              sm:px-5
+              lg:px-6
+              py-2
+              sm:py-3
+              mb-3
+              sm:mb-4
             ">
             <div
               className="
                 text-center
                 font-black
                 text-gray-400
-                text-[24px]
+                text-[14px]
+                sm:text-[18px]
+                lg:text-[24px]
               ">
               PERINGKAT
             </div>
@@ -254,15 +318,17 @@ export default function LeaderBoard({ onClose }: Props) {
                 text-center
                 font-black
                 text-[#9095A4]
-                text-[22px]
+                text-[13px]
+                sm:text-[17px]
+                lg:text-[22px]
               ">
               NAMA
             </div>
 
-            <div className="flex justify-center items-center gap-2">
+            <div className="flex justify-center items-center gap-1 sm:gap-2">
               <img
                 src="/imageAssets/sd/map/icon/icon-exp.png"
-                className="w-6"
+                className="w-4 sm:w-5 lg:w-6"
               />
 
               <div
@@ -270,7 +336,9 @@ export default function LeaderBoard({ onClose }: Props) {
                   text-center
                   font-black
                   text-[#9095A4]
-                  text-[22px]
+                  text-[13px]
+                  sm:text-[17px]
+                  lg:text-[22px]
                 ">
                 EXP
               </div>
@@ -282,20 +350,27 @@ export default function LeaderBoard({ onClose }: Props) {
             ref={scrollRef}
             className="
               absolute
-              top-[145px]
-              left-5
-              right-5
+              top-[105px]
+              sm:top-[125px]
+              lg:top-[145px]
+              left-4
+              right-4
+              sm:left-5
+              sm:right-5
 
               overflow-y-auto
               flex
               flex-col
-              gap-3
-              pr-2
-              pb-8
+              gap-2
+              sm:gap-3
+              pr-1
+              sm:pr-2
+              pb-6
+              sm:pb-8
               custom-scrollbar
             "
             style={{
-              bottom: currentUserVisible ? 20 : 95,
+              bottom: currentUserVisible ? 16 : 88,
             }}>
             {leaderboard.slice(3, 13).map((player) => (
               <div
@@ -317,12 +392,14 @@ export default function LeaderBoard({ onClose }: Props) {
           {currentUser && !currentUserVisible && (
             <div
               className="
-                  absolute
-
-                  left-5
-                  right-5
-                  bottom-5
-                ">
+                absolute
+                left-4
+                right-4
+                sm:left-5
+                sm:right-5
+                bottom-4
+                sm:bottom-5
+              ">
               <CardLeaderboard
                 rank={currentUser.rank}
                 name={currentUser.name}
@@ -338,7 +415,7 @@ export default function LeaderBoard({ onClose }: Props) {
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 12px;
+          width: 10px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {

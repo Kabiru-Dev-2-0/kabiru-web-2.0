@@ -81,7 +81,7 @@ export default function PatternPainterExercise({
   }, [selectedAnswer, correctAnswer]);
 
   return (
-    <div className="pb-32">
+    <div className="pb-24 md:pb-32">
       {/* ================= PATTERN ================= */}
       <div
         data-tutorial="question-area"
@@ -89,8 +89,7 @@ export default function PatternPainterExercise({
           flex
           flex-col
           items-center
-          gap-5
-          mb-16
+          gap-4 md:gap-5 mb-10 md:mb-16
         ">
         {pairs.map((pair: any, index: number) => (
           <div
@@ -98,24 +97,54 @@ export default function PatternPainterExercise({
             className="
                 flex
                 items-center
-                gap-8
+                justify-center
+
+                w-full
+
+                gap-2
+                sm:gap-4
+                md:gap-6
+                lg:gap-8
               ">
             {/* LEFT */}
             <div
               className="
-                  w-[220px]
+                  w-[120px]
+                  sm:w-[150px]
+                  md:w-[180px]
+                  lg:w-[220px]
+
+                  h-[88px]sm:h-[96px]md:min-h-[76px]md:h-auto
+
+                  flex
+                  items-center
+                  justify-center
+
+                  px-3
+                  sm:px-4
+                  md:px-5
+                  lg:px-6
+
+                  py-3
+                  md:py-4
+                  lg:py-5
+
+                  text-[14px]
+                  sm:text-[15px]
+                  md:text-[16px]
+                  lg:text-[18px]
+
+                  leading-snug
+                  break-words
 
                   bg-purple-200
 
-                  rounded-[20px]
-
-                  py-5
-                  px-6
+                  rounded-[16px]
+                  md:rounded-[20px]
 
                   text-center
 
                   font-semibold
-                  text-[18px]
                   text-gray-900
                 ">
               {pair.left}
@@ -134,19 +163,42 @@ export default function PatternPainterExercise({
             {/* RIGHT */}
             <div
               className="
-                  w-[220px]
+                  w-[120px]
+                  sm:w-[150px]
+                  md:w-[180px]
+                  lg:w-[220px]
+
+                  h-[88px]sm:h-[96px]md:min-h-[76px]md:h-auto
+
+                  flex
+                  items-center
+                  justify-center
+
+                  px-3
+                  sm:px-4
+                  md:px-5
+                  lg:px-6
+
+                  py-3
+                  md:py-4
+                  lg:py-5
+
+                  text-[14px]
+                  sm:text-[15px]
+                  md:text-[16px]
+                  lg:text-[18px]
+
+                  leading-snug
+                  break-words
 
                   bg-blue-200
 
-                  rounded-[20px]
-
-                  py-5
-                  px-6
+                  rounded-[16px]
+                  md:rounded-[20px]
 
                   text-center
 
                   font-semibold
-                  text-[18px]
                   text-gray-900
                 ">
               {pair.right}
@@ -159,25 +211,53 @@ export default function PatternPainterExercise({
           className="
             flex
             items-center
-            gap-8
+            justify-center
+            w-full
+            gap-2
+            sm:gap-4
+            md:gap-6
+            lg:gap-8
           ">
           {/* LEFT */}
           <div
             className="
-              w-[220px]
+              w-[120px]
+                  sm:w-[150px]
+                  md:w-[180px]
+                  lg:w-[220px]
 
-              bg-purple-200
+                  h-[88px]sm:h-[96px]md:min-h-[76px]md:h-auto
 
-              rounded-[20px]
+                  flex
+                  items-center
+                  justify-center
 
-              py-5
-              px-6
+                  px-3
+                  sm:px-4
+                  md:px-5
+                  lg:px-6
 
-              text-center
+                  py-3
+                  md:py-4
+                  lg:py-5
 
-              font-semibold
-              text-[18px]
-              text-gray-900
+                  text-[14px]
+                  sm:text-[15px]
+                  md:text-[16px]
+                  lg:text-[18px]
+
+                  leading-snug
+                  break-words
+
+                  bg-purple-200
+
+                  rounded-[16px]
+                  md:rounded-[20px]
+
+                  text-center
+
+                  font-semibold
+                  text-gray-900
             ">
             {exercise?.data?.question_left}
           </div>
@@ -185,9 +265,14 @@ export default function PatternPainterExercise({
           {/* ARROW */}
           <div
             className="
-              text-white
+            text-white
               text-[48px]
               font-bold
+              sm:text-[30px]
+              md:text-[38px]
+              lg:text-[48px]
+
+              shrink-0
             ">
             →
           </div>
@@ -195,20 +280,43 @@ export default function PatternPainterExercise({
           {/* RIGHT */}
           <div
             className="
-              w-[220px]
+                  w-[120px]
+                  sm:w-[150px]
+                  md:w-[180px]
+                  lg:w-[220px]
 
-              bg-blue-200
+                  h-[88px]sm:h-[96px]md:min-h-[76px]md:h-auto
 
-              rounded-[20px]
+                  flex
+                  items-center
+                  justify-center
 
-              py-5
-              px-6
+                  px-3
+                  sm:px-4
+                  md:px-5
+                  lg:px-6
 
-              text-center
+                  py-3
+                  md:py-4
+                  lg:py-5
 
-              font-bold
-              text-[18px]
-              text-[#1D1D1D]
+                  text-[14px]
+                  sm:text-[15px]
+                  md:text-[16px]
+                  lg:text-[18px]
+
+                  leading-snug
+                  break-words
+
+                  bg-blue-200
+
+                  rounded-[16px]
+                  md:rounded-[20px]
+
+                  text-center
+
+                  font-semibold
+                  text-gray-900
             ">
             {selectedAnswer || "..."}
           </div>
@@ -219,10 +327,17 @@ export default function PatternPainterExercise({
       <div
         data-tutorial="answer-options"
         className="
-          flex
+          grid
+          grid-cols-1
+          md:grid-cols-3
+          lg:flex
+          lg:flex-wrap
+
           justify-center
-          gap-5
-          flex-wrap
+
+          gap-3
+          md:gap-4
+          lg:gap-5
         ">
         {options.map((option: any, index: number) => {
           const isSelected = selectedAnswer === option.text;
@@ -232,22 +347,41 @@ export default function PatternPainterExercise({
               key={`${option.id}-${index}`}
               onClick={() => setSelectedAnswer(option.text)}
               className={`
-          w-[230px]
+                w-full
 
-          rounded-[20px]
+                max-w-[300px]
+                sm:max-w-[180px]
+                md:max-w-[210px]
+                lg:w-[230px]
 
-          px-6
-          py-7
+                h-[66px]
+                md:min-h-[76px]
+                md:h-auto
 
-          text-center
+                px-3
+                sm:px-4
+                md:px-5
+                lg:px-6
 
-          font-bold
+                py-3
+                md:py-5
+                lg:py-7
 
-          transition-all
+                text-[13px]
+                sm:text-[14px]
+                md:text-[16px]
+                lg:text-[18px]
+                font-semibold
+                rounded-[16px]
+                md:rounded-[20px]
+
+                leading-snug
+
+                break-words
 
           ${isSelected ? "bg-[#FFB236] scale-105" : "bg-slate-50"}
         `}>
-              <span className="mr-2">{option.id}.</span>
+              <span className="mr-1 md:mr-2 font-black">{option.id}.</span>
 
               {option.text}
             </button>

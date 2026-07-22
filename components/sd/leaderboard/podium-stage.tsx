@@ -31,9 +31,9 @@ export default function PodiumStage({
   }, [delay]);
 
   const podiumHeight = {
-    1: "h-[420px]",
-    2: "h-[250px]",
-    3: "h-[190px]",
+    1: "h-[260px] sm:h-[300px] lg:h-[420px]",
+    2: "h-[180px] sm:h-[180px] lg:h-[250px]",
+    3: "h-[140px] sm:h-[150px] lg:h-[190px]",
   };
 
   const podiumNumber = {
@@ -55,26 +55,41 @@ export default function PodiumStage({
         ${show ? "translate-y-0 opacity-100" : "translate-y-[300px] opacity-0"}
       `}>
       {/* AVATAR */}
-      <div className="relative mb-3">
+      <div className="relative mb-2 sm:mb-3 lg:mb-4">
         {rank === 1 && (
             <IconFCrown
                 size={72}
                 className="
                 absolute
-                -top-12
+                -top-14
+                sm:-top-9
+                lg:-top-12
                 left-1/2
-                -translate-x-1/2">
+                -translate-x-1/2
+                w-10
+                h-10
+                sm:w-14
+                sm:h-14
+                lg:w-[72px]
+                lg:h-[72px]">
             </IconFCrown>
         )}
 
         <div
           className="
-            w-[120px]
-            h-[120px]
+            w-[86px]
+            h-[86px]
+
+            sm:w-[90px]
+            sm:h-[90px]
+
+            lg:w-[120px]
+            lg:h-[120px]
+
+            border-[3px]
+            lg:border-[4px]
 
             rounded-full
-
-            border-[4px]
             border-white
 
             overflow-hidden
@@ -95,7 +110,7 @@ export default function PodiumStage({
         className="
           text-white
           font-black
-          text-[28px]
+          text-[20px] sm:text-[22px] lg:text-[28px]
         ">
         {name}
       </div>
@@ -109,11 +124,21 @@ export default function PodiumStage({
 
           text-[#FFCC29]
           font-black
-          text-[20px]
+          text-[16px]
+          sm:text-[18px]
+          lg:text-[20px]
 
-          mb-5
+          mb-3
+          sm:mb-4
+          lg:mb-5
         ">
-        <img src="/imageAssets/sd/map/icon/icon-exp.png" className="w-6 h-6" />
+        <img 
+          src="/imageAssets/sd/map/icon/icon-exp.png" 
+          className="
+          w-4 h-4
+          sm:w-5 sm:h-5
+          lg:w-6 lg:h-6
+          " />
 
         {exp}
       </div>
@@ -121,7 +146,9 @@ export default function PodiumStage({
       {/* PODIUM */}
       <div
         className={`
-          w-[220px]
+          w-[120px]
+          sm:w-[160px]
+          lg:w-[220px]
           ${podiumHeight[rank]}
 
           bg-gradient-to-b
@@ -134,7 +161,9 @@ export default function PodiumStage({
 
           text-white
           font-black
-          text-[90px]
+          text-[48px]
+          sm:text-[64px]
+          lg:text-[90px]
         `}>
         {podiumNumber[rank]}
       </div>

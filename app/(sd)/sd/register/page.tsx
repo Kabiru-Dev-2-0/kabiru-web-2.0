@@ -3,7 +3,8 @@
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { ChevronLeftRegular, ChevronRightRegular } from "@fluentui/react-icons";
+import { Checkbox } from "@heroui/checkbox";
+import { ArrowLeft24Regular, ChevronLeftRegular, ChevronRightRegular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -17,7 +18,9 @@ export default function SDRegisterPage() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [savingUsername, setSavingUsername] = useState<boolean>(false);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -126,37 +129,114 @@ export default function SDRegisterPage() {
     <div className="min-h-screen bg-[#3674B5] flex flex-col">
       {/* Header */}
       <div className="w-full bg-white border-b border-[#E8E8E8] px-4 sm:px-8 lg:px-12 py-4">
-        <div className="w-full flex justify-center">
-          <div className="flex flex-col items-center justify-center gap-2.5 w-full max-w-xl">
-            <div className="flex items-center gap-4 sm:gap-8 w-full justify-center">
-              {/* Arrow Left */}
-              <button
-                onClick={() => setStep((s) => (canGoPrev ? s - 1 : s))}
-                disabled={!canGoPrev}
-                className="w-8 h-8 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0">
-                <ChevronLeftRegular className="w-8 h-8 text-[#A1A1AA]" />
-              </button>
 
-              {/* Progress Dots */}
-              <div className="flex items-stretch justify-stretch gap-2 flex-1 h-2.5">
-                {Array.from({ length: stepsTotal }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex-1 rounded-full transition-colors duration-300 ${
-                      idx <= step ? "bg-[#3674B5]" : "bg-[#E4E4E7]"
-                    }`}
-                  />
-                ))}
-              </div>
+        {/* MOBILE */}
+        <div className="flex flex-col gap-4 sm:hidden">
 
-              {/* Arrow Right */}
-              <button
-                onClick={() => setStep((s) => (canGoNext ? s + 1 : s))}
-                disabled={!canGoNext}
-                className="w-8 h-8 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0">
-                <ChevronRightRegular className="w-8 h-8 text-[#A1A1AA]" />
-              </button>
+          {/* Back */}
+          <button
+            onClick={() => router.push("/register")}
+            className="
+              flex
+              items-center
+              gap-2
+              w-fit
+              text-[#3674B5]
+            "
+          >
+            <ArrowLeft24Regular className="w-6 h-6" />
+            <span className="text-sm font-medium">
+              Kembali ke Beranda
+            </span>
+          </button>
+
+          {/* Progress */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setStep((s) => (canGoPrev ? s - 1 : s))}
+              disabled={!canGoPrev}
+              className="w-5 h-5 flex items-center justify-center disabled:opacity-30"
+            >
+              <ChevronLeftRegular className="w-6 h-6 text-[#A1A1AA]" />
+            </button>
+
+            <div className="flex flex-1 gap-2 h-2.5">
+              {Array.from({ length: stepsTotal }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`flex-1 rounded-full transition-colors ${
+                    idx <= step
+                      ? "bg-[#3674B5]"
+                      : "bg-[#E4E4E7]"
+                  }`}
+                />
+              ))}
             </div>
+
+            <button
+              onClick={() => setStep((s) => (canGoNext ? s + 1 : s))}
+              disabled={!canGoNext}
+              className="w-5 h-5 flex items-center justify-center disabled:opacity-30"
+            >
+              <ChevronRightRegular className="w-6 h-6 text-[#A1A1AA]" />
+            </button>
+          </div>
+        </div>
+
+        {/* DESKTOP */}
+        <div className="hidden sm:flex relative w-full items-center justify-center">
+
+          <button
+            onClick={() => router.push("/register")}
+            className="
+              absolute
+              left-0
+              flex
+              items-center
+              gap-2
+              px-3
+              py-2
+              rounded-lg
+              hover:bg-gray-100
+              transition
+            "
+          >
+            <ArrowLeft24Regular className="w-6 h-6 text-[#3674B5]" />
+
+            <span className="font-medium text-[#3674B5]">
+              Kembali ke Beranda
+            </span>
+          </button>
+
+          <div className="flex items-center gap-8 w-full max-w-xl">
+            <button
+              onClick={() => setStep((s) => (canGoPrev ? s - 1 : s))}
+              disabled={!canGoPrev}
+              className="w-8 h-8 flex items-center justify-center disabled:opacity-30"
+            >
+              <ChevronLeftRegular className="w-8 h-8 text-[#A1A1AA]" />
+            </button>
+
+            <div className="flex flex-1 gap-2 h-2.5">
+              {Array.from({ length: stepsTotal }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`flex-1 rounded-full transition-colors ${
+                    idx <= step
+                      ? "bg-[#3674B5]"
+                      : "bg-[#E4E4E7]"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={() => setStep((s) => (canGoNext ? s + 1 : s))}
+              disabled={!canGoNext}
+              className="w-8 h-8 flex items-center justify-center disabled:opacity-30"
+            >
+              <ChevronRightRegular className="w-8 h-8 text-[#A1A1AA]" />
+            </button>
           </div>
         </div>
       </div>
@@ -239,14 +319,21 @@ export default function SDRegisterPage() {
                 </div>
               ) : step === 2 ? (
                 <div className="flex flex-col gap-4 w-full">
-                  <label className="text-[#0B1215] font-medium text-sm sm:text-base">
-                    Buat Kata Sandi Kamu
-                  </label>
+                  <div className="flex flex-col gap-1">
+                      <label className="text-gray-900 font-medium text-sm sm:text-base">
+                        Buat Kata Sandi Kamu
+                      </label>
+                      <span className="text-xs text-gray-700">
+                          Gunakan 8 karakter tanpa spasi.
+                      </span>
+                  </div>
                   <Input
                     radius="lg"
                     size="md"
-                    type="password"
-                    classNames={{ inputWrapper: "bg-[#F4F4F5]" }}
+                    type={showPassword ? "text" : "password"}
+                    classNames={{
+                      inputWrapper: "bg-[#F4F4F5]",
+                    }}
                     value={password}
                     onValueChange={(v) => {
                       setPassword(v);
@@ -254,9 +341,16 @@ export default function SDRegisterPage() {
                     }}
                     placeholder="Minimal 8 karakter"
                   />
-                  <span className="text-xs text-[#71717A]">
-                    Gunakan 8 karakter tanpa spasi.
-                  </span>
+                  <Checkbox
+                    size="sm"
+                    isSelected={showPassword}
+                    onValueChange={setShowPassword}
+                    classNames={{
+                      label: "text-[#4B5563] text-sm",
+                    }}
+                  >
+                    Tampilkan kata sandi
+                  </Checkbox>
                   {passwordError && (
                     <span className="text-xs text-[#F31260]">
                       {passwordError}

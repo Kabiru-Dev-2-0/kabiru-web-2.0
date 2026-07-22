@@ -53,10 +53,13 @@ export default function ListSubModulPage() {
   const updateScrollState = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-
-    setCanScrollLeft(el.scrollLeft > 1);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    // Update state scroll hanya relevan di desktop
+    if (window.innerWidth >= 768) {
+      setCanScrollLeft(el.scrollLeft > 1);
+      setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    }
   }, []);
+  
   useEffect(() => {
     const id = setTimeout(updateScrollState, 0);
     return () => clearTimeout(id);
@@ -67,39 +70,22 @@ export default function ListSubModulPage() {
     if (!el) return;
 
     const onWheel = (e: WheelEvent) => {
+      // NONAKTIFKAN JS SCROLL DI MOBILE
+      if (window.innerWidth < 768) return; 
       if (el.scrollWidth <= el.clientWidth) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
 
-      // Mousepad geser horizontal
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        return;
-      }
-
-      // Mouse wheel ubah vertical menjadi horizontal
       e.preventDefault();
-
-      el.scrollBy({
-        left: e.deltaY,
-        behavior: "smooth",
-      });
+      el.scrollBy({ left: e.deltaY, behavior: "smooth" });
     };
 
-    el.addEventListener("wheel", onWheel, {
-      passive: false,
-    });
-
-    return () => {
-      el.removeEventListener("wheel", onWheel);
-    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
   }, [lessons]);
 
   // ================= SCROLL BUTTONS =================
-  const scrollRight = () => {
-    scrollRef.current?.scrollBy({ left: 320, behavior: "smooth" });
-  };
-
-  const scrollLeft = () => {
-    scrollRef.current?.scrollBy({ left: -320, behavior: "smooth" });
-  };
+  const scrollRight = () => scrollRef.current?.scrollBy({ left: 320, behavior: "smooth" });
+  const scrollLeft = () => scrollRef.current?.scrollBy({ left: -320, behavior: "smooth" });
 
   // ================= FETCH DATA =================
   useEffect(() => {
@@ -110,7 +96,6 @@ export default function ListSubModulPage() {
 
     const fetchData = async () => {
       setLoading(true);
-
       try {
         const { data: modulData, error: modulError } = await supabase
           .from("moduls_sd")
@@ -160,16 +145,11 @@ export default function ListSubModulPage() {
   }, [modulId]);
 
   // ================= ARROW BUTTON STYLE =================
-  const arrowActiveClass = `
-    bg-gradient-to-br from-yellow-400 to-orange-400
-    shadow-lg cursor-pointer
-  `;
-  const arrowInactiveClass = `
-    bg-gray-200 cursor-not-allowed
-  `;
+  const arrowActiveClass = `bg-gradient-to-br from-yellow-400 to-orange-400 shadow-lg cursor-pointer`;
+  const arrowInactiveClass = `bg-gray-200 cursor-not-allowed`;
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
+    <div className="min-h-screen bg-white relative overflow-hidden flex flex-col">
       {/* ================= HEADER ================= */}
       <TopHeader
         name={user?.username || "Pemain"}
@@ -181,7 +161,7 @@ export default function ListSubModulPage() {
       />
 
       {/* ================= CONTENT ================= */}
-      <main className="flex-1 pt-28 md:pt-32 px-4 md:px-10">
+      <main className="flex-1 pt-24 sm:pt-28 md:pt-32 px-4 md:px-10 z-10 relative">
         <div className="max-w-[1200px] mx-auto">
           {/* ================= TITLE ================= */}
           <h1 className="mt-4 md:mt-6 font-bold text-[#FEA203] text-xl md:text-2xl leading-tight">
@@ -189,18 +169,18 @@ export default function ListSubModulPage() {
           </h1>
 
           {/* ================= DESCRIPTION ================= */}
-          <p className="mt-1 md:mt-2 text-gray-500 tracking-[0.3] text-sm md:text-base leading-relaxed max-w-[900px] md:h-[52px]">
+          <p className="mt-1 md:mt-2 text-gray-500 tracking-[0.3] text-sm md:text-base leading-relaxed max-w-[900px]">
             {modul?.deskripsi || "Memuat Konten..."}
           </p>
 
-          {/* ================= LOADING ================= */}
+          {/* ================= LIST LESSON ================= */}
           {loading ? (
             <p className="mt-8 text-gray-400">Memuat Konten...</p>
           ) : lessons.length === 0 ? (
             <p className="mt-8 text-gray-400">Belum ada pelajaran.</p>
           ) : (
-            <div className="relative mt-10">
-              {/* ================= LEFT BUTTON ================= */}
+            <div className="relative mt-6 sm:mt-10">
+              {/* ================= LEFT BUTTON (Desktop only) ================= */}
               <button
                 onClick={canScrollLeft ? scrollLeft : undefined}
                 disabled={!canScrollLeft}
@@ -214,31 +194,24 @@ export default function ListSubModulPage() {
                   ${canScrollLeft ? arrowActiveClass : arrowInactiveClass}
                 `}
               >
-                <img
-                  src="/imageAssets/sd/icon-arrow-left-big.png"
-                  alt="left"
-                  className="w-5 h-5"
-                />
+                <img src="/imageAssets/sd/icon-arrow-left-big.png" alt="left" className="w-5 h-5" />
               </button>
 
-              {/* ================= LIST ================= */}
+              {/* ================= LIST CONTAINER ================= */}
               <div
                 ref={scrollRef}
                 onScroll={updateScrollState}
                 className="
-                  flex
-                  gap-2 md:gap-0
-                  overflow-x-auto
+                  flex flex-col md:flex-row
+                  gap-4
+                  md:overflow-x-auto
                   no-scrollbar
                   scroll-smooth
-                  pb-4
+                  pb-6 pt-2
                 "
               >
                 {lessons.map((lesson) => (
-                  <div
-                    key={lesson.id}
-                    className="min-w-[260px] md:min-w-[300px] flex-shrink-0"
-                  >
+                  <div key={lesson.id} className="w-full md:min-w-[300px] md:w-auto md:flex-shrink-0">
                     <LessonCard
                       nomor={lesson.bagian}
                       title={lesson.judul}
@@ -251,6 +224,7 @@ export default function ListSubModulPage() {
               </div>
 
               {/* ================= RIGHT BUTTON ================= */}
+              {/* Desktop Only */}
               <button
                 onClick={canScrollRight ? scrollRight : undefined}
                 disabled={!canScrollRight}
@@ -264,11 +238,7 @@ export default function ListSubModulPage() {
                   ${canScrollRight ? arrowActiveClass : arrowInactiveClass}
                 `}
               >
-                <img
-                  src="/imageAssets/sd/icon-arrow-right-big.png"
-                  alt="right"
-                  className="w-5 h-5"
-                />
+                <img src="/imageAssets/sd/icon-arrow-right-big.png" alt="right" className="w-5 h-5" />
               </button>
             </div>
           )}
@@ -279,12 +249,12 @@ export default function ListSubModulPage() {
       <img
         src="/imageAssets/sd/robot-list-lesson.png"
         alt="robot"
-        className="absolute right-6 bottom-0 w-[100px] md:w-[220px] object-contain"
+        className="fixed right-2 md:right-6 bottom-0 w-[70px] sm:w-[100px] md:w-[220px] object-contain z-0 pointer-events-none"
       />
 
       {/* ================= FOOTER ================= */}
-      <footer className="relative mt-8 w-full bg-[#5534F7] min-h-[80px] overflow-hidden">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-6 ml-18 flex items-center justify-between">
+      <footer className="relative w-full bg-[#5534F7] min-h-[70px] md:min-h-[80px] flex items-center z-10 mt-auto">
+        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-10 py-4 md:py-6 md:ml-18 flex items-center justify-between">
           <Breadcrumb
             items={[
               { label: "Beranda", href: "/map" },

@@ -106,7 +106,40 @@ export default function MazeRunnerExercise({
   // =====================================
   // RESPONSIVE CELL SIZE
   // =====================================
-  const cellSize = grid.cols >= 5 ? 95 : grid.cols === 4 ? 110 : 140;
+  const [cellSize, setCellSize] = useState(140);
+
+    useEffect(() => {
+      function updateCellSize() {
+        const width = window.innerWidth;
+
+        if (width < 640) {
+          setCellSize(
+            grid.cols >= 5 ? 52 :
+            grid.cols === 4 ? 68 :
+            90
+          );
+        } else if (width < 1024) {
+          setCellSize(
+            grid.cols >= 5 ? 72 :
+            grid.cols === 4 ? 90 :
+            115
+          );
+        } else {
+          setCellSize(
+            grid.cols >= 5 ? 95 :
+            grid.cols === 4 ? 110 :
+            140
+          );
+        }
+      }
+
+      updateCellSize();
+
+      window.addEventListener("resize", updateCellSize);
+
+      return () =>
+        window.removeEventListener("resize", updateCellSize);
+    }, [grid.cols]);
 
   // =====================================
   // STATE
@@ -288,21 +321,30 @@ export default function MazeRunnerExercise({
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <div className="pb-32">
+      <div className="pb-24 md:pb-32">
         <div
           className="
             flex
-            items-start
+            flex-col
+            lg:flex-row
+
+            items-center
+            lg:items-start
+
             justify-center
-            gap-14
-            flex-wrap
+
+            gap-6
+            md:gap-10
+            lg:gap-14
           ">
           {/* ================= LEFT BOARD ================= */}
           <div
             data-tutorial="maze-board"
             className="
               grid
-              rounded-[24px]
+              rounded-[16px]
+              md:rounded-[20px]
+              lg:rounded-[24px]
               overflow-hidden
               shrink-0
             "
@@ -349,7 +391,7 @@ export default function MazeRunnerExercise({
                   {/* ROBOT */}
                   {robotPosition.row === cell.row &&
                     robotPosition.col === cell.col && (
-                      <div className="text-[90px]">🤖</div>
+                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🤖</div>
                     )}
 
                   {/* GOAL */}
@@ -358,7 +400,7 @@ export default function MazeRunnerExercise({
                     !(
                       robotPosition.row === cell.row &&
                       robotPosition.col === cell.col
-                    ) && <div className="text-[90px]">🚩</div>}
+                    ) && <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🚩</div>}
 
                   {/* WALL */}
                   {!(
@@ -366,7 +408,7 @@ export default function MazeRunnerExercise({
                     robotPosition.col === cell.col
                   ) &&
                     !isGoal &&
-                    isWall && <div className="text-[90px]">🚧</div>}
+                    isWall && <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🚧</div>}
 
                   {/* TREE */}
                   {!(
@@ -376,7 +418,7 @@ export default function MazeRunnerExercise({
                     !isGoal &&
                     !isWall &&
                     decoration?.type === "tree" && (
-                      <div className="text-[90px]">🌳</div>
+                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🌳</div>
                     )}
 
                   {/* ROCK */}
@@ -387,7 +429,7 @@ export default function MazeRunnerExercise({
                     !isGoal &&
                     !isWall &&
                     decoration?.type === "rock" && (
-                      <div className="text-[90px]">🪨</div>
+                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🪨</div>
                     )}
 
                   {/* LABEL */}
@@ -410,7 +452,7 @@ export default function MazeRunnerExercise({
                             text-center
 
                             font-bold
-                            text-[14px]
+                            text-[11px] sm:text-[12px] md:text-[13px] lg:text-[14px]
                             leading-tight
 
                             text-[#1D1D1D]
@@ -439,10 +481,18 @@ export default function MazeRunnerExercise({
 
                 bg-blue-200
 
-                rounded-[34px]
+                rounded-[18px]
+                md:rounded-[24px]
+                lg:rounded-[34px]
 
-                px-10
-                py-10
+                px-4
+                py-5
+
+                md:px-6
+                md:py-6
+
+                lg:px-10
+                lg:py-10
               ">
               <div
                 className="
@@ -454,12 +504,10 @@ export default function MazeRunnerExercise({
                   bg-blue-200
 
                   rounded-t-[16px]
-
-                  px-6
                   py-2
 
                   font-black
-                  text-[18px]
+                  text-[13px] sm:text-[15px] md:text-[16px] lg:text-[18px] px-4 md:px-6
                   text-[#482A9A]
                 ">
                 AREA INSTRUKSI
@@ -468,7 +516,10 @@ export default function MazeRunnerExercise({
               <div
                 className="
                   flex
-                  gap-6
+                  gap-2
+                  sm:gap-3
+                  md:gap-5
+                  lg:gap-6
                   flex-wrap
                   justify-center
                 ">
@@ -491,40 +542,56 @@ export default function MazeRunnerExercise({
                 mt-6
 
                 bg-purple-200
+                rounded-[18px]
+                md:rounded-[24px]
+                lg:rounded-[34px]
 
-                rounded-[34px]
+                px-4
+                py-5
 
-                px-10
-                py-10
+                md:px-6
+                md:py-6
+
+                lg:px-10
+                lg:py-10
               ">
               <div
                 className="
                   absolute
-                  -top-7
+                  -top-8
                   left-1/2
                   -translate-x-1/2
+
+                  bg-purple-200
 
                   w-max
                   whitespace-nowrap
 
-                  bg-purple-200
-
                   rounded-t-[16px]
-
-                  px-6
-                  py-2
+                  py-0
+                  md:py-2
 
                   font-black
-                  text-[18px]
+                  text-[13px] sm:text-[15px] md:text-[16px] lg:text-[18px] px-4 md:px-6
+                  text-center
                   text-[#A02ED6]
                 ">
-                BLOK KODE (SERET KE AREA INSTRUKSI)
+                <div className="font-black text-[13px] md:text-[18px] text-[#A02ED6]">
+                  BLOK KODE
+                </div>
+                <div className="text-[10px] md:hidden font-semibold text-[#A02ED6]">
+                  Seret ke Area Instruksi
+                </div>
+                <div className="hidden md:block text-[18px] font-black text-[#A02ED6]">
+                  (SERET KE AREA INSTRUKSI)
+                </div>
               </div>
 
               <div
                 className="
                   flex
-                  gap-6
+                  gap-2
+                  md:gap-6
                   flex-wrap
                   justify-center
                 ">
@@ -569,14 +636,22 @@ function DraggableCommand({ command, label, Icon, color }: any) {
       {...listeners}
       {...attributes}
       className="
-        w-[100px]
+        w-[58px]
+        sm:w-[82px]
+        md:w-[90px]
+        lg:w-[100px]
 
-        rounded-[20px]
+        rounded-[14px]
+        md:rounded-[20px]
+        lg:rounded-[24px]
 
         bg-white
 
         px-4
-        py-5
+
+        py-3
+        md:py-4
+        lg:py-5
 
         flex
         flex-col
@@ -590,7 +665,7 @@ function DraggableCommand({ command, label, Icon, color }: any) {
       ">
       <Icon
         className={`
-          text-[60px]
+          text-[34px] sm:text-[36px] md:text-[50px] lg:text-[60px]
 
           ${color}
         `}
@@ -600,7 +675,7 @@ function DraggableCommand({ command, label, Icon, color }: any) {
         className="
           mt-1
 
-          text-[18px]
+          text-[12px] sm:text-[14px] md:text-[16px] lg:text-[18px]
           font-bold
           text-[#374151]
         ">
@@ -633,8 +708,17 @@ function InstructionSlot({ id, command, onRemove }: any) {
         }
       }}
       className={`
-        w-[100px]
-        h-[100px]
+        w-[42px]
+        h-[42px]
+
+        sm:w-[72px]
+        sm:h-[72px]
+
+        md:w-[82px]
+        md:h-[82px]
+
+        lg:w-[100px]
+        lg:h-[100px]
 
         rounded-[20px]
 
@@ -644,7 +728,7 @@ function InstructionSlot({ id, command, onRemove }: any) {
         items-center
         justify-center
 
-        text-[52px]
+        text-[14px] sm:text-[42px] md:text-[52px] lg:text-[60px]
         font-black
         text-[#9CA3AF]
 
@@ -655,7 +739,7 @@ function InstructionSlot({ id, command, onRemove }: any) {
       {command && Icon ? (
         <Icon
           className={`
-            text-[60px]
+            text-[24px] sm:text-[32px] md:text-[50px] lg:text-[60px]
 
             ${config.color}
           `}

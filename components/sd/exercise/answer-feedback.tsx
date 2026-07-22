@@ -73,7 +73,8 @@ export default function AnswerFeedback({
         <h2
           className="
             text-white
-            text-6xl
+            text-3xl
+            md:text-6xl
             font-black
             tracking-wide
             drop-shadow-lg
@@ -88,7 +89,8 @@ export default function AnswerFeedback({
             mt-2
             text-center
             text-white/90
-            text-lg
+            text-base
+            md:text-lg
           "
         >
           {isCorrect

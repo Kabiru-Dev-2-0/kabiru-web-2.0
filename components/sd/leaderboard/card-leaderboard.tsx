@@ -47,17 +47,23 @@ export default function CardLeaderboard({
         flex
         items-center
 
-        rounded-[20px]
+        rounded-[16px]
+        sm:rounded-[18px]
+        lg:rounded-[20px]
 
-        px-8
-        py-4
+        px-3
+        sm:px-5
+        lg:px-8
+
+        py-3
+        sm:py-4
 
         transition-all
         duration-700
 
         ${
           animate
-            ? "-translate-y-10 scale-105"
+            ? "-translate-y-4 lg:-translate-y-10 scale-105"
             : ""
         }
 
@@ -75,8 +81,20 @@ export default function CardLeaderboard({
       {/* RANK */}
       <div
         className={`
-          w-[60px]
-          h-[60px]
+          w-[42px]
+          h-[42px]
+
+          sm:w-[52px]
+          sm:h-[52px]
+
+          lg:w-[60px]
+          lg:h-[60px]
+
+          text-[18px]
+          sm:text-[22px]
+          lg:text-[24px]
+
+          shrink-0
 
           rounded-full
 
@@ -85,7 +103,6 @@ export default function CardLeaderboard({
           justify-center
 
           font-black
-          text-[24px]
 
           ${
             isCurrentUser
@@ -100,9 +117,20 @@ export default function CardLeaderboard({
       {/* AVATAR */}
       <div
         className="
-          ml-8
-          w-[60px]
-          h-[60px]
+          ml-3
+          sm:ml-5
+          lg:ml-8
+
+          w-[42px]
+          h-[42px]
+
+          sm:w-[52px]
+          sm:h-[52px]
+
+          lg:w-[60px]
+          lg:h-[60px]
+
+          shrink-0
           rounded-full
           overflow-hidden
         "
@@ -121,10 +149,17 @@ export default function CardLeaderboard({
       <div
         className="
           flex-1
-          ml-8
           text-[#2A3042]
           font-black
-          text-[22px]
+          ml-3
+          sm:ml-5
+          lg:ml-8
+
+          text-[16px]
+          sm:text-[18px]
+          lg:text-[22px]
+
+          leading-tight
           truncate
         "
       >
@@ -137,19 +172,30 @@ export default function CardLeaderboard({
       {/* EXP */}
       <div
         className="
-          w-[90px]
+          w-[56px]
+          sm:w-[72px]
+          lg:w-[90px]
 
-          rounded-[16px]
+          rounded-[10px]
+          sm:rounded-[12px]
+          lg:rounded-[16px]
+
+          py-2
+          sm:py-2.5
+          lg:py-3
+
+          text-[14px]
+          sm:text-[18px]
+          lg:text-[22px]
+
+          shrink-0
 
           bg-[#EDEDED]
-
-          py-3
 
           text-center
 
           text-[#FF9D00]
           font-black
-          text-[22px]
         "
       >
         {exp}

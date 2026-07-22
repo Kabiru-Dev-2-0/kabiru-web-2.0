@@ -32,6 +32,7 @@ import {
 import TutorialOverlay from "@/components/sd/tutorial/tutorial-overlay";
 import GameButton from "@/components/sd/game-button";
 import { useSDAuth } from "@/hooks/use-sd-auth";
+import ProgressBar from "@/components/sd/progress-bar";
 
 type Lesson = {
   id: number;
@@ -499,72 +500,50 @@ export default function ExercisePage() {
       );
 
     if (lessonProgressError) {
-      console.error(
-        "Gagal menyelesaikan pelajaran:",
-        lessonProgressError
-      );
+      console.error("Gagal menyelesaikan pelajaran:", lessonProgressError);
       return;
     }
 
     // ==============================
     // AMBIL SEMUA PELAJARAN MODUL
     // ==============================
-    const { data: lessonIds, error: lessonIdsError } =
-      await supabase
-        .from("pelajarans_sd")
-        .select("id")
-        .eq("id_modul", lesson.id_modul);
+    const { data: lessonIds, error: lessonIdsError } = await supabase
+      .from("pelajarans_sd")
+      .select("id")
+      .eq("id_modul", lesson.id_modul);
 
     if (lessonIdsError) {
-      console.error(
-        "Gagal mengambil pelajaran modul:",
-        lessonIdsError
-      );
+      console.error("Gagal mengambil pelajaran modul:", lessonIdsError);
       return;
     }
 
-    const ids = (lessonIds ?? []).map(
-      (item) => Number(item.id)
-    );
+    const ids = (lessonIds ?? []).map((item) => Number(item.id));
 
     // ==============================
     // AMBIL PELAJARAN YANG COMPLETE
     // ==============================
-    const { data: completedLessons, error: completedError } =
-      await supabase
-        .from("progress_pelajaran_sd")
-        .select("pelajaran_id")
-        .eq("pengguna_id", user.id)
-        .eq("is_completed", true)
-        .in("pelajaran_id", ids);
+    const { data: completedLessons, error: completedError } = await supabase
+      .from("progress_pelajaran_sd")
+      .select("pelajaran_id")
+      .eq("pengguna_id", user.id)
+      .eq("is_completed", true)
+      .in("pelajaran_id", ids);
 
     if (completedError) {
-      console.error(
-        "Gagal mengambil progress pelajaran:",
-        completedError
-      );
+      console.error("Gagal mengambil progress pelajaran:", completedError);
       return;
     }
 
     const uniqueCompleted = new Set(
-      (completedLessons ?? []).map(
-        (item) => Number(item.pelajaran_id)
-      )
+      (completedLessons ?? []).map((item) => Number(item.pelajaran_id)),
     );
 
     const isModuleCompleted =
-      ids.length > 0 &&
-      ids.every((id) => uniqueCompleted.has(id));
+      ids.length > 0 && ids.every((id) => uniqueCompleted.has(id));
 
     console.log("SEMUA LESSON:", ids);
-    console.log(
-      "LESSON COMPLETE:",
-      Array.from(uniqueCompleted)
-    );
-    console.log(
-      "MODUL COMPLETE:",
-      isModuleCompleted
-    );
+    console.log("LESSON COMPLETE:", Array.from(uniqueCompleted));
+    console.log("MODUL COMPLETE:", isModuleCompleted);
 
     // ==============================
     // MODUL BELUM SELESAI
@@ -589,14 +568,11 @@ export default function ExercisePage() {
         },
         {
           onConflict: "pengguna_id,modul_id",
-        }
+        },
       );
 
     if (modulProgressError) {
-      console.error(
-        "Gagal menyelesaikan modul:",
-        modulProgressError
-      );
+      console.error("Gagal menyelesaikan modul:", modulProgressError);
       return;
     }
 
@@ -612,10 +588,7 @@ export default function ExercisePage() {
     const { data: nextModul } = await supabase
       .from("moduls_sd")
       .select("id")
-      .gt(
-        "nomor_modul",
-        currentModul?.nomor_modul
-      )
+      .gt("nomor_modul", currentModul?.nomor_modul)
       .order("nomor_modul", {
         ascending: true,
       })
@@ -626,38 +599,32 @@ export default function ExercisePage() {
     // UNLOCK MODUL BERIKUTNYA
     // ==============================
     if (nextModul) {
-      const { data: nextModulProgress } =
-        await supabase
-          .from("progress_modul_sd")
-          .select("is_completed")
-          .eq("pengguna_id", user.id)
-          .eq("modul_id", nextModul.id)
-          .maybeSingle();
+      const { data: nextModulProgress } = await supabase
+        .from("progress_modul_sd")
+        .select("is_completed")
+        .eq("pengguna_id", user.id)
+        .eq("modul_id", nextModul.id)
+        .maybeSingle();
 
       // PENTING:
       // Jangan timpa modul yang sudah complete
       if (!nextModulProgress?.is_completed) {
-        const { error: nextModuleError } =
-          await supabase
-            .from("progress_modul_sd")
-            .upsert(
-              {
-                pengguna_id: user.id,
-                modul_id: nextModul.id,
-                is_unlocked: true,
-                is_completed: false,
-              },
-              {
-                onConflict:
-                  "pengguna_id,modul_id",
-              }
-            );
+        const { error: nextModuleError } = await supabase
+          .from("progress_modul_sd")
+          .upsert(
+            {
+              pengguna_id: user.id,
+              modul_id: nextModul.id,
+              is_unlocked: true,
+              is_completed: false,
+            },
+            {
+              onConflict: "pengguna_id,modul_id",
+            },
+          );
 
         if (nextModuleError) {
-          console.error(
-            "Gagal membuka modul berikutnya:",
-            nextModuleError
-          );
+          console.error("Gagal membuka modul berikutnya:", nextModuleError);
           return;
         }
       }
@@ -710,7 +677,7 @@ export default function ExercisePage() {
 
   return (
     <main>
-      <div className="relative min-h-screen overflow-hidden">
+      <div className="relative isolate min-h-screen overflow-hidden">
         {/* ================= BACKGROUND ================= */}
         <img
           src="/imageAssets/sd/soal/background.png"
@@ -725,38 +692,49 @@ export default function ExercisePage() {
         />
 
         {/* ================= HEADER ================= */}
-        <div className="relative z-30">
           <TopHeader
-            name={user?.username || "Pemain"}
-            level="Siswa"
-            avatar={user?.avatar || "/imageAssets/avatar/default.png"}
-            currentProgress={currentProgress}
-            totalProgress={totalExercises + 1}
-            exp={user?.exp || 0}
-            showProgress
-            showBack
-            backHref={`/sd/eksplorasi/${lesson?.id_modul}/${lessonId}`}
-            showProgressNavigation
-            onProgressPrevious={goToPreviousExercise}
-            onProgressNext={goToNextExerciseDirect}
-            progressPreviousDisabled={!canPrev}
-            progressNextDisabled={!canNext}
+              name={user?.username || "Pemain"}
+              level="Siswa"
+              avatar={user?.avatar || "/imageAssets/avatar/default.png"}
+              exp={user?.exp || 0}
+
+              showBack
+              backHref={`/sd/eksplorasi/${lesson?.id_modul}/${lessonId}`}
+
+              showProgress={false}
+              showProgressNavigation={false}
           />
-        </div>
+
+          <div
+            className="relative z-30 pt-0 pb-36 md:pb-0 sm:pt-24 md:pt-12 px-4 md:px-10 max-w-[1200px] mx-auto flex md:justify-center">
+            <div
+              className="w-full absolute md:static top-[16vh] left-0 px-4 md:px-0 md:w-[400px] z-40">
+              <ProgressBar
+                current={currentProgress}
+                total={totalExercises + 1}
+                onPrev={goToPreviousExercise}
+                onNext={goToNextExerciseDirect}
+                canPrev={canPrev}
+                canNext={canNext}
+                showChevrons
+              />
+            </div>
+          </div>
 
         {/* ================= MAIN BOARD ================= */}
         <div
           className={`
-          absolute
-          top-[16%]
-          left-1/2
-          -translate-x-1/2
+          relative
+          mx-auto
 
-          z-20
+          mt-8
+          md:mt-10
 
-          w-[84%]
-          h-[72%]
+          left-auto
+          translate-x-0
 
+          w-[90%] md:w-[80%]
+          h-[68vh] md:h-[72vh]
           ${shakeBoard ? "animate-board-shake" : ""}
   
 
@@ -769,7 +747,9 @@ export default function ExercisePage() {
 
           shadow-2xl
 
-          overflow-hidden
+          overflow-x-hidden
+          pb-6
+          md:pb-8
         `}>
           <div
             ref={boardRef}
@@ -780,8 +760,10 @@ export default function ExercisePage() {
             overflow-y-auto
             overflow-x-hidden
 
-            px-10
-            py-8
+            px-5
+            py-5
+            md:px-10
+            md:py-8
 
             custom-scroll
           ">
@@ -823,7 +805,8 @@ export default function ExercisePage() {
               className="
               text-center
               text-amber-100
-              text-3xl
+              text-[18px]
+              md:text-[32px]
               font-black
               mb-4
             ">
@@ -832,9 +815,17 @@ export default function ExercisePage() {
             </h1>
 
             {/* ================= QUESTION ================= */}
-            <div className="flex flex-row items-start gap-3 w-full mb-8">
+            <div
+              className="
+              flex
+              flex-col
+              md:flex-row
+              items-start
+              gap-3 
+              w-full 
+              mb-8">
               <IconFRobot
-                className="flex-shrink-0 mt-4 justify-center items-center"
+                className="flex-shrink-0 mt-4 justify-center items-center hidden md:block"
                 size={64}></IconFRobot>
               <div className="relative bg-amber-50 rounded-2xl px-5 py-4 flex-1 outline-2 outline-dashed outline-amber-50">
                 {/* Tail bubble */}
@@ -850,7 +841,14 @@ export default function ExercisePage() {
                 "
                 />
                 <div
-                  className="text-gray-800 text-[17px] font-semibold leading-relaxed"
+                  className="
+                  text-gray-800 
+                  text-[12px]
+                  tracking-wide
+                  md:text-[18px]
+                  leading-5 
+                  md:leading-7 
+                  font-semibold"
                   dangerouslySetInnerHTML={{
                     __html: exercise.pertanyaan || "",
                   }}
@@ -999,49 +997,52 @@ export default function ExercisePage() {
         {/* ================= FLOATING BUTTONS ================= */}
         <div
           className="
-          absolute
+          fixed
 
-          bottom-[8%]
-          right-[8%]
+          bottom-4
+
+          left-1/2
+          -translate-x-1/2
+
+          md:left-auto
+          md:translate-x-0
+          lg:right-36
+          lg:bottom-18
 
           z-50
 
           flex
+          flex-col
           items-center
-          gap-5
+
+          md:flex-row
+
+          gap-2
         ">
           {/* PETUNJUK BUTTON */}
-          <button
+          <GameButton
+            data-tutorial="btn-help"
             onClick={() => setShowTutorial(true)}
+            variant="blue"
+            size="lg"
             className="
-            flex
-            items-center
-            gap-3
+                w-[180px]
+                h-[46px]
+                shadow-2xl
 
-            rounded-full
-
-            bg-gradient-to-r
-            from-[#3A63FF]
-            to-[#3D8BFF]
-
-            px-8
-            py-4
-
-            text-white
-            font-black
-            text-[24px]
-
-            hover:scale-105
-            transition-all
-          "
-            data-tutorial="btn-help">
-            <img
-              src="/imageAssets/sd/icon-lamp.png"
-              alt="hint"
-              className="w-10 h-10"
-            />
+                md:w-auto
+                md:h-auto
+                md:shadow-none
+            "
+            icon={
+              <img
+                src="/imageAssets/sd/icon-lamp.png"
+                alt="check"
+                className="w-6 h-6 md:w-10 md:h-10"
+              />
+            }>
             PETUNJUK
-          </button>
+          </GameButton>
 
           {/* CHECK */}
           <GameButton
@@ -1054,11 +1055,21 @@ export default function ExercisePage() {
             }}
             variant="green"
             size="lg"
+            className="
+                w-[240px]
+                h-[46px]
+                shadow-2xl
+                shadow-black
+
+                md:w-auto
+                md:h-auto
+                md:shadow-none
+            "
             icon={
               <img
                 src="/imageAssets/sd/icon-magnifying.png"
                 alt="check"
-                className="w-10 h-10"
+                className="w-6 h-6 md:w-10 md:h-10"
               />
             }>
             PERIKSA JAWABAN
@@ -1066,14 +1077,7 @@ export default function ExercisePage() {
         </div>
 
         {/* ================= BREADCRUMB ================= */}
-        <div
-          className="
-          absolute
-          bottom-8
-          left-18
-          px-6 md:px-10
-          z-30
-        ">
+        <div className="absolute hidden md:block md:bottom-12 left-6 md:left-38 z-30">
           <Breadcrumb
             items={[
               {
@@ -1164,36 +1168,90 @@ export default function ExercisePage() {
       </div>
       {/* ================= MODAL FINISH ALL ================= */}
       {showFinishModal && (
-        <div className="fixed inset-0 z-[9999] bg-[#1F0234]/67 items-center justify-center">
-          {/* Modal */}
+        <div
+          className="
+            fixed
+            inset-0
+            z-[9999]
+            bg-[#1F0234]/67
+
+            flex
+            items-center
+            justify-center
+
+            p-4
+          "
+        >
           <Modal
             title="KAMU HEBAT!!"
-            width="w-[800px]"
+            width="lg:w-[800px]"
             onClose={() => router.push("/map")}
             buttonText="KEMBALI KE MAP"
-            buttonIcon={<IconFWorldMap size={30}></IconFWorldMap>}>
-            {/* Content */}
-            <div className=" flex flex-col gap-4 justify-center items-center">
+            buttonIcon={<IconFWorldMap size={30} />}
+          >
+            <div
+              className="
+                flex
+                flex-col
+                items-center
+                justify-center
+
+                gap-4
+                md:gap-5
+
+                py-2
+                md:py-4
+              "
+            >
               <IconFTrophy
-                className="mt-4 justify-center items-center"
-                size={300}></IconFTrophy>
-              <div className=" flex flex-col gap-1 justify-center items-center">
+                className="
+                  mt-2
+                  md:mt-4
+                "
+                size={
+                  typeof window !== "undefined" && window.innerWidth < 640
+                    ? 170
+                    : typeof window !== "undefined" && window.innerWidth < 1024
+                    ? 220
+                    : 300
+                }
+              />
+
+              <div
+                className="
+                  flex
+                  flex-col
+                  items-center
+
+                  gap-2
+                "
+              >
                 <p
                   className="
-                text-center
-                text-[22px]
-                font-bold
-                text-gray-800
-                ">
+                    text-center
+
+                    text-[18px]
+                    sm:text-[20px]
+                    lg:text-[22px]
+
+                    font-bold
+                    text-gray-800
+                  "
+                >
                   Berhasil menyelesaikan semua!
                 </p>
+
                 <p
                   className="
-                text-center
-                text-l
-                font-medium
-                text-gray-700
-                ">
+                    text-center
+
+                    text-[14px]
+                    sm:text-[16px]
+                    lg:text-[18px]
+
+                    text-gray-700
+                  "
+                >
                   Yuk, eksplorasi modul selanjutnya
                 </p>
               </div>
@@ -1206,43 +1264,75 @@ export default function ExercisePage() {
       {showLessonFinishModal && (
         <div
           className="
-          fixed
-          inset-0
-          z-[9999]
-          bg-[#1F0234]/67
-          flex
-          items-center
-          justify-center
-        ">
+            fixed
+            inset-0
+            z-[9999]
+            bg-[#1F0234]/67
+
+            flex
+            items-center
+            justify-center
+
+            p-4
+          "
+        >
           <Modal
             title="KAMU KEREN!"
-            width="w-[800px]"
-            onClose={() => router.push(`/sd/eksplorasi/${lesson?.id_modul}`)}
+            width="lg:w-[800px]"
+            onClose={() =>
+              router.push(`/sd/eksplorasi/${lesson?.id_modul}`)
+            }
             buttonText="LANJUTKAN BELAJAR"
-            buttonIcon={<IconFOpenBook size={30} />}>
+            buttonIcon={<IconFOpenBook size={30} />}
+          >
             <div
               className="
-              flex
-              flex-col
-              items-center
-              gap-4
-            ">
-              <IconFPartyPopper size={250} />
+                flex
+                flex-col
+                items-center
+
+                gap-4
+                md:gap-5
+
+                py-2
+                md:py-4
+              "
+            >
+              <IconFPartyPopper
+                size={
+                  typeof window !== "undefined" && window.innerWidth < 640
+                    ? 150
+                    : typeof window !== "undefined" && window.innerWidth < 1024
+                    ? 190
+                    : 250
+                }
+              />
 
               <p
                 className="
-                text-[22px]
-                font-bold
-                text-center
-              ">
+                  text-center
+
+                  text-[18px]
+                  sm:text-[20px]
+                  lg:text-[22px]
+
+                  font-bold
+                "
+              >
                 Pelajaran berhasil diselesaikan!
               </p>
 
               <p
                 className="
-                text-gray-700
-                text-center
-              ">
+                  text-center
+
+                  text-gray-700
+
+                  text-[14px]
+                  sm:text-[16px]
+                  lg:text-[18px]
+                "
+              >
                 Ayo lanjutkan ke pelajaran berikutnya.
               </p>
             </div>

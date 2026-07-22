@@ -293,10 +293,12 @@ function SortableItem({
 
         bg-white
 
-        rounded-[20px]
+        rounded-[12px]
+        md:rounded-[20px]
 
         px-5
-        py-0
+        py-2
+        md:py-0
 
         flex
         items-center
@@ -316,14 +318,15 @@ function SortableItem({
       >
         {/* LABEL TEXT */}
         <div className="flex items-center justify-center">
-          <p className="text-[64px]">{item.label}</p>
+          <p className="text-[32px] md:text-[64px]">{item.label}</p>
         </div>
 
         {/* TEXT */}
         <div
           className="
             font-semibold
-            text-[18px]
+            text-[14px]
+            md:text-[18px]
             text-gray-900
           "
         >

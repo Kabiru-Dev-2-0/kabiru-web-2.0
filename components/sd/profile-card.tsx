@@ -2,7 +2,8 @@
 
 import { DoorArrowRight28Filled } from "@fluentui/react-icons";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Modal from "./modal";
 import { IconFTrophy } from "react-fluentui-emoji/lib/flat";
 import LeaderBoard from "./leaderboard/leaderboard";
@@ -29,7 +30,14 @@ export default function ProfileCard({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
 
-  // Ukuran avatar yang responsif
+  // === STATE KLIK DROPDOWN ===
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Ukuran avatar
   const avatarSizes = {
     sm: "h-[60px] w-[60px] sm:h-[70px] sm:w-[70px]",
     md: "h-[64px] w-[64px] sm:h-[70px] sm:w-[70px] md:h-[80px] md:w-[80px]",
@@ -38,9 +46,9 @@ export default function ProfileCard({
 
   // Ukuran padding untuk card
   const cardPadding = {
-    sm: "pl-6 pr-[70px] py-1.5",
-    md: "pl-7 pr-[80px] py-2.5",
-    lg: "pl-8 pr-[90px] py-2.5",
+    sm: "pl-5  pr-[50px] md:pr-[70px] py-1.5",
+    md: "pl-6  pr-[60px] md:pr-[80px] py-2.5",
+    lg: "pl-7  pr-[70px] md:pr-[90px] py-2.5",
   };
 
   function handleLogout() {
@@ -50,48 +58,64 @@ export default function ProfileCard({
 
   return (
     <div className={`relative group ${className}`}>
-      {/* ================= MODAL CONFIRM LOGOUT ================= */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-[9999] bg-[#1F0234]/67 flex items-center justify-center p-4">
-          <Modal
-            title="Apakah Kamu Yakin?"
-            width="w-full max-w-[500px]"
-            autoHeight
-            buttonText="Keluar"
-            buttonVariant="red"
-            onButtonClick={handleLogout}
-            secondButtonText="Batal"
-            secondButtonVariant="gray"
-            onSecondButtonClick={() => setShowConfirmModal(false)}
-            onClose={() => setShowConfirmModal(false)}>
-            <div className="py-6 sm:py-8 px-2">
-              <p
-                className="
-                      text-center
-                      text-[18px] sm:text-[20px]
-                      font-bold
-                      text-[#1E293B]
-                    ">
-                Apakah kamu yakin untuk Keluar Akun?
-              </p>
-            </div>
-          </Modal>
-        </div>
+      {/* ================= MODAL CONFIRM LOGOUT (PORTAL) ================= */}
+      {mounted &&
+        showConfirmModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] bg-[#1F0234]/67 flex items-center justify-center p-4">
+            <Modal
+              title="Apakah Kamu Yakin?"
+              width="w-full max-w-[500px]"
+              autoHeight
+              buttonText="Keluar"
+              buttonVariant="red"
+              onButtonClick={handleLogout}
+              secondButtonText="Batal"
+              secondButtonVariant="gray"
+              onSecondButtonClick={() => setShowConfirmModal(false)}
+              onClose={() => setShowConfirmModal(false)}>
+              <div className="py-6 sm:py-8 px-2">
+                <p
+                  className="
+                        text-center
+                        text-[18px] sm:text-[20px]
+                        font-bold
+                        text-[#1E293B]
+                      ">
+                  Apakah kamu yakin untuk Keluar Akun?
+                </p>
+              </div>
+            </Modal>
+          </div>,
+          document.body,
+        )}
+
+      {/* ================= LEADERBOARD (PORTAL) ================= */}
+      {mounted &&
+        showLeaderboard &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999]">
+            <LeaderBoard onClose={() => setShowLeaderboard(false)} />
+          </div>,
+          document.body,
+        )}
+
+      {/* === INVISIBLE OVERLAY UNTUK MENUTUP DROPDOWN DI MOBILE JIKA DIKLIK LUAR === */}
+      {isDropdownOpen && (
+        <div
+          className="fixed inset-0 z-[15] md:hidden"
+          onClick={() => setIsDropdownOpen(false)}
+        />
       )}
 
-      {/* ================= LEADERBOARD ================= */}
-      {showLeaderboard && (
-        <div className="fixed inset-0 z-[9999]">
-          <LeaderBoard onClose={() => setShowLeaderboard(false)} />
-        </div>
-      )}
       {/* PROFILE CARD */}
       <div
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className={`
           relative flex flex-col justify-center rounded-[40px]
           border-[3px] sm:border-[4px]
           ${cardPadding[avatarSize]}
-          transition-all duration-200
+          transition-all duration-200 cursor-pointer z-20
           ${
             isLight
               ? "bg-slate-100 border-slate-100 text-gray-800"
@@ -129,20 +153,31 @@ export default function ProfileCard({
 
       {/* DROPDOWN */}
       <div
-        className="
+        className={`
           absolute
-          top-0
           right-0
           min-w-full
-          opacity-0
-          invisible
-          group-hover:opacity-100
-          group-hover:visible
+
+          ${
+            isLight
+              ? "top-4 md:top-5"
+              : "top-0"
+          }
+
           transition-all
           duration-200
-          z-20
+          z-30
           border-slate-100
-        ">
+
+          ${
+            isDropdownOpen
+              ? "opacity-100 visible"
+              : "opacity-0 invisible"
+          }
+
+          md:group-hover:opacity-100
+          md:group-hover:visible
+        `}>
         <div
           className="
             overflow-hidden
@@ -150,11 +185,12 @@ export default function ProfileCard({
             rounded-b-[16px]
             bg-slate-100
           ">
-          {/* HEADER */}
+          {/* HEADER (Bisa diklik lagi untuk menutup menu) */}
           <div
+            onClick={() => setIsDropdownOpen(false)}
             className={`
           relative flex flex-col justify-center rounded-[40px]
-          border-[3px] sm:border-[4px]
+          border-[3px] sm:border-[4px] cursor-pointer
           ${cardPadding[avatarSize]}
           transition-all duration-200
           ${
@@ -193,7 +229,10 @@ export default function ProfileCard({
           </div>
 
           <button
-            onClick={() => setShowLeaderboard(true)}
+            onClick={() => {
+              setShowLeaderboard(true);
+              setIsDropdownOpen(false); // Tutup dropdown setelah ditekan
+            }}
             className="
               w-full
               flex
@@ -214,7 +253,10 @@ export default function ProfileCard({
           </button>
 
           <button
-            onClick={() => setShowConfirmModal(true)}
+            onClick={() => {
+              setShowConfirmModal(true);
+              setIsDropdownOpen(false); // Tutup dropdown setelah ditekan
+            }}
             className="
               w-full
               flex

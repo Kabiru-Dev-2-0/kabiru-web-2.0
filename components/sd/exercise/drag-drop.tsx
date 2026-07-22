@@ -252,7 +252,11 @@ export default function DragDropExercise({
         {/* ================= BUCKETS ================= */}
         <div 
         data-tutorial="bucket-area"
-        className="grid grid-cols-2 gap-8 mb-8">
+        className="
+        grid
+        grid-cols-1
+        md:grid-cols-2
+        md:gap-8 gap-5 mb-8">
           {exercise.data.buckets.map(
             (
               bucket: string,
@@ -277,7 +281,7 @@ export default function DragDropExercise({
         <CardArea>
           <div 
           data-tutorial="drag-item-area"
-          className="flex flex-wrap justify-center gap-5 pb-32">
+          className="flex flex-wrap justify-center gap-3 md:gap-5 pb-32">
             {cards.map(
               (item: string, index: number) => (
                 <DraggableCard
@@ -355,17 +359,25 @@ function DraggableCard({
       {...attributes}
       className="
        bg-slate-50 
-       rounded-3xl 
+       rounded-2xl 
+       md:rounded-3xl 
        p-2 
-       w-52
-       h-24
-
+       w-[140px]
+       h-[70px]
+       sm:w-[170px]
+       sm:h-[82px]
+       md:w-52
+       md:h-24
+       
        flex 
        items-center 
        justify-center
 
        text-center 
-       font-bold 
+       font-bold
+      text-[13px]
+      sm:text-[15px]
+      md:text-base
        
        cursor-grab 
        touch-none
@@ -407,11 +419,13 @@ function DraggableBucketItem({
       className="
         bg-slate-50
 
-        rounded-2xl
+        rounded-xl
+        md:rounded-2xl
 
-        p-4
+        p-3 md:p-4
 
         font-bold
+        text-sm md:text-base
         text-[#1D1D1D]
 
         cursor-grab
@@ -473,16 +487,20 @@ function DropArea({
                 : "bg-purple-200"
             }
 
-            px-8
-            py-3
-
             whitespace-nowrap
             w-max
 
             rounded-t-[20px]
 
             font-black
-            text-[18px]
+            px-5
+            py-2
+
+            md:px-8
+            md:py-3
+
+            text-[14px]
+            md:text-[18px]
 
             ${
               isBlue
@@ -505,11 +523,13 @@ function DropArea({
               : "bg-purple-200"
           }
 
-          min-h-[200px]
+          min-h-[160px]
+          md:min-h-[220px]
 
-          rounded-[34px]
+          rounded-[24px]
+          md:rounded-[34px]
 
-          p-4
+          p-3 md:p-5
 
           pt-8
 

@@ -1,16 +1,19 @@
 'use client';
 
 import { Card, CardBody } from '@heroui/card';
+import { Checkbox } from "@heroui/checkbox";
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useSDAuth } from '@/hooks/use-sd-auth';
+import { ArrowLeft24Regular } from '@fluentui/react-icons';
 
 export default function SDLoginPage() {
   useSDAuth();
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const [login, setLogin] = useState("");
   const [error, setError] = useState("");
@@ -53,9 +56,44 @@ export default function SDLoginPage() {
   return (
     <div className="min-h-screen bg-[#3674B5] flex flex-col">
       {/* Header */}
-      <div className="w-full bg-white border-b border-[#E8E8E8] px-4 sm:px-8 md:px-12 py-3 sm:py-4">
-        <div className="w-full flex justify-center">
-          {/* Logo placeholder */}
+      <div className="w-full h-[65px] bg-white border-b border-[#E8E8E8] px-4 sm:px-8 md:px-12">
+        <div className="relative w-full h-full flex justify-center items-center">
+        <button
+                    onClick={() => router.push("/login")}
+                    className="
+                      absolute
+                      left-0
+                      top-1/2
+                      -translate-y-1/2
+        
+                      flex
+                      items-center
+                      gap-2
+        
+                      px-3
+                      py-2
+        
+                      rounded-base
+                      md:rounded-lg
+                      hover:bg-gray-100
+                      transition
+                    "
+                  >
+                    <ArrowLeft24Regular className="w-6 h-6 text-[#3674B5]" />
+        
+                    <span
+                      className="
+        
+                        text-sm
+                        md:text-base
+        
+                        font-medium
+                        text-[#3674B5]
+                      "
+                    >
+                      Kembali ke Beranda
+                    </span>
+                  </button>
         </div>
       </div>
 
@@ -81,6 +119,7 @@ export default function SDLoginPage() {
                   <Input
                     radius="lg"
                     size="md"
+                    placeholder="Masukkan username atau email"
                     classNames={{
                       inputWrapper: "bg-[#F4F4F5]",
                     }}
@@ -93,15 +132,27 @@ export default function SDLoginPage() {
                   </label>
 
                   <Input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     radius="lg"
                     size="md"
+                    placeholder="Masukkan kata sandi"
                     classNames={{
                       inputWrapper: "bg-[#F4F4F5]",
                     }}
                     value={password}
                     onValueChange={setPassword}
                   />
+
+                  <Checkbox
+                    size="sm"
+                    isSelected={showPassword}
+                    onValueChange={setShowPassword}
+                    classNames={{
+                      label: "text-[#4B5563] text-sm",
+                    }}
+                  >
+                    Tampilkan kata sandi
+                  </Checkbox>
 
                   {error && (
                     <span className="text-xs text-[#F31260]">

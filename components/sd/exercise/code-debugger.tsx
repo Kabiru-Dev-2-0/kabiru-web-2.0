@@ -221,7 +221,8 @@ export default function CodeDebuggerExercise({
                 <div
                   className="
                     font-bold
-                    text-[18px]
+                    text-[14px]
+                    md:text-[20px]
                     text-[#1D1D1D]
 
                     min-w-[28px]
@@ -234,7 +235,8 @@ export default function CodeDebuggerExercise({
                 <div
                   className="
                     font-semibold
-                    text-[18px]
+                    text-[14px]
+                    md:text-[20px]
                     text-gray-900
                   "
                 >
@@ -272,7 +274,8 @@ export default function CodeDebuggerExercise({
 
             font-semibold
             tracking-wide
-            text-[20px]
+            text-[16px]
+            md:text-[20px]
             text-white
 
             ${
@@ -290,7 +293,8 @@ export default function CodeDebuggerExercise({
             mt-4
 
             text-gray-300
-            text-[16px]
+            text-[14px]
+            md:text-[16px]
           "
         >
           *(Klik untuk menghapus langkah)

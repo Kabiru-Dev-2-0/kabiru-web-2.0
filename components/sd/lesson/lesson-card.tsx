@@ -21,7 +21,7 @@ export default function LessonCard({
     <Link href={href}>
       <div
         className="
-        w-[252px]
+        w-full
         md:w-[270px]
         lg:w-[280px]
         rounded-[18px]
@@ -35,11 +35,10 @@ export default function LessonCard({
         md:h-[382px]
       "
       >
-        {/* ================= IMAGE ================= */}
         <div
           className="
           relative
-          h-full
+          h-[200px]
           md:h-[240px]
           overflow-hidden
           bg-[#EFEFEF]
@@ -60,10 +59,8 @@ export default function LessonCard({
           />
         </div>
 
-        {/* ================= CONTENT ================= */}
         <div className="px-5 py-5">
           <div className="flex items-start gap-4">
-            {/* NUMBER */}
             <div
               className="
               flex-shrink-0
@@ -84,9 +81,7 @@ export default function LessonCard({
               {nomor}
             </div>
 
-            {/* TEXT */}
             <div className="flex-1 min-w-0">
-              {/* TITLE */}
               <h3
                 className="
                 text-[#1E293B]
@@ -104,7 +99,6 @@ export default function LessonCard({
                 {title}
               </h3>
 
-              {/* DESCRIPTION */}
               <p
                 className="
                 mt-2

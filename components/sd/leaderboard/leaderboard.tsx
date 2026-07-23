@@ -116,11 +116,11 @@ export default function LeaderBoard({ onClose }: Props) {
 
   return (
     <div className="relative h-[100dvh] w-full overflow-y-auto overflow-x-hidden lg:overflow-hidden custom-scrollbar">
-      {/* BACKGROUND — fixed supaya tidak ikut ter-scroll & selalu full screen */}
+      {/* BACKGROUND */}
       <img
         src="/imageAssets/sd/map/background-map.png"
         alt="background"
-        className="fixed inset-0 -z-10 h-[100dvh] w-full object-cover"
+        className="absolute inset-0 z-0 h-full w-full object-cover"
       />
 
       {/* CLOSE */}

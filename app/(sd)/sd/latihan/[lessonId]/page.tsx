@@ -53,7 +53,7 @@ export default function ExercisePage() {
   const router = useRouter();
   const boardRef = useRef<HTMLDivElement>(null);
 
-  // ================= PROFILE =================
+  // PROFILE
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -76,65 +76,38 @@ export default function ExercisePage() {
 
   const supabase = createClient();
 
-  // =====================================
   // GAME STORE
-  // =====================================
-  const addExp = useGameStore((state) => state.addExp);
-
   const [shakeBoard, setShakeBoard] = useState(false);
 
-  // =====================================
-  // STATE
-  // =====================================
+  // STAT
   const [loading, setLoading] = useState(true);
-
   const [checkAnswerFn, setCheckAnswerFn] = useState<() => void>();
-
   const [exercise, setExercise] = useState<any>(null);
-
   const [lesson, setLesson] = useState<Lesson | null>(null);
-
   const [modul, setModul] = useState<Modul | null>(null);
-
   const [totalExercises, setTotalExercises] = useState(0);
-
   const [currentProgress, setCurrentProgress] = useState(2);
-
   const [canCheckAnswer, setCanCheckAnswer] = useState(false);
-
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-
   const [showFinishModal, setShowFinishModal] = useState(false);
-
   const [showLessonFinishModal, setShowLessonFinishModal] = useState(false);
-
   const [showTutorial, setShowTutorial] = useState(false);
-
   const [tutorialSteps, setTutorialSteps] = useState<any[]>([]);
-
   const [isAnswerLocked, setIsAnswerLocked] = useState(false);
-
   const [expProcessed, setExpProcessed] = useState(false);
-
   const [allExercises, setAllExercises] = useState<any[]>([]);
-
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-
   const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
-
   const canPrev = currentExerciseIndex > 0;
-
   const canNext =
     currentExerciseIndex < allExercises.length - 1 &&
     completedIds.has(Number(exercise?.id));
-
   const checkButtonDisabled = showTutorial
     ? false
     : !canCheckAnswer || isAnswerLocked;
 
-  // =========================
+  
   // LEADERBOARD
-  // =========================
   useEffect(() => {
     if (!showLeaderboard) return;
 
@@ -162,9 +135,7 @@ export default function ExercisePage() {
     (() => void) | undefined
   >();
 
-  // =====================================
   // SHORT TEXT
-  // =====================================
   const shortText = (text?: string) => {
     if (!text) return "";
 
@@ -175,9 +146,7 @@ export default function ExercisePage() {
     return `${words[0]} ${words[1]}...`;
   };
 
-  // =====================================
   // TUTORIAL
-  // =====================================
   useEffect(() => {
     if (!user) return;
 
@@ -210,9 +179,8 @@ export default function ExercisePage() {
     }
   }
 
-  // =========================
+  
   // TUTORIAL SHOW FOR NEW USER
-  // =========================
   async function checkTutorialStatus() {
     if (!user || !exercise) {
       return;
@@ -238,15 +206,10 @@ export default function ExercisePage() {
       .maybeSingle();
 
     const onboardingCompleted = userData?.onboarding_completed === false;
-
     const completedTypes: string[] = userData?.tutorial_completed_types ?? [];
-
     const currentType = exercise.type;
-
     const alreadyCompleted = completedTypes.includes(currentType);
-
     const neverPlayed = !progress;
-
     const shouldShowTutorial =
       userData?.is_pengguna_baru &&
       onboardingCompleted &&
@@ -256,9 +219,8 @@ export default function ExercisePage() {
     setShowTutorial(shouldShowTutorial);
   }
 
-  // =========================
+  
   // CLOSE TUTORIAL
-  // =========================
   async function closeTutorial() {
     const { data: userData } = await supabase
       .from("data_penggunas_sd")
@@ -267,11 +229,8 @@ export default function ExercisePage() {
       .single();
 
     const completedTypes: string[] = userData?.tutorial_completed_types || [];
-
     const currentType = exercise?.type ?? "";
-
     const updatedTypes = Array.from(new Set([...completedTypes, currentType]));
-
     const allTypes = [
       "drag_and_drop",
       "pattern_painter",
@@ -410,7 +369,7 @@ export default function ExercisePage() {
 
     const alreadyCompleted = existingProgress?.is_completed === true;
 
-    // Tambah EXP untuk soal yang belum pernah dikerjakan
+    // ADD EXP IF != COMPLETED
     if (!alreadyCompleted) {
       const gainedExp = Number(currentExercise.points) || 0;
       const newExp = Number(user.exp || 0) + gainedExp;
@@ -438,7 +397,7 @@ export default function ExercisePage() {
       setUser(updatedUser);
     }
 
-    // SIMPAN / UPDATE PROGRESS
+    // SAVE OR UPDATE PROGRESS
     const { error: progressError } = await supabase
       .from("progress_latihan_sd")
       .upsert(
@@ -476,15 +435,13 @@ export default function ExercisePage() {
 
     const nextIndex = currentExerciseIndex + 1;
 
-    // MASIH ADA SOAL BERIKUTNYA
+    // NEXT EXERCISE
     if (nextIndex < allExercises.length) {
       loadExercise(allExercises[nextIndex], nextIndex);
       return;
     }
 
-    // ==============================
-    // SELESAIKAN PELAJARAN
-    // ==============================
+    // COMPLETE LESSON
     const { error: lessonProgressError } = await supabase
       .from("progress_pelajaran_sd")
       .upsert(
@@ -504,9 +461,7 @@ export default function ExercisePage() {
       return;
     }
 
-    // ==============================
-    // AMBIL SEMUA PELAJARAN MODUL
-    // ==============================
+    // LESSON ON MODUL
     const { data: lessonIds, error: lessonIdsError } = await supabase
       .from("pelajarans_sd")
       .select("id")
@@ -519,9 +474,7 @@ export default function ExercisePage() {
 
     const ids = (lessonIds ?? []).map((item) => Number(item.id));
 
-    // ==============================
-    // AMBIL PELAJARAN YANG COMPLETE
-    // ==============================
+    // LESSON COMPLETE
     const { data: completedLessons, error: completedError } = await supabase
       .from("progress_pelajaran_sd")
       .select("pelajaran_id")
@@ -545,17 +498,13 @@ export default function ExercisePage() {
     console.log("LESSON COMPLETE:", Array.from(uniqueCompleted));
     console.log("MODUL COMPLETE:", isModuleCompleted);
 
-    // ==============================
-    // MODUL BELUM SELESAI
-    // ==============================
+    // MODUL UNCOMPLETED
     if (!isModuleCompleted) {
       setShowLessonFinishModal(true);
       return;
     }
 
-    // ==============================
-    // SELESAIKAN MODUL
-    // ==============================
+    // COMPLETE THE MODUL
     const { error: modulProgressError } = await supabase
       .from("progress_modul_sd")
       .upsert(
@@ -576,9 +525,7 @@ export default function ExercisePage() {
       return;
     }
 
-    // ==============================
-    // CARI MODUL BERIKUTNYA
-    // ==============================
+    // SEARCH NEXT MODUL
     const { data: currentModul } = await supabase
       .from("moduls_sd")
       .select("nomor_modul")
@@ -595,9 +542,7 @@ export default function ExercisePage() {
       .limit(1)
       .maybeSingle();
 
-    // ==============================
-    // UNLOCK MODUL BERIKUTNYA
-    // ==============================
+    // UNLOCK NEXT MODUL
     if (nextModul) {
       const { data: nextModulProgress } = await supabase
         .from("progress_modul_sd")
@@ -606,8 +551,7 @@ export default function ExercisePage() {
         .eq("modul_id", nextModul.id)
         .maybeSingle();
 
-      // PENTING:
-      // Jangan timpa modul yang sudah complete
+      // NO OVERWRITE TO COMPLETED MODUL
       if (!nextModulProgress?.is_completed) {
         const { error: nextModuleError } = await supabase
           .from("progress_modul_sd")
@@ -653,9 +597,7 @@ export default function ExercisePage() {
     loadExercise(allExercises[nextIndex], nextIndex);
   }
 
-  // =====================================
   // LOADING
-  // =====================================
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center text-2xl font-bold">
@@ -664,9 +606,7 @@ export default function ExercisePage() {
     );
   }
 
-  // =====================================
   // EMPTY
-  // =====================================
   if (!exercise) {
     return (
       <div className="h-screen flex items-center justify-center text-2xl font-bold">
@@ -678,7 +618,7 @@ export default function ExercisePage() {
   return (
     <main>
       <div className="relative isolate min-h-screen overflow-hidden">
-        {/* ================= BACKGROUND ================= */}
+        {/*  BACKGROUND  */}
         <img
           src="/imageAssets/sd/soal/background.png"
           alt="background"
@@ -691,37 +631,33 @@ export default function ExercisePage() {
         "
         />
 
-        {/* ================= HEADER ================= */}
-          <TopHeader
-              name={user?.username || "Pemain"}
-              level="Siswa"
-              avatar={user?.avatar || "/imageAssets/avatar/default.png"}
-              exp={user?.exp || 0}
+        {/*  HEADER  */}
+        <TopHeader
+          name={user?.username || "Pemain"}
+          level="Siswa"
+          avatar={user?.avatar || "/imageAssets/avatar/default.png"}
+          exp={user?.exp || 0}
+          showBack
+          backHref={`/sd/eksplorasi/${lesson?.id_modul}/${lessonId}`}
+          showProgress={false}
+          showProgressNavigation={false}
+        />
 
-              showBack
-              backHref={`/sd/eksplorasi/${lesson?.id_modul}/${lessonId}`}
-
-              showProgress={false}
-              showProgressNavigation={false}
-          />
-
-          <div
-            className="relative z-30 pt-0 pb-36 md:pb-0 sm:pt-24 md:pt-12 px-4 md:px-10 max-w-[1200px] mx-auto flex md:justify-center">
-            <div
-              className="w-full absolute md:static top-[16vh] left-0 px-4 md:px-0 md:w-[400px] z-40">
-              <ProgressBar
-                current={currentProgress}
-                total={totalExercises + 1}
-                onPrev={goToPreviousExercise}
-                onNext={goToNextExerciseDirect}
-                canPrev={canPrev}
-                canNext={canNext}
-                showChevrons
-              />
-            </div>
+        <div className="relative z-30 pt-0 pb-36 md:pb-0 sm:pt-24 md:pt-12 px-4 md:px-10 max-w-[1200px] mx-auto flex md:justify-center">
+          <div className="w-full absolute md:static top-[16vh] left-0 px-4 md:px-0 md:w-[400px] z-40">
+            <ProgressBar
+              current={currentProgress}
+              total={totalExercises + 1}
+              onPrev={goToPreviousExercise}
+              onNext={goToNextExerciseDirect}
+              canPrev={canPrev}
+              canNext={canNext}
+              showChevrons
+            />
           </div>
+        </div>
 
-        {/* ================= MAIN BOARD ================= */}
+        {/*  MAIN BOARD  */}
         <div
           className={`
           relative
@@ -736,7 +672,6 @@ export default function ExercisePage() {
           w-[90%] md:w-[80%]
           h-[68vh] md:h-[72vh]
           ${shakeBoard ? "animate-board-shake" : ""}
-  
 
           rounded-[28px]
 
@@ -780,7 +715,7 @@ export default function ExercisePage() {
                 pointer-events-none
               "
             />
-            {/* ================= OVERLAY ANSWER FEEDBACK ================= */}
+            {/* OVERLAY ANSWER FEEDBACK */}
             <AnswerFeedback
               open={feedback.open}
               status={feedback.status}
@@ -800,7 +735,7 @@ export default function ExercisePage() {
                 }
               }}
             />
-            {/* ================= TITLE ================= */}
+            {/*  TITLE  */}
             <h1
               className="
               text-center
@@ -814,7 +749,7 @@ export default function ExercisePage() {
               " {exercise.prompt} "
             </h1>
 
-            {/* ================= QUESTION ================= */}
+            {/*  QUESTION  */}
             <div
               className="
               flex
@@ -828,7 +763,7 @@ export default function ExercisePage() {
                 className="flex-shrink-0 mt-4 justify-center items-center hidden md:block"
                 size={64}></IconFRobot>
               <div className="relative bg-amber-50 rounded-2xl px-5 py-4 flex-1 outline-2 outline-dashed outline-amber-50">
-                {/* Tail bubble */}
+                {/* TAIL BUBBLE */}
                 <div
                   className="
                   absolute
@@ -856,7 +791,7 @@ export default function ExercisePage() {
               </div>
             </div>
 
-            {/* ================= EXERCISE ================= */}
+            {/*  EXERCISE  */}
             {exercise.type === "drag_and_drop" && (
               <DragDropExercise
                 key={exercise.id}
@@ -994,7 +929,7 @@ export default function ExercisePage() {
           </div>
         </div>
 
-        {/* ================= FLOATING BUTTONS ================= */}
+        {/*  FLOATING BUTTONS  */}
         <div
           className="
           fixed
@@ -1076,7 +1011,7 @@ export default function ExercisePage() {
           </GameButton>
         </div>
 
-        {/* ================= BREADCRUMB ================= */}
+        {/*  BREADCRUMB  */}
         <div className="absolute hidden md:block md:bottom-12 left-6 md:left-38 z-30">
           <Breadcrumb
             items={[
@@ -1095,7 +1030,7 @@ export default function ExercisePage() {
           />
         </div>
 
-        {/* ================= OVERLAY LEADERBOARD ================= */}
+        {/*  OVERLAY LEADERBOARD  */}
         {showLeaderboard && (
           <div
             className="
@@ -1114,12 +1049,12 @@ export default function ExercisePage() {
           </div>
         )}
 
-        {/* ================= OVERLAY TUTORIAL ================= */}
+        {/*  OVERLAY TUTORIAL  */}
         {showTutorial && (
           <TutorialOverlay steps={tutorialSteps} onClose={closeTutorial} />
         )}
 
-        {/* ================= STYLES ================= */}
+        {/*  STYLES  */}
         <style>{`
         .custom-scroll:has(*)::-webkit-scrollbar {
           width: 18px;
@@ -1166,7 +1101,7 @@ export default function ExercisePage() {
         }
       `}</style>
       </div>
-      {/* ================= MODAL FINISH ALL ================= */}
+      {/*  MODAL FINISH ALL  */}
       {showFinishModal && (
         <div
           className="
@@ -1180,15 +1115,13 @@ export default function ExercisePage() {
             justify-center
 
             p-4
-          "
-        >
+          ">
           <Modal
             title="KAMU HEBAT!!"
             width="lg:w-[800px]"
             onClose={() => router.push("/map")}
             buttonText="KEMBALI KE MAP"
-            buttonIcon={<IconFWorldMap size={30} />}
-          >
+            buttonIcon={<IconFWorldMap size={30} />}>
             <div
               className="
                 flex
@@ -1201,8 +1134,7 @@ export default function ExercisePage() {
 
                 py-2
                 md:py-4
-              "
-            >
+              ">
               <IconFTrophy
                 className="
                   mt-2
@@ -1212,8 +1144,8 @@ export default function ExercisePage() {
                   typeof window !== "undefined" && window.innerWidth < 640
                     ? 170
                     : typeof window !== "undefined" && window.innerWidth < 1024
-                    ? 220
-                    : 300
+                      ? 220
+                      : 300
                 }
               />
 
@@ -1224,8 +1156,7 @@ export default function ExercisePage() {
                   items-center
 
                   gap-2
-                "
-              >
+                ">
                 <p
                   className="
                     text-center
@@ -1236,8 +1167,7 @@ export default function ExercisePage() {
 
                     font-bold
                     text-gray-800
-                  "
-                >
+                  ">
                   Berhasil menyelesaikan semua!
                 </p>
 
@@ -1250,8 +1180,7 @@ export default function ExercisePage() {
                     lg:text-[18px]
 
                     text-gray-700
-                  "
-                >
+                  ">
                   Yuk, eksplorasi modul selanjutnya
                 </p>
               </div>
@@ -1260,7 +1189,7 @@ export default function ExercisePage() {
         </div>
       )}
 
-      {/* ================= MODAL FINISH LESSON ================= */}
+      {/*  MODAL FINISH LESSON  */}
       {showLessonFinishModal && (
         <div
           className="
@@ -1274,17 +1203,13 @@ export default function ExercisePage() {
             justify-center
 
             p-4
-          "
-        >
+          ">
           <Modal
             title="KAMU KEREN!"
             width="lg:w-[800px]"
-            onClose={() =>
-              router.push(`/sd/eksplorasi/${lesson?.id_modul}`)
-            }
+            onClose={() => router.push(`/sd/eksplorasi/${lesson?.id_modul}`)}
             buttonText="LANJUTKAN BELAJAR"
-            buttonIcon={<IconFOpenBook size={30} />}
-          >
+            buttonIcon={<IconFOpenBook size={30} />}>
             <div
               className="
                 flex
@@ -1296,15 +1221,14 @@ export default function ExercisePage() {
 
                 py-2
                 md:py-4
-              "
-            >
+              ">
               <IconFPartyPopper
                 size={
                   typeof window !== "undefined" && window.innerWidth < 640
                     ? 150
                     : typeof window !== "undefined" && window.innerWidth < 1024
-                    ? 190
-                    : 250
+                      ? 190
+                      : 250
                 }
               />
 
@@ -1317,8 +1241,7 @@ export default function ExercisePage() {
                   lg:text-[22px]
 
                   font-bold
-                "
-              >
+                ">
                 Pelajaran berhasil diselesaikan!
               </p>
 
@@ -1331,8 +1254,7 @@ export default function ExercisePage() {
                   text-[14px]
                   sm:text-[16px]
                   lg:text-[18px]
-                "
-              >
+                ">
                 Ayo lanjutkan ke pelajaran berikutnya.
               </p>
             </div>

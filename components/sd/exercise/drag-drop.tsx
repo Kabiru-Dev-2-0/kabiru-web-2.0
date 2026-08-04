@@ -1,34 +1,19 @@
 "use client";
 
-import {
-  DndContext,
-  useDraggable,
-  useDroppable,
-} from "@dnd-kit/core";
+import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   exercise: any;
 
-  setCheckAnswer?: (
-    fn: () => void
-  ) => void;
+  setCheckAnswer?: (fn: () => void) => void;
 
-  onAnswerResult?: (
-    isCorrect: boolean
-  ) => void;
+  onAnswerResult?: (isCorrect: boolean) => void;
 
-  setResetExercise?: (
-    fn: () => void
-  ) => void;
+  setResetExercise?: (fn: () => void) => void;
 
-  onStateChange?: (
-    ready: boolean
-  ) => void;
+  onStateChange?: (ready: boolean) => void;
 };
 
 export default function DragDropExercise({
@@ -38,260 +23,166 @@ export default function DragDropExercise({
   setResetExercise,
   onStateChange,
 }: Props) {
-  // =====================================
   // INITIAL STATE
-  // =====================================
-  const createInitialBuckets = () => {
-    const initialBuckets: Record<
-      string,
-      string[]
-    > = {};
 
-    (
-      exercise?.data?.buckets || []
-    ).forEach((bucket: string) => {
+  const createInitialBuckets = () => {
+    const initialBuckets: Record<string, string[]> = {};
+
+    (exercise?.data?.buckets || []).forEach((bucket: string) => {
       initialBuckets[bucket] = [];
     });
 
     return initialBuckets;
   };
 
-  const [cards, setCards] =
-    useState<string[]>(
-      exercise?.data?.items || []
-    );
-  
+  const [cards, setCards] = useState<string[]>(exercise?.data?.items || []);
+
   useEffect(() => {
-    onStateChange?.(
-      cards.length === 0
-    );
+    onStateChange?.(cards.length === 0);
   }, [cards]);
 
-  const [bucketItems, setBucketItems] =
-    useState<Record<string, string[]>>(
-      createInitialBuckets()
-    );
+  const [bucketItems, setBucketItems] = useState<Record<string, string[]>>(
+    createInitialBuckets(),
+  );
 
-  // =====================================
   // RESET STATE WHEN EXERCISE CHANGED
-  // =====================================
+
   function resetExercise() {
-  setCards(
-    exercise?.data?.items || []
-  );
+    setCards(exercise?.data?.items || []);
 
-  setBucketItems(
-    createInitialBuckets()
-  );
-}
+    setBucketItems(createInitialBuckets());
+  }
 
-  // =====================================
   // EXPOSE RESET TO PARENT
-  // =====================================
+
   useEffect(() => {
-    setResetExercise?.(
-      () => resetExercise
-    );
+    setResetExercise?.(() => resetExercise);
   }, [exercise]);
 
-  // =====================================
   // REMOVE ITEM FROM ALL BUCKETS
-  // =====================================
+
   function removeItemFromBuckets(
     draggedText: string,
-    currentBuckets: Record<
-      string,
-      string[]
-    >
+    currentBuckets: Record<string, string[]>,
   ) {
     const updatedBuckets = {
       ...currentBuckets,
     };
 
-    Object.keys(updatedBuckets).forEach(
-      (bucket) => {
-        updatedBuckets[bucket] =
-          updatedBuckets[bucket].filter(
-            (item) =>
-              item !== draggedText
-          );
-      }
-    );
+    Object.keys(updatedBuckets).forEach((bucket) => {
+      updatedBuckets[bucket] = updatedBuckets[bucket].filter(
+        (item) => item !== draggedText,
+      );
+    });
 
     return updatedBuckets;
   }
 
-  // =====================================
   // DRAG END
-  // =====================================
+
   function handleDragEnd(event: any) {
     const { active, over } = event;
 
     if (!over) return;
 
-    const draggedText =
-      active.id as string;
+    const draggedText = active.id as string;
 
-    const dropTarget =
-      over.id as string;
+    const dropTarget = over.id as string;
 
-    // =========================
     // DROP TO BUCKET
-    // =========================
-    if (
-      exercise.data.buckets.includes(
-        dropTarget
-      )
-    ) {
-      setCards((prev) =>
-        prev.filter(
-          (item) =>
-            item !== draggedText
-        )
-      );
+
+    if (exercise.data.buckets.includes(dropTarget)) {
+      setCards((prev) => prev.filter((item) => item !== draggedText));
 
       setBucketItems((prev) => {
-        const cleanedBuckets =
-          removeItemFromBuckets(
-            draggedText,
-            prev
-          );
+        const cleanedBuckets = removeItemFromBuckets(draggedText, prev);
 
         return {
           ...cleanedBuckets,
 
-          [dropTarget]: [
-            ...cleanedBuckets[
-              dropTarget
-            ],
-            draggedText,
-          ],
+          [dropTarget]: [...cleanedBuckets[dropTarget], draggedText],
         };
       });
     }
 
-    // =========================
     // RETURN TO CARD AREA
-    // =========================
+
     if (dropTarget === "card-area") {
-      setBucketItems((prev) =>
-        removeItemFromBuckets(
-          draggedText,
-          prev
-        )
-      );
+      setBucketItems((prev) => removeItemFromBuckets(draggedText, prev));
 
       setCards((prev) => {
-        if (
-          prev.includes(
-            draggedText
-          )
-        ) {
+        if (prev.includes(draggedText)) {
           return prev;
         }
 
-        return [
-          ...prev,
-          draggedText,
-        ];
+        return [...prev, draggedText];
       });
     }
   }
 
-  // =====================================
   // CHECK ANSWER
-  // =====================================
+
   function checkAnswerInternal() {
-  const correct =
-    exercise?.data
-      ?.correct_assignment;
+    const correct = exercise?.data?.correct_assignment;
 
-  let isCorrect = true;
+    let isCorrect = true;
 
-  Object.keys(correct).forEach(
-    (bucket) => {
-      const expected = [
-        ...correct[bucket],
-      ].sort();
+    Object.keys(correct).forEach((bucket) => {
+      const expected = [...correct[bucket]].sort();
 
-      const actual = [
-        ...(bucketItems[bucket] ||
-          []),
-      ].sort();
+      const actual = [...(bucketItems[bucket] || [])].sort();
 
-      if (
-        JSON.stringify(expected) !==
-        JSON.stringify(actual)
-      ) {
+      if (JSON.stringify(expected) !== JSON.stringify(actual)) {
         isCorrect = false;
       }
-    }
-  );
+    });
 
-  onAnswerResult?.(
-    isCorrect
-  );
-}
+    onAnswerResult?.(isCorrect);
+  }
 
-  // =====================================
   // SEND FUNCTION TO PARENT
-  // =====================================
+
   useEffect(() => {
     if (setCheckAnswer) {
-      setCheckAnswer(
-        () => checkAnswerInternal
-      );
+      setCheckAnswer(() => checkAnswerInternal);
     }
   }, [bucketItems]);
 
   return (
     <>
-      <DndContext
-        onDragEnd={handleDragEnd}
-      >
-        {/* ================= BUCKETS ================= */}
-        <div 
-        data-tutorial="bucket-area"
-        className="
+      <DndContext onDragEnd={handleDragEnd}>
+        {/*  BUCKETS  */}
+        <div
+          data-tutorial="bucket-area"
+          className="
         grid
         grid-cols-1
         md:grid-cols-2
         md:gap-8 gap-5 mb-8">
-          {exercise.data.buckets.map(
-            (
-              bucket: string,
-              index: number
-            ) => (
-              <DropArea
-                key={bucket}
-                id={bucket}
-                title={bucket}
-                items={
-                  bucketItems[
-                    bucket
-                  ] || []
-                }
-                index={index}
-              />
-            )
-          )}
+          {exercise.data.buckets.map((bucket: string, index: number) => (
+            <DropArea
+              key={bucket}
+              id={bucket}
+              title={bucket}
+              items={bucketItems[bucket] || []}
+              index={index}
+            />
+          ))}
         </div>
 
-        {/* ================= CARDS ================= */}
+        {/*  CARDS  */}
         <CardArea>
-          <div 
-          data-tutorial="drag-item-area"
-          className="flex flex-wrap justify-center gap-3 md:gap-5 pb-32">
-            {cards.map(
-              (item: string, index: number) => (
-                <DraggableCard
-                  key={item}
-                  id={item}
-                  text={item}
-                  isFirst={index === 0}
-                />
-              )
-            )}
+          <div
+            data-tutorial="drag-item-area"
+            className="flex flex-wrap justify-center gap-3 md:gap-5 pb-32">
+            {cards.map((item: string, index: number) => (
+              <DraggableCard
+                key={item}
+                id={item}
+                text={item}
+                isFirst={index === 0}
+              />
+            ))}
           </div>
         </CardArea>
       </DndContext>
@@ -299,29 +190,18 @@ export default function DragDropExercise({
   );
 }
 
-// =====================================
 // CARD AREA
-// =====================================
-function CardArea({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { setNodeRef } =
-    useDroppable({
-      id: "card-area",
-    });
 
-  return (
-    <div ref={setNodeRef}>
-      {children}
-    </div>
-  );
+function CardArea({ children }: { children: React.ReactNode }) {
+  const { setNodeRef } = useDroppable({
+    id: "card-area",
+  });
+
+  return <div ref={setNodeRef}>{children}</div>;
 }
 
-// =====================================
 // DRAGGABLE CARD
-// =====================================
+
 function DraggableCard({
   id,
   text,
@@ -331,12 +211,7 @@ function DraggableCard({
   text: string;
   isFirst?: boolean;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-  } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
   });
 
@@ -349,11 +224,7 @@ function DraggableCard({
   return (
     <div
       ref={setNodeRef}
-      data-tutorial={
-        isFirst
-          ? "drag-item"
-          : undefined
-      }
+      data-tutorial={isFirst ? "drag-item" : undefined}
       style={style}
       {...listeners}
       {...attributes}
@@ -381,26 +252,14 @@ function DraggableCard({
        
        cursor-grab 
        touch-none
-      "
-    >
+      ">
       {text}
     </div>
   );
 }
 
-function DraggableBucketItem({
-  id,
-  text,
-}: {
-  id: string;
-  text: string;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-  } = useDraggable({
+function DraggableBucketItem({ id, text }: { id: string; text: string }) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
   });
 
@@ -430,16 +289,14 @@ function DraggableBucketItem({
 
         cursor-grab
         touch-none
-      "
-    >
+      ">
       {text}
     </div>
   );
 }
 
-// =====================================
 // DROP AREA
-// =====================================
+
 function DropArea({
   id,
   title,
@@ -451,13 +308,11 @@ function DropArea({
   items: string[];
   index: number;
 }) {
-  const { setNodeRef, isOver } =
-    useDroppable({
-      id,
-    });
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+  });
 
-  const isBlue =
-    index % 2 === 1;
+  const isBlue = index % 2 === 1;
 
   return (
     <div
@@ -466,9 +321,8 @@ function DropArea({
       className="
         relative
         pt-8
-      "
-    >
-      {/* ================= TAB TITLE ================= */}
+      ">
+      {/*  TAB TITLE  */}
       <div
         className="
           absolute
@@ -477,15 +331,10 @@ function DropArea({
           -translate-x-1/2
 
           z-20
-        "
-      >
+        ">
         <div
           className={`
-            ${
-              isBlue
-                ? "bg-blue-200"
-                : "bg-purple-200"
-            }
+            ${isBlue ? "bg-blue-200" : "bg-purple-200"}
 
             whitespace-nowrap
             w-max
@@ -502,26 +351,17 @@ function DropArea({
             text-[14px]
             md:text-[18px]
 
-            ${
-              isBlue
-                ? "text-[#39218D]"
-                : "text-[#8A2BE2]"
-            }
-          `}
-        >
+            ${isBlue ? "text-[#39218D]" : "text-[#8A2BE2]"}
+          `}>
           {title.toUpperCase()}
         </div>
       </div>
 
-      {/* ================= MAIN BOX ================= */}
+      {/*  MAIN BOX  */}
       <div
         ref={setNodeRef}
         className={`
-          ${
-            isBlue
-              ? "bg-blue-200"
-              : "bg-purple-200"
-          }
+          ${isBlue ? "bg-blue-200" : "bg-purple-200"}
 
           min-h-[160px]
           md:min-h-[220px]
@@ -535,20 +375,11 @@ function DropArea({
 
           transition-all
 
-          ${
-            isOver
-              ? "scale-[1.02] ring-4 ring-white/50"
-              : ""
-          }
-        `}
-      >
+          ${isOver ? "scale-[1.02] ring-4 ring-white/50" : ""}
+        `}>
         <div className="flex flex-col gap-4">
           {items.map((item) => (
-            <DraggableBucketItem
-              key={item}
-              id={item}
-              text={item}
-            />
+            <DraggableBucketItem key={item} id={item} text={item} />
           ))}
         </div>
       </div>

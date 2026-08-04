@@ -59,9 +59,9 @@ export default function SortingExercise({
   setResetExercise,
   onStateChange,
 }: Props) {
-  // =====================================
+  
   // DATA
-  // =====================================
+  
   const initialItems: ItemType[] =
     exercise?.data?.items || [];
 
@@ -80,15 +80,15 @@ useEffect(() => {
   );
 }, [initialItems]);
 
-  // =====================================
+  
   // STATE
-  // =====================================
+  
   const [items, setItems] =
     useState<ItemType[]>([]);
 
-  // =====================================
+  
   // INIT / CHANGE EXERCISE
-  // =====================================
+  
   useEffect(() => {
     setItems(
       structuredClone(
@@ -97,9 +97,9 @@ useEffect(() => {
     );
   }, [exercise?.id]);
 
-  // =====================================
+  
   // REGISTER RESET
-  // =====================================
+  
   useEffect(() => {
     if (!setResetExercise)
       return;
@@ -119,9 +119,9 @@ useEffect(() => {
     exercise?.id,
   ]);
 
-  // =====================================
+  
   // SENSOR
-  // =====================================
+  
   const sensors = useSensors(
     useSensor(
       PointerSensor,
@@ -134,9 +134,9 @@ useEffect(() => {
     )
   );
 
-  // =====================================
+  
   // DRAG END
-  // =====================================
+  
   function handleDragEnd(
     event: any
   ) {
@@ -173,9 +173,9 @@ useEffect(() => {
     );
   }
 
-  // =====================================
+  
   // CHECK ANSWER
-  // =====================================
+  
   function checkAnswerInternal() {
     const currentOrder =
       items.map(
@@ -195,9 +195,9 @@ useEffect(() => {
     );
   }
 
-  // =====================================
+  
   // REGISTER CHECK FUNCTION
-  // =====================================
+  
   useEffect(() => {
     if (setCheckAnswer) {
       setCheckAnswer(
@@ -226,7 +226,7 @@ useEffect(() => {
             verticalListSortingStrategy
           }
         >
-          {/* ================= LIST ================= */}
+          {/*  LIST  */}
           <div
             className="
               flex
@@ -254,9 +254,9 @@ useEffect(() => {
   );
 }
 
-// =====================================
+
 // SORTABLE ITEM
-// =====================================
+
 function SortableItem({
   item,
   index,
@@ -308,7 +308,7 @@ function SortableItem({
         touch-none
       "
     >
-      {/* ================= LEFT ================= */}
+      {/*  LEFT  */}
       <div
         className="
           flex
@@ -334,7 +334,7 @@ function SortableItem({
         </div>
       </div>
 
-      {/* ================= DRAG HANDLE ================= */}
+      {/*  DRAG HANDLE  */}
       <button
         data-tutorial="sequence-area"
         {...attributes}

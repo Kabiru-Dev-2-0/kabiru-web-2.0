@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 type StepType = {
   id: number;
@@ -12,22 +9,10 @@ type StepType = {
 
 type Props = {
   exercise: any;
-
-  setCheckAnswer?: (
-    fn: () => void
-  ) => void;
-
-  setResetExercise?: (
-    fn: () => void
-  ) => void;
-
-  onAnswerResult?: (
-    isCorrect: boolean
-  ) => void;
-
-  onStateChange?: (
-    ready: boolean
-  ) => void;
+  setCheckAnswer?: (fn: () => void) => void;
+  setResetExercise?: (fn: () => void) => void;
+  onAnswerResult?: (isCorrect: boolean) => void;
+  onStateChange?: (ready: boolean) => void;
 };
 
 export default function CodeDebuggerExercise({
@@ -37,38 +22,21 @@ export default function CodeDebuggerExercise({
   onAnswerResult,
   onStateChange,
 }: Props) {
-  // =====================================
   // DATA
-  // =====================================
-  const steps: StepType[] =
-    exercise?.data?.steps || [];
+  const steps: StepType[] = exercise?.data?.steps || [];
 
-  const correctRemovedIds: number[] =
-    exercise?.data
-      ?.correct_removed_ids || [];
+  const correctRemovedIds: number[] = exercise?.data?.correct_removed_ids || [];
 
-  // =====================================
   // STATE
-  // =====================================
-  const [
-    selectedIds,
-    setSelectedIds,
-  ] = useState<number[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-  const [
-    removedIds,
-    setRemovedIds,
-  ] = useState<number[]>([]);
+  const [removedIds, setRemovedIds] = useState<number[]>([]);
 
   useEffect(() => {
-    onStateChange?.(
-      removedIds.length > 0
-    );
+    onStateChange?.(removedIds.length > 0);
   }, [removedIds]);
 
-  // =====================================
   // RESET
-  // =====================================
   useEffect(() => {
     const reset = () => {
       setSelectedIds([]);
@@ -78,12 +46,8 @@ export default function CodeDebuggerExercise({
     setResetExercise?.(() => reset);
   }, [setResetExercise]);
 
-  // =====================================
   // TOGGLE STEP
-  // =====================================
-  function toggleStep(
-    id: number
-  ) {
+  function toggleStep(id: number) {
     // tidak bisa pilih step yang sudah dihapus
     if (removedIds.includes(id)) {
       return;
@@ -91,84 +55,50 @@ export default function CodeDebuggerExercise({
 
     setSelectedIds((prev) => {
       if (prev.includes(id)) {
-        return prev.filter(
-          (item) => item !== id
-        );
+        return prev.filter((item) => item !== id);
       }
 
       return [...prev, id];
     });
   }
 
-  // =====================================
   // REMOVE SELECTED
-  // =====================================
   function handleRemove() {
-    if (
-      selectedIds.length === 0
-    ) {
+    if (selectedIds.length === 0) {
       return;
     }
 
-    setRemovedIds((prev) => [
-      ...prev,
-      ...selectedIds,
-    ]);
+    setRemovedIds((prev) => [...prev, ...selectedIds]);
 
     // reset selection
     setSelectedIds([]);
   }
 
-  // =====================================
   // CHECK ANSWER
-  // =====================================
   function checkAnswerInternal() {
-    const sortedRemoved = [
-      ...removedIds,
-    ].sort((a, b) => a - b);
+    const sortedRemoved = [...removedIds].sort((a, b) => a - b);
 
-    const sortedCorrect = [
-      ...correctRemovedIds,
-    ].sort((a, b) => a - b);
+    const sortedCorrect = [...correctRemovedIds].sort((a, b) => a - b);
 
     const isCorrect =
-      JSON.stringify(
-        sortedRemoved
-      ) ===
-      JSON.stringify(
-        sortedCorrect
-      );
+      JSON.stringify(sortedRemoved) === JSON.stringify(sortedCorrect);
 
-    onAnswerResult?.(
-      isCorrect
-    );
+    onAnswerResult?.(isCorrect);
   }
 
-  // =====================================
   // REGISTER CHECK FUNCTION
-  // =====================================
   useEffect(() => {
     if (setCheckAnswer) {
-      setCheckAnswer(
-        () => checkAnswerInternal
-      );
+      setCheckAnswer(() => checkAnswerInternal);
     }
   }, [removedIds]);
 
-  // =====================================
   // FILTER VISIBLE STEPS
-  // =====================================
-  const visibleSteps =
-    steps.filter(
-      (step) =>
-        !removedIds.includes(
-          step.id
-        )
-    );
+  const visibleSteps = steps.filter((step) => !removedIds.includes(step.id));
 
   return (
     <div className="pb-32">
-      {/* ================= STEPS ================= */}
+      {/*  STEPS  */}
       <div
         data-tutorial="step-list"
         className="
@@ -176,25 +106,15 @@ export default function CodeDebuggerExercise({
           flex-col
           gap-4
           items-center
-        "
-      >
-        {visibleSteps.map(
-          (
-            step: StepType,
-            index: number
-          ) => {
-            const isSelected =
-              selectedIds.includes(
-                step.id
-              );
+        ">
+        {visibleSteps.map((step: StepType, index: number) => {
+          const isSelected = selectedIds.includes(step.id);
 
-            return (
-              <button
-                key={step.id}
-                onClick={() =>
-                  toggleStep(step.id)
-                }
-                className={`
+          return (
+            <button
+              key={step.id}
+              onClick={() => toggleStep(step.id)}
+              className={`
                   w-full
                   max-w-[1000px]
 
@@ -215,40 +135,36 @@ export default function CodeDebuggerExercise({
                       ? "bg-rose-50 border-[6px] border-rose-800"
                       : "bg-white"
                   }
-                `}
-              >
-                {/* NUMBER */}
-                <div
-                  className="
+                `}>
+              {/* NUMBER */}
+              <div
+                className="
                     font-bold
                     text-[14px]
                     md:text-[20px]
                     text-[#1D1D1D]
 
                     min-w-[28px]
-                  "
-                >
-                  {index + 1}.
-                </div>
+                  ">
+                {index + 1}.
+              </div>
 
-                {/* TEXT */}
-                <div
-                  className="
+              {/* TEXT */}
+              <div
+                className="
                     font-semibold
                     text-[14px]
                     md:text-[20px]
                     text-gray-900
-                  "
-                >
-                  {step.text}
-                </div>
-              </button>
-            );
-          }
-        )}
+                  ">
+                {step.text}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* ================= BUTTON LABEL ================= */}
+      {/*  BUTTON LABEL  */}
       <div
         data-tutorial="remove-button"
         className="
@@ -257,13 +173,10 @@ export default function CodeDebuggerExercise({
           items-center
 
           mt-8
-        "
-      >
+        ">
         <button
           onClick={handleRemove}
-          disabled={
-            selectedIds.length === 0
-          }
+          disabled={selectedIds.length === 0}
           className={`
             bg-rose-800
 
@@ -283,8 +196,7 @@ export default function CodeDebuggerExercise({
                 ? "opacity-50 cursor-not-allowed"
                 : "cursor-pointer"
             }
-          `}
-        >
+          `}>
           Hapus
         </button>
 
@@ -295,8 +207,7 @@ export default function CodeDebuggerExercise({
             text-gray-300
             text-[14px]
             md:text-[16px]
-          "
-        >
+          ">
           *(Klik untuk menghapus langkah)
         </div>
       </div>

@@ -63,7 +63,7 @@ export default function SDRegisterPage() {
     const val = username.trim();
 
     if (val.length < 4 || val.length > 10 || val.includes(" ")) {
-      setUsernameError("Gunakan 4–10 karakter tanpa spasi");
+      setUsernameError("Gunakan 4–10 karakter");
       return;
     }
 
@@ -297,7 +297,7 @@ export default function SDRegisterPage() {
                     placeholder="contoh: budi123"
                   />
                   <span className="text-xs text-[#71717A]">
-                    Gunakan 4–10 karakter tanpa spasi.
+                    Gunakan 4–10 karakter.
                   </span>
                   {usernameError && (
                     <span className="text-xs text-[#F31260]">
@@ -324,7 +324,7 @@ export default function SDRegisterPage() {
                         Buat Kata Sandi Kamu
                       </label>
                       <span className="text-xs text-gray-700">
-                          Gunakan 8 karakter tanpa spasi.
+                          Gunakan 8 karakter.
                       </span>
                   </div>
                   <Input

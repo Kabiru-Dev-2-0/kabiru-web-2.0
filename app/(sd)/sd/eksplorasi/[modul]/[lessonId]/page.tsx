@@ -102,7 +102,8 @@ export default function DetailLessonPage() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto mt-44 md:mt-10 w-[90%] md:w-[80%]
+      <div
+        className="relative z-10 mx-auto mt-44 md:mt-10 w-[90%] md:w-[80%]
           h-[68vh] md:h-[72vh] rounded-[28px] border-[10px] border-[#F8B233] bg-[#015B4E] shadow-2xl overflow-x-hidden">
         <div className="w-full h-full overflow-y-auto px-6 py-6 md:px-10 md:py-8 custom-scroll">
           {loading ? (

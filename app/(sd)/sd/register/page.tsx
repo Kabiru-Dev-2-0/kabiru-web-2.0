@@ -13,13 +13,11 @@ export default function SDRegisterPage() {
   const [step, setStep] = useState<number>(0);
   const [email, setEmail] = useState<string>("");
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [savingEmail, setSavingEmail] = useState<boolean>(false);
   const [username, setUsername] = useState<string>("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [savingUsername, setSavingUsername] = useState<boolean>(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

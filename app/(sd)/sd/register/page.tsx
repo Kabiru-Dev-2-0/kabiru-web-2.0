@@ -83,6 +83,12 @@ export default function SDRegisterPage() {
   }
 
   async function handleFinish() {
+    if (password.trim().length < 8) {
+      setPasswordError("Kata sandi minimal 8 karakter.");
+      return;
+    }
+
+    setPasswordError(null);
     const supabase = createClient();
 
     const { data, error } = await supabase

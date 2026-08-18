@@ -30,7 +30,7 @@ export default function ProfileCard({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
 
-  // === STATE KLIK DROPDOWN ===
+  //  STATE DROPDOWN 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function ProfileCard({
 
   return (
     <div className={`relative group ${className}`}>
-      {/* ================= MODAL CONFIRM LOGOUT (PORTAL) ================= */}
+      {/*  MODAL CONFIRM LOGOUT */}
       {mounted &&
         showConfirmModal &&
         createPortal(
@@ -90,7 +90,7 @@ export default function ProfileCard({
           document.body,
         )}
 
-      {/* ================= LEADERBOARD (PORTAL) ================= */}
+      {/*  LEADERBOARD  */}
       {mounted &&
         showLeaderboard &&
         createPortal(
@@ -100,7 +100,7 @@ export default function ProfileCard({
           document.body,
         )}
 
-      {/* === INVISIBLE OVERLAY UNTUK MENUTUP DROPDOWN DI MOBILE JIKA DIKLIK LUAR === */}
+      {/*  INVISIBLE OVERLAY ON MOBILE  */}
       {isDropdownOpen && (
         <div
           className="fixed inset-0 z-[15] md:hidden"
@@ -185,7 +185,7 @@ export default function ProfileCard({
             rounded-b-[16px]
             bg-slate-100
           ">
-          {/* HEADER (Bisa diklik lagi untuk menutup menu) */}
+          {/* HEADER */}
           <div
             onClick={() => setIsDropdownOpen(false)}
             className={`
@@ -231,7 +231,7 @@ export default function ProfileCard({
           <button
             onClick={() => {
               setShowLeaderboard(true);
-              setIsDropdownOpen(false); // Tutup dropdown setelah ditekan
+              setIsDropdownOpen(false);
             }}
             className="
               w-full
@@ -255,7 +255,7 @@ export default function ProfileCard({
           <button
             onClick={() => {
               setShowConfirmModal(true);
-              setIsDropdownOpen(false); // Tutup dropdown setelah ditekan
+              setIsDropdownOpen(false);
             }}
             className="
               w-full

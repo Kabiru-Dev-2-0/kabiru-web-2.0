@@ -23,22 +23,19 @@ export default function GameSelectionPage() {
         items-center
       "
       style={{
-        backgroundImage:
-          "url('/imageAssets/sd/game-selection/background.png')",
+        backgroundImage: "url('/imageAssets/sd/game-selection/background.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-      }}
-    >
-      {/* ================= TITLE ================= */}
+      }}>
+      {/*  TITLE  */}
       <div
         className="
           mt-10
           sm:mt-14
           md:mt-20
           lg:mt-24
-        "
-      >
+        ">
         <h1
           className="
             text-white
@@ -51,13 +48,12 @@ export default function GameSelectionPage() {
             sm:text-[44px]
             md:text-[60px]
             lg:text-[72px]
-          "
-        >
+          ">
           PILIH MAP
         </h1>
       </div>
 
-      {/* ================= MAPS ================= */}
+      {/*  MAPS  */}
       <div
         className="
           flex
@@ -77,8 +73,7 @@ export default function GameSelectionPage() {
 
           px-5
           pb-10
-        "
-      >
+        ">
         {/* DETEKTIF LOGIKA */}
         <div
           className="
@@ -94,8 +89,7 @@ export default function GameSelectionPage() {
           style={{
             width: "clamp(260px, 42vw, 420px)",
             aspectRatio: "1.25 / 1",
-          }}
-        >
+          }}>
           <img
             src="/imageAssets/sd/game-selection/thumbnail-1.png"
             alt="Detektif Logika"
@@ -111,8 +105,7 @@ export default function GameSelectionPage() {
               md:bottom-7
               left-1/2
               -translate-x-1/2
-            "
-          >
+            ">
             <GameButton
               variant="yellow"
               size="sm"
@@ -125,8 +118,7 @@ export default function GameSelectionPage() {
               style={{
                 fontSize: "clamp(14px, 1.5vw, 18px)",
               }}
-              onClick={() => router.push("/onboarding")}
-            >
+              onClick={() => router.push("/onboarding")}>
               Mainkan
             </GameButton>
           </div>
@@ -149,8 +141,7 @@ export default function GameSelectionPage() {
           style={{
             width: "clamp(260px, 42vw, 420px)",
             aspectRatio: "1.25 / 1",
-          }}
-        >
+          }}>
           <img
             src="/imageAssets/sd/game-selection/thumbnail-2.png"
             alt="Island Logic"
@@ -166,8 +157,7 @@ export default function GameSelectionPage() {
               md:bottom-7
               left-1/2
               -translate-x-1/2
-            "
-          >
+            ">
             <GameButton
               variant="yellow"
               size="sm"
@@ -180,8 +170,7 @@ export default function GameSelectionPage() {
               style={{
                 fontSize: "clamp(14px, 1.5vw, 18px)",
               }}
-              disabled
-            >
+              disabled>
               Segera Hadir
             </GameButton>
           </div>

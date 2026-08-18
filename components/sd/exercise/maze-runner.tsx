@@ -30,13 +30,9 @@ type LabelType = {
 
 type Props = {
   exercise: any;
-
   setCheckAnswer?: (fn: () => void) => void;
-
   setResetExercise?: (fn: () => void) => void;
-
   onAnswerResult?: (isCorrect: boolean) => void;
-
   onStateChange?: (ready: boolean) => void;
 };
 
@@ -75,9 +71,8 @@ export default function MazeRunnerExercise({
   onAnswerResult,
   onStateChange,
 }: Props) {
-  // =====================================
   // DATA
-  // =====================================
+
   const grid = exercise?.data?.grid || {
     rows: 3,
     cols: 3,
@@ -94,72 +89,45 @@ export default function MazeRunnerExercise({
   };
 
   const walls: Position[] = exercise?.data?.walls || [];
-
   const decorations: DecorationType[] = exercise?.data?.decorations || [];
-
   const labels: LabelType[] = exercise?.data?.labels || [];
-
   const correctPath: CommandType[] = exercise?.data?.correct_path || [];
-
   const maxSteps = exercise?.data?.max_steps || correctPath.length;
 
-  // =====================================
   // RESPONSIVE CELL SIZE
-  // =====================================
   const [cellSize, setCellSize] = useState(140);
 
-    useEffect(() => {
-      function updateCellSize() {
-        const width = window.innerWidth;
+  useEffect(() => {
+    function updateCellSize() {
+      const width = window.innerWidth;
 
-        if (width < 640) {
-          setCellSize(
-            grid.cols >= 5 ? 52 :
-            grid.cols === 4 ? 68 :
-            90
-          );
-        } else if (width < 1024) {
-          setCellSize(
-            grid.cols >= 5 ? 72 :
-            grid.cols === 4 ? 90 :
-            115
-          );
-        } else {
-          setCellSize(
-            grid.cols >= 5 ? 95 :
-            grid.cols === 4 ? 110 :
-            140
-          );
-        }
+      if (width < 640) {
+        setCellSize(grid.cols >= 5 ? 52 : grid.cols === 4 ? 68 : 90);
+      } else if (width < 1024) {
+        setCellSize(grid.cols >= 5 ? 72 : grid.cols === 4 ? 90 : 115);
+      } else {
+        setCellSize(grid.cols >= 5 ? 95 : grid.cols === 4 ? 110 : 140);
       }
+    }
 
-      updateCellSize();
+    updateCellSize();
+    window.addEventListener("resize", updateCellSize);
+    return () => window.removeEventListener("resize", updateCellSize);
+  }, [grid.cols]);
 
-      window.addEventListener("resize", updateCellSize);
-
-      return () =>
-        window.removeEventListener("resize", updateCellSize);
-    }, [grid.cols]);
-
-  // =====================================
   // STATE
-  // =====================================
   const [commands, setCommands] = useState<(CommandType | null)[]>(
     Array(maxSteps).fill(null),
   );
 
   const [robotPosition, setRobotPosition] = useState(start);
-
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // =====================================
   // RESET
-  // =====================================
+
   useEffect(() => {
     setCommands(Array(maxSteps).fill(null));
-
     setRobotPosition(start);
-
     setIsAnimating(false);
   }, [exercise]);
 
@@ -167,9 +135,7 @@ export default function MazeRunnerExercise({
     onStateChange?.(commands.every((command) => command !== null));
   }, [commands]);
 
-  // =====================================
   // REMOVE COMMAND
-  // =====================================
   function removeCommand(index: number) {
     if (isAnimating) return;
 
@@ -180,9 +146,7 @@ export default function MazeRunnerExercise({
     setCommands(updated);
   }
 
-  // =====================================
   // DRAG END
-  // =====================================
   function handleDragEnd(event: any) {
     if (isAnimating) return;
 
@@ -193,30 +157,21 @@ export default function MazeRunnerExercise({
     if (!over.id.toString().startsWith("slot-")) return;
 
     const command = active.id as CommandType;
-
     const slotIndex = Number(over.id.toString().replace("slot-", ""));
-
     const updated = [...commands];
-
     updated[slotIndex] = command;
 
     setCommands(updated);
   }
 
-  // =====================================
   // RESET EXERCISE
-  // =====================================
   function resetExercise() {
     setCommands(Array(maxSteps).fill(null));
-
     setRobotPosition(start);
-
     setIsAnimating(false);
   }
 
-  // =====================================
   // ANIMATE ROBOT
-  // =====================================
   async function animateRobot() {
     setIsAnimating(true);
 
@@ -257,25 +212,20 @@ export default function MazeRunnerExercise({
           row: current.row + 1,
         };
       }
-
       setRobotPosition(current);
     }
 
     await new Promise((resolve) => setTimeout(resolve, 400));
-
     setIsAnimating(false);
   }
 
-  // =====================================
   // CHECK ANSWER
-  // =====================================
   async function checkAnswerInternal() {
     const correctPaths =
       exercise?.data?.correct_paths ||
       (exercise?.data?.correct_path ? [exercise.data.correct_path] : []);
 
     const filledCommands = commands.filter(Boolean);
-
     const isCorrect = correctPaths.some(
       (path: string[]) =>
         JSON.stringify(path) === JSON.stringify(filledCommands),
@@ -292,18 +242,14 @@ export default function MazeRunnerExercise({
     }
   }
 
-  // =====================================
   // REGISTER CHECK FUNCTION
-  // =====================================
   useEffect(() => {
     if (setCheckAnswer) {
       setCheckAnswer(() => checkAnswerInternal);
     }
   }, [commands]);
 
-  // =====================================
   // GRID CELLS
-  // =====================================
   const cells = useMemo(() => {
     const arr = [];
 
@@ -337,7 +283,7 @@ export default function MazeRunnerExercise({
             md:gap-10
             lg:gap-14
           ">
-          {/* ================= LEFT BOARD ================= */}
+          {/*  LEFT BOARD  */}
           <div
             data-tutorial="maze-board"
             className="
@@ -391,7 +337,9 @@ export default function MazeRunnerExercise({
                   {/* ROBOT */}
                   {robotPosition.row === cell.row &&
                     robotPosition.col === cell.col && (
-                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🤖</div>
+                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">
+                        🤖
+                      </div>
                     )}
 
                   {/* GOAL */}
@@ -400,7 +348,11 @@ export default function MazeRunnerExercise({
                     !(
                       robotPosition.row === cell.row &&
                       robotPosition.col === cell.col
-                    ) && <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🚩</div>}
+                    ) && (
+                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">
+                        🚩
+                      </div>
+                    )}
 
                   {/* WALL */}
                   {!(
@@ -408,7 +360,11 @@ export default function MazeRunnerExercise({
                     robotPosition.col === cell.col
                   ) &&
                     !isGoal &&
-                    isWall && <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🚧</div>}
+                    isWall && (
+                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">
+                        🚧
+                      </div>
+                    )}
 
                   {/* TREE */}
                   {!(
@@ -418,7 +374,9 @@ export default function MazeRunnerExercise({
                     !isGoal &&
                     !isWall &&
                     decoration?.type === "tree" && (
-                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🌳</div>
+                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">
+                        🌳
+                      </div>
                     )}
 
                   {/* ROCK */}
@@ -429,7 +387,9 @@ export default function MazeRunnerExercise({
                     !isGoal &&
                     !isWall &&
                     decoration?.type === "rock" && (
-                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">🪨</div>
+                      <div className="text-[42px] sm:text-[56px] md:text-[70px] lg:text-[90px]">
+                        🪨
+                      </div>
                     )}
 
                   {/* LABEL */}
@@ -465,14 +425,14 @@ export default function MazeRunnerExercise({
             })}
           </div>
 
-          {/* ================= RIGHT AREA ================= */}
+          {/*  RIGHT AREA  */}
           <div
             className="
               flex
               flex-col
               gap-8
             ">
-            {/* ================= INSTRUCTION AREA ================= */}
+            {/*  INSTRUCTION AREA  */}
             <div
               data-tutorial="instruction-list"
               className="
@@ -534,7 +494,7 @@ export default function MazeRunnerExercise({
               </div>
             </div>
 
-            {/* ================= COMMAND AREA ================= */}
+            {/*  COMMAND AREA  */}
             <div
               data-tutorial="control-buttons"
               className="
@@ -615,9 +575,8 @@ export default function MazeRunnerExercise({
   );
 }
 
-// =====================================
 // DRAGGABLE COMMAND
-// =====================================
+
 function DraggableCommand({ command, label, Icon, color }: any) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: command,
@@ -685,9 +644,7 @@ function DraggableCommand({ command, label, Icon, color }: any) {
   );
 }
 
-// =====================================
 // INSTRUCTION SLOT
-// =====================================
 function InstructionSlot({ id, command, onRemove }: any) {
   const { setNodeRef, isOver } = useDroppable({
     id,

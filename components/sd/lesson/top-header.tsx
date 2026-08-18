@@ -63,7 +63,7 @@ export default function TopHeader({
       {/* CONTAINER */}
       <div className="max-w-[1200px] mx-auto flex flex-row items-center justify-between gap-1 sm:gap-4 w-full">
         
-        {/* ================= LEFT SECTION ================= */}
+        {/*  LEFT SECTION  */}
         <div className="flex items-center gap-2 sm:gap-4 md:gap-6 w-auto">
           
           {/* BACK BUTTON */}
@@ -113,7 +113,7 @@ export default function TopHeader({
           )}
         </div>
 
-        {/* ================= RIGHT SECTION ================= */}
+        {/*  RIGHT SECTION  */}
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 w-auto justify-center">
           
           {/* EXP BADGE */}

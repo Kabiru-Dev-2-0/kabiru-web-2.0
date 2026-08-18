@@ -28,10 +28,6 @@ export default function LeaderBoard({ onClose }: Props) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [currentUsername, setCurrentUsername] = useState("");
 
-  // ================================================
-  // KUNCI SCROLL BODY SELAMA LEADERBOARD TERBUKA
-  // (mencegah konten halaman di belakang ikut ter-scroll/terlihat)
-  // ================================================
   useEffect(() => {
     const original = document.body.style.overflow;
     document.body.style.overflow = "hidden";

@@ -13,13 +13,11 @@ export default function SDRegisterPage() {
   const [step, setStep] = useState<number>(0);
   const [email, setEmail] = useState<string>("");
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [savingEmail, setSavingEmail] = useState<boolean>(false);
   const [username, setUsername] = useState<string>("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [savingUsername, setSavingUsername] = useState<boolean>(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -63,7 +61,7 @@ export default function SDRegisterPage() {
     const val = username.trim();
 
     if (val.length < 4 || val.length > 10 || val.includes(" ")) {
-      setUsernameError("Gunakan 4–10 karakter tanpa spasi");
+      setUsernameError("Gunakan 4–10 karakter");
       return;
     }
 
@@ -83,6 +81,12 @@ export default function SDRegisterPage() {
   }
 
   async function handleFinish() {
+    if (password.trim().length < 8) {
+      setPasswordError("Kata sandi minimal 8 karakter.");
+      return;
+    }
+
+    setPasswordError(null);
     const supabase = createClient();
 
     const { data, error } = await supabase
@@ -297,7 +301,7 @@ export default function SDRegisterPage() {
                     placeholder="contoh: budi123"
                   />
                   <span className="text-xs text-[#71717A]">
-                    Gunakan 4–10 karakter tanpa spasi.
+                    Gunakan 4–10 karakter.
                   </span>
                   {usernameError && (
                     <span className="text-xs text-[#F31260]">
@@ -324,7 +328,7 @@ export default function SDRegisterPage() {
                         Buat Kata Sandi Kamu
                       </label>
                       <span className="text-xs text-gray-700">
-                          Gunakan 8 karakter tanpa spasi.
+                          Gunakan 8 karakter.
                       </span>
                   </div>
                   <Input

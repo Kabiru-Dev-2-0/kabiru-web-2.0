@@ -1,6 +1,4 @@
-// ======================================
 // TYPES
-// ======================================
 
 export type TutorialStep = {
   target: string;
@@ -9,35 +7,23 @@ export type TutorialStep = {
 
   description: string;
 
-  placement?:
-    | "top"
-    | "bottom"
-    | "left"
-    | "right";
+  placement?: "top" | "bottom" | "left" | "right";
 };
 
-// ======================================
 // TUTORIAL DATA
-// ======================================
 
 export const tutorialData = {
-  // ======================================
   // DRAG & DROP
-  // ======================================
 
-  drag_and_drop: (
-  buckets: string[] = []
-): TutorialStep[] => [
-  {
-    target: "drag-item-area",
-    title: "Kartu Soal",
-    description:
-      "Klik dan seret kartu ke dalam kotak kategori yang sesuai.",
-    placement: "top",
-  },
+  drag_and_drop: (buckets: string[] = []): TutorialStep[] => [
+    {
+      target: "drag-item-area",
+      title: "Kartu Soal",
+      description: "Klik dan seret kartu ke dalam kotak kategori yang sesuai.",
+      placement: "top",
+    },
 
-  ...buckets.map(
-    (bucket, index) => ({
+    ...buckets.map((bucket, index) => ({
       target: `bucket-${index}`,
 
       title: bucket,
@@ -45,26 +31,24 @@ export const tutorialData = {
       description: `Masukkan kartu yang termasuk kategori ${bucket} ke dalam kotak ini.`,
 
       placement: "bottom" as const,
-    })
-  ),
+    })),
 
-  {
-    target: "scrollbar",
-    title: "Geser Halaman ke Atas-Bawah",
-    description:
-      "Jika isi soal belum terlihat seluruhnya, geser halaman ke atas-bawah menggunakan scroll mouse atau klik dan seret roda putih ke atas/bawah.",
-    placement: "left",
-  },
+    {
+      target: "scrollbar",
+      title: "Geser Halaman ke Atas-Bawah",
+      description:
+        "Jika isi soal belum terlihat seluruhnya, geser halaman ke atas-bawah menggunakan scroll mouse atau klik dan seret roda putih ke atas/bawah.",
+      placement: "left",
+    },
 
-  {
-    target: "btn-check",
-    title: "Periksa Jawaban",
-    description:
-      "Klik tombol PERIKSA JAWABAN untuk memeriksa jawaban.",
-    placement: "top",
-  },
+    {
+      target: "btn-check",
+      title: "Periksa Jawaban",
+      description: "Klik tombol PERIKSA JAWABAN untuk memeriksa jawaban.",
+      placement: "top",
+    },
 
-  {
+    {
       target: "btn-help",
 
       title: "Petunjuk",
@@ -73,12 +57,10 @@ export const tutorialData = {
         "Tutorial ini bisa dibuka kembali kapan saja melalui tombol Petunjuk.",
 
       placement: "top",
-  },
-],
+    },
+  ],
 
-  // ======================================
   // PATTERN PAINTER
-  // ======================================
 
   pattern_painter: (): TutorialStep[] => [
     {
@@ -134,9 +116,7 @@ export const tutorialData = {
     },
   ],
 
-  // ======================================
   // MAZE RUNNER
-  // ======================================
 
   maze_runner: (): TutorialStep[] => [
     {
@@ -196,16 +176,13 @@ export const tutorialData = {
 
       title: "Petunjuk",
 
-      description:
-        "Klik tombol Petunjuk jika ingin melihat tutorial lagi.",
+      description: "Klik tombol Petunjuk jika ingin melihat tutorial lagi.",
 
       placement: "top",
     },
   ],
 
-  // ======================================
   // SORTING / SEQUENCE
-  // ======================================
 
   sorting: (): TutorialStep[] => [
     {
@@ -224,8 +201,7 @@ export const tutorialData = {
 
       title: "Tombol Geser",
 
-      description:
-        "Geser ke atas atau bawah untuk memindahkan kartu langkah.",
+      description: "Geser ke atas atau bawah untuk memindahkan kartu langkah.",
 
       placement: "top",
     },
@@ -261,9 +237,7 @@ export const tutorialData = {
     },
   ],
 
-  // ======================================
   // CODE DEBUGGER
-  // ======================================
 
   code_debugger: (): TutorialStep[] => [
     {
@@ -271,8 +245,7 @@ export const tutorialData = {
 
       title: "Langkah Program",
 
-      description:
-        "Klik langkah yang menurutmu tidak sesuai.",
+      description: "Klik langkah yang menurutmu tidak sesuai.",
 
       placement: "right",
     },
@@ -312,8 +285,7 @@ export const tutorialData = {
 
       title: "Petunjuk",
 
-      description:
-        "Klik tombol Petunjuk jika ingin melihat tutorial kembali.",
+      description: "Klik tombol Petunjuk jika ingin melihat tutorial kembali.",
 
       placement: "top",
     },

@@ -25,18 +25,18 @@ export default function PatternPainterExercise({
   onAnswerResult,
   onStateChange,
 }: Props) {
-  // =====================================
+  
   // DATA
-  // =====================================
+  
   const pairs = exercise?.data?.pairs || [];
 
   const options = exercise?.data?.options || [];
 
   const correctAnswer = exercise?.data?.correct_answer;
 
-  // =====================================
+  
   // STATE
-  // =====================================
+  
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   useEffect(() => {
   onStateChange?.(
@@ -44,9 +44,9 @@ export default function PatternPainterExercise({
   );
 }, [selectedAnswer]);
 
-  // =====================================
+  
   // RESET WHEN EXERCISE CHANGED
-  // =====================================
+  
   useEffect(() => {
     if (!setResetExercise) return;
 
@@ -58,9 +58,9 @@ export default function PatternPainterExercise({
   }, [setResetExercise]);
 
 
-  // =====================================
+  
   // CHECK ANSWER
-  // =====================================
+  
     function checkAnswerInternal() {
         const isCorrect =
             selectedAnswer ===
@@ -71,9 +71,9 @@ export default function PatternPainterExercise({
         );
     }
 
-  // =====================================
+  
   // SEND CHECK FUNCTION
-  // =====================================
+  
   useEffect(() => {
     if (setCheckAnswer) {
       setCheckAnswer(() => checkAnswerInternal);
@@ -82,7 +82,7 @@ export default function PatternPainterExercise({
 
   return (
     <div className="pb-24 md:pb-32">
-      {/* ================= PATTERN ================= */}
+      {/*  PATTERN  */}
       <div
         data-tutorial="question-area"
         className="
@@ -206,7 +206,7 @@ export default function PatternPainterExercise({
           </div>
         ))}
 
-        {/* ================= LAST ROW ================= */}
+        {/*  LAST ROW  */}
         <div
           className="
             flex
@@ -323,7 +323,7 @@ export default function PatternPainterExercise({
         </div>
       </div>
 
-      {/* ================= OPTIONS ================= */}
+      {/*  OPTIONS  */}
       <div
         data-tutorial="answer-options"
         className="

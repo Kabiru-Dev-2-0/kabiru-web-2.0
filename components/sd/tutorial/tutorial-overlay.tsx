@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import GameButton from "@/components/sd/game-button";
 import TutorialBubble from "./tutorial-bubble";
 
 type TutorialStep = {
